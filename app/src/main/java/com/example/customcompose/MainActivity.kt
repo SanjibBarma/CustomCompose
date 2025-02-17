@@ -7,16 +7,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import com.example.customcompose.lazy_column_test.TestScreen
 import com.example.customcompose.model.JSON_STRING
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.ui.theme.CustomComposeTheme
-import com.example.customcompose.views.DynamicScreen
+import com.example.customcompose.lazy_column_test.ListViewModel
 import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
@@ -26,9 +22,7 @@ class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
-                // Permission granted, proceed with camera functionality
             } else {
-                // Permission denied, show a message to the user
                 Toast.makeText(this, "Camera permission is required", Toast.LENGTH_SHORT).show()
             }
         }
@@ -46,14 +40,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CustomComposeTheme {
-                Surface (
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .systemBarsPadding(),
-                    color = MaterialTheme.colorScheme.background
-                ){
-                    DynamicScreen(surveyDataModelList)
-                }
+//                DynamicScreenTest(surveyDataModelList)
+//                DynamicScreen(surveyDataModelList)
+                val viewModel = ListViewModel()
+                TestScreen(viewModel)
             }
         }
     }

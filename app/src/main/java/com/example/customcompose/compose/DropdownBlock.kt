@@ -31,11 +31,12 @@ import androidx.compose.ui.unit.dp
 import com.example.customcompose.model.Block
 
 @Composable
-fun DropdownBlock(block: Block, inputData: MutableMap<String, String>, isLast: Boolean, onNext: (String) -> Unit) {
+fun DropdownBlock(block: Block, inputData: MutableMap<String, String>, isLast: Boolean, onNext: (String, String) -> Unit) {
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var isEnabled by remember { mutableStateOf(true) }
     var selectedReferTo by remember { mutableStateOf<String?>(null) }
+    var selectedReferToGroup by remember { mutableStateOf<String?>(null) }
 
     Column {
         Text(block.question!!.slug)
@@ -74,6 +75,7 @@ fun DropdownBlock(block: Block, inputData: MutableMap<String, String>, isLast: B
                     onClick = {
                         selectedOption = option.value
                         selectedReferTo = option.referTo?.id
+                        selectedReferToGroup = option.referTo?.group_no
                         isDropdownExpanded = false
                         inputData[block.id] = selectedOption ?: ""
                     }
@@ -85,7 +87,11 @@ fun DropdownBlock(block: Block, inputData: MutableMap<String, String>, isLast: B
 
         // Next button
         Button(
-            onClick = { isEnabled = false; selectedReferTo?.let(onNext) },
+            onClick = {
+                isEnabled = false;
+//                selectedReferTo?.let(onNext())
+                onNext(selectedReferTo!!, selectedReferToGroup!!)
+            },
             modifier = Modifier.fillMaxWidth(),
             enabled = isLast && selectedOption != null && isEnabled
         ) {

@@ -9,8 +9,10 @@
 //import androidx.compose.foundation.rememberScrollState
 //import androidx.compose.foundation.shape.RoundedCornerShape
 //import androidx.compose.foundation.verticalScroll
+//import androidx.compose.material3.Button
 //import androidx.compose.material3.Card
 //import androidx.compose.material3.CardDefaults
+//import androidx.compose.material3.Text
 //import androidx.compose.runtime.Composable
 //import androidx.compose.runtime.LaunchedEffect
 //import androidx.compose.runtime.getValue
@@ -25,23 +27,26 @@
 //import com.example.customcompose.model.Block
 //import com.example.customcompose.model.SurveyDataModel
 //import com.example.customcompose.views.SubmitButton
+//import com.example.customcompose.views.TextInputBlock
+//import com.example.customcompose.views.onReferToData
 //
 //@Composable
-//fun ReferringGroup(group: List<Block>, surveyDataModel: SurveyDataModel, onNext: (List<Block>) -> Unit) {
-//    val inputData = remember { mutableStateMapOf<String, String>() }
+//fun ReferringGroup(group: List<Block>, inputData: MutableMap<String, String>, surveyDataModelList: List<SurveyDataModel>, loadedGroups: MutableList<List<Block>>, initialShowSubmit: Boolean, onShowSubmitChange: (Boolean) -> Unit) {
 //    val visitedBlocks = remember { mutableStateListOf<Block>() }
-//    val allBlocks = surveyDataModel.blocks.associateBy { it.id }
+//    val allBlocks = group.associateBy { it.id }
 //    val scrollState = rememberScrollState()
+//
 //    var currentBlockId by remember { mutableStateOf(group.firstOrNull()?.id) }
-//    var showSubmitButton by remember { mutableStateOf(false) }
+//    var showSubmitButton by remember { mutableStateOf(initialShowSubmit) }
 //
 //    LaunchedEffect(currentBlockId) {
 //        currentBlockId?.let { id ->
 //            allBlocks[id]?.let { block ->
 //                if (block !in visitedBlocks) visitedBlocks.add(block)
-//            } ?: run { showSubmitButton = true }
+//            } ?: run { onShowSubmitChange(true) } // Block finished, potentially show submit
 //        }
 //    }
+//
 //
 //    LaunchedEffect(visitedBlocks.size) {
 //        scrollState.animateScrollTo(scrollState.maxValue)
@@ -51,12 +56,11 @@
 //        modifier = Modifier
 //            .fillMaxSize()
 //            .padding(16.dp)
-//            .verticalScroll(scrollState)
 //            .imePadding()
 //    ) {
-//        // Loop over all the blocks in the current group
-//        group.forEachIndexed { index, block ->
-//            val isCurrentBlock = index == group.lastIndex
+//        visitedBlocks.forEachIndexed { index, block ->
+//            val isCurrentBlock = index == visitedBlocks.lastIndex
+//
 //            Card(
 //                modifier = Modifier
 //                    .fillMaxWidth()
@@ -73,12 +77,12 @@
 //                        .padding(16.dp)
 //                ) {
 //                    when (block.type) {
-//                        "textInput" -> TextInputBlock(block, inputData, isCurrentBlock, onNext = { nextId -> navigateToNextBlock(nextId, { currentBlockId = it }) })
-//                        "terms" -> TermsBlock(block, isCurrentBlock, onNext = { nextId -> navigateToNextBlock(nextId, { currentBlockId = it }) })
-//                        "otp" -> OTPBlock(block, isCurrentBlock, onNext = { nextId -> navigateToNextBlock(nextId, { currentBlockId = it }) })
-//                        "dropdown" -> DropdownBlock(block, inputData, isCurrentBlock, onNext = { nextId -> navigateToNextBlock(nextId, { currentBlockId = it }) })
-//                        "multipleChoice" -> MultipleChoiceBlock(block, inputData, isCurrentBlock, onNext = { nextId -> navigateToNextBlock(nextId, { currentBlockId = it }) })
-//                        "camera" -> CameraBlock(block, inputData, isCurrentBlock, onNext = { nextId -> navigateToNextBlock(nextId, { currentBlockId = it }) })
+//                        "audio_start" -> TextInputBlock(block, inputData, isCurrentBlock, onNext = { blockId, groupId -> onReferToData(blockId, groupId, block, surveyDataModelList, loadedGroups) { onShowSubmitChange(it) } })
+//                        "textInput" -> TextInputBlock(block, inputData, isCurrentBlock, onNext = { blockId, groupId -> onReferToData(blockId, groupId, block, surveyDataModelList, loadedGroups) { onShowSubmitChange(it) } })
+//                        "terms" -> TermsBlock(block, isCurrentBlock, onNext = { blockId, groupId -> onReferToData(blockId, groupId, block, surveyDataModelList, loadedGroups) { onShowSubmitChange(it) } })
+//                        "otp" -> OTPBlock(block, isCurrentBlock, onNext = { blockId, groupId -> onReferToData(blockId, groupId, block, surveyDataModelList, loadedGroups) { onShowSubmitChange(it) } })
+//                        "dropdown" -> DropdownBlock(block, inputData, isCurrentBlock, onNext = { blockId, groupId -> onReferToData(blockId, groupId, block, surveyDataModelList, loadedGroups) { onShowSubmitChange(it) } })
+//                        "multipleChoice" -> MultipleChoiceBlock(block, inputData, isCurrentBlock, onNext = { blockId, groupId -> onReferToData(blockId, groupId, block, surveyDataModelList, loadedGroups) { onShowSubmitChange(it) } })
 //                    }
 //                }
 //            }
@@ -88,8 +92,6 @@
 //            SubmitButton(inputData, visitedBlocks)
 //        }
 //    }
-//
-//    // Trigger navigation to the next group after processing the current one
-//    onNext(group)
 //}
+//
 //

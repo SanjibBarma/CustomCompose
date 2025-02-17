@@ -31,7 +31,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.customcompose.model.Block
 
 @Composable
-fun OTPBlock(block: Block, isLast: Boolean, onNext: (String) -> Unit) {
+fun OTPBlock(block: Block, isLast: Boolean, onNext: (String, String) -> Unit) {
     var otp by remember { mutableStateOf("") }
     var isEnabled by remember { mutableStateOf(true) }
     var showPopup by remember { mutableStateOf(true) }
@@ -87,7 +87,8 @@ fun OTPBlock(block: Block, isLast: Boolean, onNext: (String) -> Unit) {
                         Button(
                             onClick = {
                                 isEnabled = false
-                                block.referTo?.id?.let(onNext)
+//                                block.referTo?.id?.let(onNext)
+                                onNext(block.referTo?.id!!, block.referTo?.group_no!!)
                                 showPopup = false
                             },
                             enabled = isLast && otp.length == 6,

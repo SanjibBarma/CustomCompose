@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.example.customcompose.model.Block
 
 @Composable
-fun MultipleChoiceBlock(block: Block, inputData: MutableMap<String, String>, isLast: Boolean, onNext: (String) -> Unit) {
+fun MultipleChoiceBlock(block: Block, inputData: MutableMap<String, String>, isLast: Boolean, onNext: (String, String) -> Unit) {
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var isEnabled by remember { mutableStateOf(true) }
 
@@ -53,7 +53,7 @@ fun MultipleChoiceBlock(block: Block, inputData: MutableMap<String, String>, isL
                         .clickable(enabled = isEnabled && selectedOption == null) {
                             selectedOption = option.value
                             option.referTo?.id?.let { referToId ->
-                                if (isLast && selectedOption != null) onNext(referToId)
+                                if (isLast && selectedOption != null) onNext(referToId, option.referTo.group_no!!)
                             }
                             inputData[block.id] = selectedOption ?: ""
                         }
@@ -71,7 +71,7 @@ fun MultipleChoiceBlock(block: Block, inputData: MutableMap<String, String>, isL
                                     selectedOption = option.value
                                     inputData[block.id] = selectedOption ?: ""
                                     option.referTo?.id?.let { referToId ->
-                                        if (isLast && selectedOption != null) onNext(referToId)
+                                        if (isLast && selectedOption != null) onNext(referToId, option.referTo.group_no!!)
                                     }
                                 }
                             },
@@ -104,7 +104,7 @@ fun MultipleChoiceBlock(block: Block, inputData: MutableMap<String, String>, isL
                                     selectedOption = option.value
                                     inputData[block.id] = selectedOption ?: ""
                                     option.referTo?.id?.let { referToId ->
-                                        if (isLast && selectedOption != null) onNext(referToId)
+                                        if (isLast && selectedOption != null) onNext(referToId, option.referTo.group_no!!)
                                     }
                                 },
                             contentAlignment = Alignment.Center

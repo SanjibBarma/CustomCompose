@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.example.customcompose.model.Block
 
 @Composable
-fun TermsBlock(block: Block, isLast: Boolean, onNext: (String) -> Unit) {
+fun TermsBlock(block: Block, isLast: Boolean, onNext: (String, String) -> Unit) {
     var isChecked by remember { mutableStateOf(false) }
     var isEnabled by remember { mutableStateOf(true) }
 
@@ -41,15 +41,22 @@ fun TermsBlock(block: Block, isLast: Boolean, onNext: (String) -> Unit) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = block.question!!.slug, fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        Text(
+            text = block.question!!.slug,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
         Spacer(modifier = Modifier.height(12.dp))
 
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
-            .padding(8.dp)
-            .verticalScroll(rememberScrollState())) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
+                .padding(8.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
             Column {
                 block.validations?.terms?.forEach { term ->
                     Text(text = term, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
@@ -66,7 +73,14 @@ fun TermsBlock(block: Block, isLast: Boolean, onNext: (String) -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { isEnabled = false; block.referTo?.id?.let(onNext) }, enabled = isChecked && isEnabled) {
+        Button(
+            onClick = {
+                isEnabled = false;
+//                block.referTo?.id?.let()
+                onNext(block.referTo?.id!!, block.referTo?.group_no!!)
+            },
+            enabled = isChecked && isEnabled
+        ) {
             Text("I Agree")
         }
     }
