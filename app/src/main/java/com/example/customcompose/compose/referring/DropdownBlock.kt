@@ -1,4 +1,4 @@
-package com.example.customcompose.compose
+package com.example.customcompose.compose.referring
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -29,42 +30,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.model.Block
+import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
-fun DropdownBlock(block: Block, inputData: MutableMap<String, String>, isLast: Boolean, onNext: (String, String) -> Unit) {
+fun DropdownBlock(block: Block, blockListViewModel: BlockListViewModel) {
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
-    var isEnabled by remember { mutableStateOf(true) }
-    var selectedReferTo by remember { mutableStateOf<String?>(null) }
-    var selectedReferToGroup by remember { mutableStateOf<String?>(null) }
+    val isSkippable = block.skip?.id != "-1"
 
     Column {
         Text(block.question!!.slug)
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Box for the dropdown
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
                 .padding(8.dp)
-                .clickable(enabled = isEnabled) { isDropdownExpanded = true }
+                .clickable { isDropdownExpanded = true }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(selectedOption ?: "Select an option") // Display selected option or placeholder text
+                Text(selectedOption ?: "Select an option")
                 Icon(
-                    imageVector = Icons.Default.ArrowDropDown, // Downward arrow icon
-                    contentDescription = "Dropdown Arrow", // Accessibility description
-                    modifier = Modifier.size(24.dp) // Set icon size
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Dropdown Arrow",
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
 
-        // Dropdown menu
         DropdownMenu(
             expanded = isDropdownExpanded,
             onDismissRequest = { isDropdownExpanded = false }
@@ -73,11 +71,13 @@ fun DropdownBlock(block: Block, inputData: MutableMap<String, String>, isLast: B
                 DropdownMenuItem(
                     text = { Text(option.value) },
                     onClick = {
+                        option.referTo?.id?.let { blockId ->
+                            option.referTo.group_no?.let { groupId ->
+                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                            }
+                        }
                         selectedOption = option.value
-                        selectedReferTo = option.referTo?.id
-                        selectedReferToGroup = option.referTo?.group_no
                         isDropdownExpanded = false
-                        inputData[block.id] = selectedOption ?: ""
                     }
                 )
             }
@@ -85,17 +85,23 @@ fun DropdownBlock(block: Block, inputData: MutableMap<String, String>, isLast: B
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Next button
-        Button(
-            onClick = {
-                isEnabled = false;
-//                selectedReferTo?.let(onNext())
-                onNext(selectedReferTo!!, selectedReferToGroup!!)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = isLast && selectedOption != null && isEnabled
-        ) {
-            Text("Next")
+        if (isSkippable) {
+            Button(
+                onClick = {
+                    block.skip?.group_no?.let { groupId ->
+                        block.skip.id.let { blockId ->
+                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Blue,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Skip")
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
-package com.example.customcompose.compose
+package com.example.customcompose.compose.referring
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -7,7 +8,7 @@ import android.graphics.Matrix
 import android.hardware.camera2.CameraAccessException
 import android.media.ExifInterface
 import android.net.Uri
-import android.util.Log
+import android.view.WindowManager
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -24,17 +25,23 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,72 +57,108 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
+import com.example.customcompose.viewmodel.BlockListViewModel
 import es.dmoral.toasty.Toasty
 import java.io.File
 import java.io.IOException
 
 @Composable
-fun CameraBlock(block: Block, inputData: MutableMap<String, String>, isLast: Boolean, onNext: (String) -> Unit) {
+fun ImageCaptureBlock(block: Block, blockListViewModel: BlockListViewModel) {
     var showCamera by remember { mutableStateOf(false) }
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showPreview by remember { mutableStateOf(false) }
-    var nextClick by remember { mutableStateOf(false) }
+    val isSkippable = block.skip?.id != "-1"
 
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = block.question!!.slug,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        Log.d( "CameraBlock: ", isLast.toString())
+    Column {
+        Text(block.question!!.slug)
+        Spacer(modifier = Modifier.height(8.dp))
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.LightGray.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
                 .clickable {
-                    if (!nextClick){
-                        showCamera = true
-                    }
+                    showCamera = true
                 }
                 .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-                .padding(top = 32.dp)
-                .padding(bottom = 32.dp),
+                .height(200.dp),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_camera),
-                contentDescription = "Open Camera",
-                modifier = Modifier.size(100.dp),
-                tint = Color.Gray
-            )
+
+            if (capturedImageUri != null) {
+                val context = LocalContext.current
+                val bitmap = remember(capturedImageUri) {
+                    try {
+                        val inputStream = context.contentResolver.openInputStream(capturedImageUri!!)
+                        val originalBitmap = BitmapFactory.decodeStream(inputStream)
+                        inputStream?.close()
+
+                        val exif = context.contentResolver.openInputStream(capturedImageUri!!)?.use {
+                            ExifInterface(it)
+                        }
+
+                        val orientation = exif?.getAttributeInt(
+                            ExifInterface.TAG_ORIENTATION,
+                            ExifInterface.ORIENTATION_UNDEFINED
+                        )
+
+                        // Apply rotation based on EXIF orientation
+                        when (orientation) {
+                            ExifInterface.ORIENTATION_ROTATE_90 -> rotateImage(originalBitmap, 90f)
+                            ExifInterface.ORIENTATION_ROTATE_180 -> rotateImage(originalBitmap, 180f)
+                            ExifInterface.ORIENTATION_ROTATE_270 -> rotateImage(originalBitmap, 270f)
+                            else -> originalBitmap
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
+                }
+
+                bitmap?.let {
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = "Captured Image",
+                        modifier = Modifier.fillMaxSize()
+                            .clickable {
+                                showCamera = true
+                            },
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            } else {
+                // Show the camera icon
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_camera),
+                    contentDescription = "Open Camera",
+                    modifier = Modifier.size(100.dp),
+                    tint = Color.Blue
+                )
+            }
+
         }
 
         if (showCamera) {
-            Dialog(
-                onDismissRequest = { showCamera = false }
-            ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CustomCameraPreview(
-                        onCaptureClick = { uri ->
-                            capturedImageUri = uri
-                            showCamera = false
-                            showPreview = true
-                        },
-                        onSwitchCameraClick = { /* Handle camera switch if needed */ }
-                    )
-                }
+            FullScreenDialog(onDismissRequest = { showCamera = false }) { // Use FullScreenDialog
+                CustomCameraPreview(
+                    onCaptureClick = { uri ->
+                        capturedImageUri = uri
+                        showCamera = false
+                        showPreview = true
+                    },
+                    onSwitchCameraClick = { /* Handle camera switch if needed */ }
+                )
             }
         }
 
         if (showPreview && capturedImageUri != null) {
-            Dialog(onDismissRequest = { /*showPreview = false*/ }) {
+            FullScreenDialog(onDismissRequest = { /*showPreview = false*/ }) { // Use FullScreenDialog
                 ImagePreview(
                     imageUri = capturedImageUri!!,
                     onRetake = {
@@ -124,31 +167,69 @@ fun CameraBlock(block: Block, inputData: MutableMap<String, String>, isLast: Boo
                         showCamera = true
                     },
                     onForward = {
-                        inputData[block.id] = capturedImageUri.toString()
                         showPreview = false
-                        block.referTo?.id?.let(onNext)
+
+                        block.referTo?.id?.let { blockId ->
+                            block.referTo.group_no?.let { groupId ->
+                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                            }
+                        }
                     },
-                    onNextClick = { nextClick = true }
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        if (!block.skip?.id.equals("-1")){
+        if (isSkippable){
             Button(
                 onClick = {
-                    if (block.skip?.id.equals("-1")){
-                        block.referTo?.id?.let(onNext)
-                    }else{
-                        block.skip?.id?.let { onNext(it) }
+                    block.skip?.id?.let {blockId ->
+                        block.skip.group_no.let { groupId ->
+                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                        }
                     }
-                    nextClick = true
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = isLast
             ) {
-                Text("Next")
+                Text("Skip")
+            }
+        }
+    }
+}
+
+@Composable
+fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
+    val context = LocalContext.current
+    val activity = context as? Activity
+
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            // Add these for immersive mode if needed
+            // decorFitsSystemWindows = false
+        )
+    ) {
+        // Set flags to occupy the entire screen, including behind system bars
+        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
+        // Use a Layout to handle insets correctly
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black) // Or your desired background
+                .windowInsetsPadding(
+                    WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Vertical)
+                )
+        ) {
+            content()
+        }
+
+        // IMPORTANT: Clear flags when the dialog is dismissed
+        DisposableEffect(Unit) {
+            onDispose {
+                activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
             }
         }
     }
@@ -161,6 +242,7 @@ fun CustomCameraPreview(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val activity = context as? Activity
 
     val preview = remember { Preview.Builder().build() }
 //    val imageCapture = remember { ImageCapture.Builder().build() }
@@ -275,7 +357,7 @@ fun CustomCameraPreview(
 }
 
 @Composable
-fun ImagePreview(imageUri: Uri, onRetake: () -> Unit, onForward: () -> Unit, onNextClick: () -> Unit) {
+fun ImagePreview(imageUri: Uri, onRetake: () -> Unit, onForward: () -> Unit) {
     val context = LocalContext.current
     val bitmap = remember {
         try {
@@ -301,7 +383,7 @@ fun ImagePreview(imageUri: Uri, onRetake: () -> Unit, onForward: () -> Unit, onN
 
             rotatedBitmap
         } catch (e: IOException) {
-            null // Handle the error appropriately
+            null
         }
     }
 
@@ -345,7 +427,6 @@ fun ImagePreview(imageUri: Uri, onRetake: () -> Unit, onForward: () -> Unit, onN
 
             Button(onClick = {
                 onForward()
-                onNextClick()
             }) {
                 Text("Forward")
             }

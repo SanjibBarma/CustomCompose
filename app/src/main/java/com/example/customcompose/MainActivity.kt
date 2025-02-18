@@ -8,11 +8,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import com.example.customcompose.lazy_column_test.TestScreen
 import com.example.customcompose.model.JSON_STRING
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.ui.theme.CustomComposeTheme
-import com.example.customcompose.lazy_column_test.ListViewModel
+import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.views.DynamicScreen
 import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
@@ -38,12 +38,13 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(android.Manifest.permission.CAMERA)
         }
 
+        val blockListViewModel = BlockListViewModel(surveyDataModelList)
         setContent {
             CustomComposeTheme {
 //                DynamicScreenTest(surveyDataModelList)
-//                DynamicScreen(surveyDataModelList)
-                val viewModel = ListViewModel()
-                TestScreen(viewModel)
+                DynamicScreen(blockListViewModel, surveyDataModelList)
+//                val viewModel = ListViewModel()
+//                TestScreen(viewModel)
             }
         }
     }

@@ -19,9 +19,9 @@ class ListViewModel() : ViewModel() {
         viewModelScope.launch {
             var count = 1
             while (true) {
-                _items.value = _items.value + count // নতুন আইটেম যোগ করা হচ্ছে
+                _items.value = _items.value + count
                 count++
-                delay(1000) // ১ সেকেন্ড অপেক্ষা
+                delay(1000)
             }
         }
     }

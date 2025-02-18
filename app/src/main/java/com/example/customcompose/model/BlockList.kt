@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BlockList(
     val position: Int,
-    val surveyBlock: SurveyDataModel,
+    val group: SurveyDataModel,
+    val block: Block,
     val surveyHistoryModel: SurveyHistoryModel?,
 )
 

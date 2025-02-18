@@ -1,4 +1,4 @@
-package com.example.customcompose.compose
+package com.example.customcompose.compose.referring
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -22,14 +22,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.customcompose.model.Block
+import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
-fun TermsBlock(block: Block, isLast: Boolean, onNext: (String, String) -> Unit) {
+fun TermsBlock(block: Block, blockListViewModel: BlockListViewModel) {
     var isChecked by remember { mutableStateOf(false) }
     var isEnabled by remember { mutableStateOf(true) }
 
@@ -41,13 +40,9 @@ fun TermsBlock(block: Block, isLast: Boolean, onNext: (String, String) -> Unit) 
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = block.question!!.slug,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(12.dp))
+        Text(text = block.question!!.slug)
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Box(
             modifier = Modifier
@@ -77,7 +72,7 @@ fun TermsBlock(block: Block, isLast: Boolean, onNext: (String, String) -> Unit) 
             onClick = {
                 isEnabled = false;
 //                block.referTo?.id?.let()
-                onNext(block.referTo?.id!!, block.referTo?.group_no!!)
+                blockListViewModel.addBlockToTheList(block.referTo?.id!!, block.referTo.group_no!!)
             },
             enabled = isChecked && isEnabled
         ) {

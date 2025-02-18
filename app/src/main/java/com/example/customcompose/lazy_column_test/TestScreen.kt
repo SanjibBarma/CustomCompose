@@ -22,10 +22,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun TestScreen(viewModel: ListViewModel) {
     val items by viewModel.items.collectAsState()
-    val listState = rememberLazyListState()  // LazyColumn-এর Scroll State
+    val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    // যখন নতুন আইটেম যোগ হবে তখন স্ক্রল করা হবে
     LaunchedEffect(items.size) {
         if (items.isNotEmpty()) {
             coroutineScope.launch {

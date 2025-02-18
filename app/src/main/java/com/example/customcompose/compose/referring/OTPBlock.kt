@@ -1,4 +1,4 @@
-package com.example.customcompose.compose
+package com.example.customcompose.compose.referring
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,15 +29,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.customcompose.model.Block
+import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
-fun OTPBlock(block: Block, isLast: Boolean, onNext: (String, String) -> Unit) {
+fun OTPBlock(block: Block, blockListViewModel: BlockListViewModel) {
     var otp by remember { mutableStateOf("") }
     var isEnabled by remember { mutableStateOf(true) }
     var showPopup by remember { mutableStateOf(true) }
 
     if (showPopup) {
-        // Show a popup dialog
         Dialog(onDismissRequest = { }) {
             Box(
                 modifier = Modifier
@@ -46,13 +46,9 @@ fun OTPBlock(block: Block, isLast: Boolean, onNext: (String, String) -> Unit) {
                     .padding(16.dp)
             ) {
                 Column {
-                    Text(
-                        text = block.question!!.slug,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
+                    Text(text = block.question!!.slug)
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Spacer(modifier = Modifier.height(16.dp))
                     TextField(
                         value = otp,
                         onValueChange = { otp = it },
@@ -70,7 +66,6 @@ fun OTPBlock(block: Block, isLast: Boolean, onNext: (String, String) -> Unit) {
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    // Buttons
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -87,11 +82,10 @@ fun OTPBlock(block: Block, isLast: Boolean, onNext: (String, String) -> Unit) {
                         Button(
                             onClick = {
                                 isEnabled = false
-//                                block.referTo?.id?.let(onNext)
-                                onNext(block.referTo?.id!!, block.referTo?.group_no!!)
+                                blockListViewModel.addBlockToTheList(block.referTo?.id!!, block.referTo.group_no!!)
                                 showPopup = false
                             },
-                            enabled = isLast && otp.length == 6,
+                            enabled = otp.length == 6,
                             modifier = Modifier.padding(8.dp)
                         ) {
                             Text("Verify")
@@ -117,12 +111,4 @@ fun OTPBlock(block: Block, isLast: Boolean, onNext: (String, String) -> Unit) {
             )
         }
     }
-
-//    Column {
-//        Text(block.question.slug)
-//        TextField(value = otp, onValueChange = { otp = it }, label = { Text("Enter OTP") }, modifier = Modifier.fillMaxWidth(), enabled = isEnabled)
-//        Button(onClick = { isEnabled = false; block.referTo?.id?.let(onNext) }, enabled = isLast && otp.length == 6, modifier = Modifier.fillMaxWidth()) {
-//            Text("Next")
-//        }
-//    }
 }
