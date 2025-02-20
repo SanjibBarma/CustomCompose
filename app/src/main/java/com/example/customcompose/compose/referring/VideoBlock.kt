@@ -48,6 +48,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -56,7 +57,12 @@ import java.io.File
 import kotlin.math.max
 
 @Composable
-fun VideoBlock(block: Block, blockListViewModel: BlockListViewModel) {
+fun VideoBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    position: Int,
+    isActiveGroup: Boolean
+) {
     val context = LocalContext.current
     var videoThumbnail by remember { mutableStateOf<Bitmap?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -67,6 +73,11 @@ fun VideoBlock(block: Block, blockListViewModel: BlockListViewModel) {
     var showDialog by remember { mutableStateOf(false) } // State for showing the dialog
     var videoUri by remember { mutableStateOf<Uri?>(null) } // Store the video Uri
     val isSkippable = block.skip?.id != "-1"
+
+    val existingData = blockListViewModel.getData(position)
+    var text by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "") }
+    val question = block.question?.slug ?: ""
+    val blockId = block.id ?: ""
 
 
     LaunchedEffect(videoPath) {
@@ -102,7 +113,7 @@ fun VideoBlock(block: Block, blockListViewModel: BlockListViewModel) {
             modifier = Modifier
                 .height(200.dp)
                 .fillMaxWidth()
-                .clickable {
+                .clickable (enabled = isActiveGroup){
                     if (videoThumbnail != null && videoPath != null) {
                         Log.d("Box Clicked", "Showing video dialog")
                         videoUri = Uri.fromFile(File(videoPath)) // Set the video Uri
@@ -223,6 +234,15 @@ fun VideoBlock(block: Block, blockListViewModel: BlockListViewModel) {
                                     setOnCompletionListener {
                                         showDialog = false
 
+                                        val surveyHistoryModel = listOf(
+                                            SurveyHistoryModel(
+                                                question = question,
+                                                answer = "Yes",
+                                                id = blockId
+                                            )
+                                        )
+                                        blockListViewModel.saveData(position, surveyHistoryModel)
+
                                         block.options?.get(0)?.referTo?.id?.let { blockId ->
                                             block.options[0].referTo!!.group_no?.let { groupId ->
                                                 blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -261,6 +281,15 @@ fun VideoBlock(block: Block, blockListViewModel: BlockListViewModel) {
 
             Button(
                 onClick = {
+                    val surveyHistoryModel = listOf(
+                        SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = blockId
+                        )
+                    )
+                    blockListViewModel.saveData(position, surveyHistoryModel)
+
                     block.skip?.id?.let { blockId ->
                         block.skip.group_no.let { groupId ->
                             blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -268,6 +297,7 @@ fun VideoBlock(block: Block, blockListViewModel: BlockListViewModel) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = isActiveGroup
             ) {
                 Text("Skip")
             }

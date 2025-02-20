@@ -24,23 +24,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
-fun CheckboxBlock(block: Block, blockListViewModel: BlockListViewModel) {
-    val selectedOptions = remember { mutableStateOf<Set<Any>>(emptySet()) }
+fun CheckboxBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    position: Int,
+    isActiveGroup: Boolean
+) {
     val isSkippable = block.skip?.id != "-1"
 
+    // Get existing data
+    val existingData = blockListViewModel.getData(position)
+    val selectedOptions = remember { mutableStateOf(existingData.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
 
-    block.options
+    val question = block.question?.slug ?: ""
+    val blockId = block.id ?: ""
 
     Column {
-        Text(text = block.question!!.slug)
+        Text(text = question)
 
         Spacer(modifier = Modifier.height(8.dp))
 
         block.options?.forEach { option ->
-            val isSelected = selectedOptions.value.contains(option)
+            val isSelected = selectedOptions.value.contains(option.value)
 
             Surface(
                 modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
@@ -55,11 +64,12 @@ fun CheckboxBlock(block: Block, blockListViewModel: BlockListViewModel) {
                         checked = isSelected,
                         onCheckedChange = { isChecked ->
                             selectedOptions.value = if (isChecked) {
-                                selectedOptions.value + option
+                                selectedOptions.value + option.value
                             } else {
-                                selectedOptions.value - option
+                                selectedOptions.value - option.value
                             }
-                        }
+                        },
+                        enabled = isActiveGroup
                     )
                     Text(option.value)
                 }
@@ -69,13 +79,22 @@ fun CheckboxBlock(block: Block, blockListViewModel: BlockListViewModel) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Row (
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ){
             if (isSkippable){
                 Button(
                     onClick = {
+
+                        val surveyHistoryModel = listOf(
+                            SurveyHistoryModel(
+                                question = "",
+                                answer = "",
+                                id = blockId
+                            )
+                        )
+                        blockListViewModel.saveData(position, surveyHistoryModel)
+
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
                                 blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -86,19 +105,29 @@ fun CheckboxBlock(block: Block, blockListViewModel: BlockListViewModel) {
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Blue,
                         contentColor = Color.White
-                    )
+                    ),
+                    enabled = isActiveGroup
                 ) {
                     Text("Skip")
                 }
-
                 Spacer(modifier = Modifier.width(8.dp))
-
             }
+
             Button(
                 onClick = {
+                    val answer = selectedOptions.value.joinToString(",") // Convert Set to Comma-Separated String
+                    val surveyHistoryModel = listOf(
+                        SurveyHistoryModel(
+                            question = question,
+                            answer = answer,
+                            id = blockId
+                        )
+                    )
+                    blockListViewModel.saveData(position, surveyHistoryModel)
+
                     block.referTo?.group_no?.let { groupId ->
-                        block.referTo.id?.let { blockId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                        block.referTo.id?.let { nextBlockId ->
+                            blockListViewModel.addBlockToTheList(nextBlockId, groupId)
                         }
                     }
                 },
@@ -106,7 +135,8 @@ fun CheckboxBlock(block: Block, blockListViewModel: BlockListViewModel) {
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Blue,
                     contentColor = Color.White
-                )
+                ),
+                enabled = isActiveGroup
             ) {
                 Text("Next")
             }

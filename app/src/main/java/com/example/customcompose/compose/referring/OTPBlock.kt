@@ -25,20 +25,33 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import es.dmoral.toasty.Toasty
 
 @Composable
-fun OTPBlock(block: Block, blockListViewModel: BlockListViewModel) {
+fun OTPBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    position: Int,
+    isActiveGroup: Boolean
+) {
     var otp by remember { mutableStateOf("") }
-    var isEnabled by remember { mutableStateOf(true) }
-    var showPopup by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+
+    val existingData = blockListViewModel.getData(position)
+    var showPopup by remember { mutableStateOf(existingData.firstOrNull() == null) } // Initialize based on existing data
+
+    val question = block.question?.slug ?: ""
+    val blockId = block.id ?: ""
 
     if (showPopup) {
-        Dialog(onDismissRequest = { }) {
+        Dialog(onDismissRequest = { /* Optional: handle dismiss if needed */ }) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -54,7 +67,6 @@ fun OTPBlock(block: Block, blockListViewModel: BlockListViewModel) {
                         onValueChange = { otp = it },
                         label = { Text("Enter OTP") },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = isEnabled
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -71,7 +83,17 @@ fun OTPBlock(block: Block, blockListViewModel: BlockListViewModel) {
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         TextButton(
-                            onClick = { /* Handle resend OTP */ },
+                            onClick = {
+                                val surveyHistoryModel = listOf(
+                                    SurveyHistoryModel(
+                                        question = "",
+                                        answer = "",
+                                        id = blockId
+                                    )
+                                )
+                                blockListViewModel.saveData(position, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheList(block.skip?.id!!, block.skip.group_no)
+                            },
                             modifier = Modifier.padding(8.dp)
                         ) {
                             Text("Resend")
@@ -81,9 +103,19 @@ fun OTPBlock(block: Block, blockListViewModel: BlockListViewModel) {
 
                         Button(
                             onClick = {
-                                isEnabled = false
+                                val surveyHistoryModel = listOf(
+                                    SurveyHistoryModel(
+                                        question = question,
+                                        answer = "Yes",
+                                        id = blockId
+                                    )
+                                )
+                                blockListViewModel.saveData(position, surveyHistoryModel)
                                 blockListViewModel.addBlockToTheList(block.referTo?.id!!, block.referTo.group_no!!)
-                                showPopup = false
+
+                                Toasty.success(context, "blockId ${block.referTo?.id!!} groupId: ${block.referTo.group_no!!}")
+
+                                showPopup = false // Dismiss dialog
                             },
                             enabled = otp.length == 6,
                             modifier = Modifier.padding(8.dp)

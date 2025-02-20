@@ -1,4 +1,4 @@
-package com.example.customcompose.compose.referring
+package com.example.customcompose.compose.number_validation
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -34,17 +32,18 @@ import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
-fun DropdownBlock(
+fun NonRefDropdown(
     block: Block,
     blockListViewModel: BlockListViewModel,
+    index: Int,
     position: Int,
     isActiveGroup: Boolean
 ) {
     var isDropdownExpanded by remember { mutableStateOf(false) }
-    val isSkippable = block.skip?.id != "-1"
+    val isRequired = block.required
 
-    val existingData = blockListViewModel.getData(position)
-    var selectedOption by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "") }
+    val existingData = blockListViewModel.getDataFromIndex(position, index)
+    var selectedOption by remember { mutableStateOf(existingData?.answer ?: "") }
     val question = block.question?.slug ?: ""
     val blockId = block.id ?: ""
 
@@ -82,21 +81,16 @@ fun DropdownBlock(
                     text = { Text(option.value) },
                     onClick = {
                         selectedOption = option.value
+                        val answerToSave = selectedOption.ifEmpty { "" }
 
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
-                                question = question,
-                                answer = selectedOption!!,
-                                id = blockId
-                            )
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = question,
+                            answer = answerToSave,
+                            id = blockId
                         )
-                        blockListViewModel.saveData(position, surveyHistoryModel)
 
-                        option.referTo?.id?.let { blockId ->
-                            option.referTo.group_no?.let { groupId ->
-                                blockListViewModel.addBlockToTheList(blockId, groupId)
-                            }
-                        }
+                        blockListViewModel.saveDataAtIndex(position, index, surveyHistoryModel)
+
                         isDropdownExpanded = false
                     },
                     enabled = isActiveGroup
@@ -105,33 +99,5 @@ fun DropdownBlock(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
-        if (isSkippable) {
-            Button(
-                onClick = {
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
-                            question = "",
-                            answer = "",
-                            id = blockId
-                        )
-                    )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
-                    block.skip?.group_no?.let { groupId ->
-                        block.skip.id.let { blockId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Blue,
-                    contentColor = Color.White
-                ),
-                enabled = isActiveGroup
-            ) {
-                Text("Skip")
-            }
-        }
     }
 }

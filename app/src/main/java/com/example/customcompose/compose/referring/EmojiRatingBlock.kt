@@ -25,18 +25,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
-fun EmojiRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
+fun EmojiRatingBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    position: Int,
+    isActiveGroup: Boolean
+) {
     val isSkippable = block.skip?.id != "-1"
+
+    val blockId = block.id ?: ""
 
     val emojiImageArray = intArrayOf(
         R.drawable.ic_angry,
@@ -54,9 +61,12 @@ fun EmojiRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
         "Great"
     )
 
-    var selectedEmojiIndex by remember { mutableStateOf<Int?>(null) }
+    val existingData = blockListViewModel.getData(position)
+    var selectedEmojiIndex by remember {
+        mutableStateOf(existingData.firstOrNull()?.answer?.toIntOrNull())
+    }
 
-    Column{
+    Column {
         Text(block.question!!.slug)
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -67,14 +77,27 @@ fun EmojiRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
         ) {
             emojiImageArray.forEachIndexed { index, emojiResource ->
                 EmojiBox(
-                    block,
                     emojiImageResource = emojiResource,
                     title = emojiTitles[index],
                     isSelected = selectedEmojiIndex == index,
-                    onNext = { blockId, groupId ->
-                        selectedEmojiIndex = index // Update selected emoji index
-                        blockListViewModel.addBlockToTheList(blockId, groupId) // Call onNext with the updated values
-                    }
+                    onSelect = {
+                        selectedEmojiIndex = index
+                        val surveyHistoryModel = listOf(
+                            SurveyHistoryModel(
+                                question = block.question?.slug ?: "",
+                                answer = emojiTitles[index],
+                                id = blockId
+                            )
+                        )
+                        blockListViewModel.saveData(position, surveyHistoryModel)
+
+                        block.referTo?.id?.let { blockId ->
+                            block.referTo.group_no?.let { groupId ->
+                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                            }
+                        }
+                    },
+                    isActiveGroup
                 )
             }
         }
@@ -84,6 +107,15 @@ fun EmojiRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
         if (isSkippable) {
             Button(
                 onClick = {
+                    val surveyHistoryModel = listOf(
+                        SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = blockId
+                        )
+                    )
+                    blockListViewModel.saveData(position, surveyHistoryModel)
+
                     block.skip?.group_no?.let { groupId ->
                         block.skip.id.let { blockId ->
                             blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -94,7 +126,8 @@ fun EmojiRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Blue,
                     contentColor = Color.White
-                )
+                ),
+                enabled = isActiveGroup
             ) {
                 Text("Skip")
             }
@@ -104,14 +137,12 @@ fun EmojiRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
 
 @Composable
 fun EmojiBox(
-    block: Block,
     emojiImageResource: Int,
     title: String,
     isSelected: Boolean,
-    onNext: (String, String) -> Unit
+    onSelect: () -> Unit,
+    isActiveGroup: Boolean
 ) {
-    val context = LocalContext.current
-
     val backgroundColor = if (isSelected) Color.LightGray else Color.White
     val borderColor = if (isSelected) Color.Black else Color.Transparent
 
@@ -121,15 +152,11 @@ fun EmojiBox(
         ),
         shape = RoundedCornerShape(8.dp),
         onClick = {
-            block.referTo?.id?.let { blockId ->
-                block.referTo.group_no?.let { groupId ->
-                    onNext(blockId, groupId)
-                }
-            }
-//            Toast.makeText(context, "$title is Selected", Toast.LENGTH_SHORT).show()
+            onSelect()
         },
         modifier = Modifier
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp)),
+        enabled = isActiveGroup
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -154,5 +181,6 @@ fun EmojiBox(
         }
     }
 }
+
 
 

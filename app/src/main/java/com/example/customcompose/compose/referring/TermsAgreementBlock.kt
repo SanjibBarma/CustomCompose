@@ -25,12 +25,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
-fun TermsBlock(block: Block, blockListViewModel: BlockListViewModel) {
-    var isChecked by remember { mutableStateOf(false) }
-    var isEnabled by remember { mutableStateOf(true) }
+fun TermsAgreementBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    position: Int,
+    isActiveGroup: Boolean
+) {
+    val existingData = blockListViewModel.getData(position)
+    var isChecked by remember { mutableStateOf(existingData.firstOrNull()?.answer == "Yes") }
+
+    val question = block.question?.slug ?: ""
+    val blockId = block.id ?: ""
 
     Column(
         modifier = Modifier
@@ -62,7 +71,7 @@ fun TermsBlock(block: Block, blockListViewModel: BlockListViewModel) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = isChecked, onCheckedChange = { isChecked = it })
+            Checkbox(checked = isChecked, onCheckedChange = { isChecked = it }, enabled = isActiveGroup)
             Text(text = "I agree to the terms and conditions", fontSize = 14.sp)
         }
 
@@ -70,11 +79,19 @@ fun TermsBlock(block: Block, blockListViewModel: BlockListViewModel) {
 
         Button(
             onClick = {
-                isEnabled = false;
-//                block.referTo?.id?.let()
+                //isEnabled = false;
+                val surveyHistoryModel = listOf(
+                    SurveyHistoryModel(
+                        question = question,
+                        answer = "Yes",
+                        id = blockId
+                    )
+                )
+                blockListViewModel.saveData(position, surveyHistoryModel)
+
                 blockListViewModel.addBlockToTheList(block.referTo?.id!!, block.referTo.group_no!!)
             },
-            enabled = isChecked && isEnabled
+            enabled = isChecked && isActiveGroup
         ) {
             Text("I Agree")
         }

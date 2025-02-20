@@ -44,7 +44,6 @@ fun DynamicScreen(
     val isSubmitted by blockListViewModel.isSubmitted.collectAsState()
     val context = LocalContext.current
 
-    // AppBar using Material3
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -86,11 +85,12 @@ fun DynamicScreen(
                 items(viewListItem) { childView ->
                     val survey = childView.group
                     val block = childView.block
-
+                    val isCurrentGroupActive = !isSubmitted && viewListItem.lastOrNull()?.group?.group == survey.group
+                    val position = childView.position
                     when (survey.type) {
-                        "referring" -> ReferringGroup(blockListViewModel, block, survey)
-                        "non-referring" -> NonReferringGroup(blockListViewModel, block, survey)
-                        "numbervalidation" -> NumberValidationGroup(blockListViewModel, block, survey)
+                        "referring" -> ReferringGroup(blockListViewModel, block, survey, isCurrentGroupActive, position)
+                        "non-referring" -> NonReferringGroup(blockListViewModel, block, survey, isCurrentGroupActive, position)
+                        "numbervalidation" -> NumberValidationGroup(blockListViewModel, block, survey, isCurrentGroupActive, position)
                     }
                 }
 

@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyDataModel
@@ -21,13 +22,16 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 fun NonReferringGroup(
     blockListViewModel: BlockListViewModel,
     currentBlock: Block?,
-    survey: SurveyDataModel
+    survey: SurveyDataModel,
+    isActiveGroup: Boolean,
+    position: Int
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+//        elevation = CardDefaults.cardElevation(4.dp)
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Non-Referring: ")

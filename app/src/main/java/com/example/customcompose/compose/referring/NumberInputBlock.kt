@@ -1,5 +1,6 @@
 package com.example.customcompose.compose.referring
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -26,18 +28,28 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import es.dmoral.toasty.Toasty
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NumberInputBlock(block: Block, blockListViewModel: BlockListViewModel) {
-    var text by remember { mutableStateOf("") }
+fun NumberInputBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    position: Int,
+    isActiveGroup: Boolean
+) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val isSkippable = block.skip?.id != "-1"
     val validationRegex = block.validations?.regex
+
+    val existingData = blockListViewModel.getData(position)
+    var text by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "") }
+    val question = block.question?.slug ?: ""
+    val blockId = block.id ?: ""
 
     fun validateInput(input: String): Boolean {
         return if (validationRegex != null) {
@@ -57,17 +69,18 @@ fun NumberInputBlock(block: Block, blockListViewModel: BlockListViewModel) {
             onValueChange = {
                 text = it
             },
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().height(56.dp).border(1.dp, color = Color.Gray),
             singleLine = true,
+            shape = RoundedCornerShape(4.dp),
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = Color.White,
+                containerColor = if (isActiveGroup) Color.White else Color.LightGray,
                 focusedBorderColor = Color.Gray,
                 unfocusedBorderColor = Color.Gray
             ),
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Number
             ),
+            enabled = isActiveGroup,
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -81,18 +94,29 @@ fun NumberInputBlock(block: Block, blockListViewModel: BlockListViewModel) {
                 Button(
                     onClick = {
                         keyboardController?.hide()
+
+                        val surveyHistoryModel = listOf(
+                            SurveyHistoryModel(
+                                question = "",
+                                answer = "",
+                                id = blockId
+                            )
+                        )
+                        blockListViewModel.saveData(position, surveyHistoryModel)
+
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
                                 blockListViewModel.addBlockToTheList(blockId, groupId)
                             }
                         }
                     },
-                    enabled = (isSkippable || text.isNotBlank()),
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Blue,
                         contentColor = Color.White
-                    )
+                    ),
+                    enabled = isActiveGroup
+
                 ) {
                     Text("Skip")
                 }
@@ -105,6 +129,16 @@ fun NumberInputBlock(block: Block, blockListViewModel: BlockListViewModel) {
                     keyboardController?.hide()
                     if (text.isNotBlank()) {
                         if (validateInput(text)) {
+
+                            val surveyHistoryModel = listOf(
+                                SurveyHistoryModel(
+                                    question = question,
+                                    answer = text,
+                                    id = blockId
+                                )
+                            )
+                            blockListViewModel.saveData(position, surveyHistoryModel)
+
                             block.referTo?.group_no?.let { groupId ->
                                 block.referTo.id?.let { blockId ->
                                     blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -117,7 +151,7 @@ fun NumberInputBlock(block: Block, blockListViewModel: BlockListViewModel) {
                         Toasty.warning(context, "Input valid ${block.question.slug}", Toasty.LENGTH_SHORT).show()
                     }
                 },
-                enabled = (isSkippable || text.isNotBlank()),
+                enabled = (isActiveGroup || text.isNotBlank()),
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Blue,

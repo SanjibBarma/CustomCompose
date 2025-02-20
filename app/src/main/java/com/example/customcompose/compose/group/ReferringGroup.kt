@@ -26,14 +26,18 @@ import com.example.customcompose.compose.referring.MultipleChoiceBlock
 import com.example.customcompose.compose.referring.NumberInputBlock
 import com.example.customcompose.compose.referring.OTPBlock
 import com.example.customcompose.compose.referring.StarRatingBlock
-import com.example.customcompose.compose.referring.TermsBlock
+import com.example.customcompose.compose.referring.TermsAgreementBlock
 import com.example.customcompose.compose.referring.UrlBlock
 import com.example.customcompose.compose.referring.VideoBlock
 import es.dmoral.toasty.Toasty
 
 @Composable
 fun ReferringGroup(
-    blockListViewModel: BlockListViewModel, block: Block?, survey: SurveyDataModel
+    blockListViewModel: BlockListViewModel,
+    block: Block?,
+    survey: SurveyDataModel,
+    isActiveGroup: Boolean,
+    position: Int
 ) {
     val context = LocalContext.current
 
@@ -43,37 +47,33 @@ fun ReferringGroup(
             .padding(8.dp)
             .background(Color.White),
         elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ) {
         Column(modifier = Modifier
             .padding(16.dp)
         ) {
 
             when (block?.type) {
-                "audio_start" -> EditTextBlock(block, blockListViewModel)
-                "textInput" -> EditTextBlock(block, blockListViewModel)
-                "terms" -> TermsBlock(block, blockListViewModel)
-                "otp" -> OTPBlock(block, blockListViewModel)
-                "dropdown" -> DropdownBlock(block, blockListViewModel)
-                "multipleChoice" -> MultipleChoiceBlock(block, blockListViewModel)
-                "numberInput" -> NumberInputBlock(block, blockListViewModel)
-                "checkbox" -> CheckboxBlock(block, blockListViewModel)
-                "emoji_rating" -> EmojiRatingBlock(block, blockListViewModel)
-                "camera" -> ImageCaptureBlock(block, blockListViewModel)
-                "url" -> UrlBlock(block, blockListViewModel)
-                "video" -> VideoBlock(block, blockListViewModel)
-                "star_rating" -> StarRatingBlock(block, blockListViewModel)
-                "date" -> DatePickerBlock(block, blockListViewModel)
+                "audio_start" -> EditTextBlock(block, blockListViewModel, position, isActiveGroup)
+                "textInput" -> EditTextBlock(block, blockListViewModel, position, isActiveGroup)
+                "terms" -> TermsAgreementBlock(block, blockListViewModel, position, isActiveGroup)
+                "otp" -> OTPBlock(block, blockListViewModel, position, isActiveGroup)
+                "dropdown" -> DropdownBlock(block, blockListViewModel, position, isActiveGroup)
+                "multipleChoice" -> MultipleChoiceBlock(block, blockListViewModel, position, isActiveGroup)
+                "numberInput" -> NumberInputBlock(block, blockListViewModel, position, isActiveGroup)
+                "checkbox" -> CheckboxBlock(block, blockListViewModel, position, isActiveGroup)
+                "emoji_rating" -> EmojiRatingBlock(block, blockListViewModel, position, isActiveGroup)
+                "camera" -> ImageCaptureBlock(block, blockListViewModel, position, isActiveGroup)
+                "url" -> UrlBlock(block, blockListViewModel, position, isActiveGroup)
+                "video" -> VideoBlock(block, blockListViewModel, position, isActiveGroup)
+                "star_rating" -> StarRatingBlock(block, blockListViewModel, position, isActiveGroup)
+                "date" -> DatePickerBlock(block, blockListViewModel, position, isActiveGroup)
 
                 else -> {
                     Text("Unsupported block type: ${block?.type}", color = Color.Red)
 
                     LaunchedEffect(block?.type) {
-                        Toasty.error(
-                            context,
-                            "View not found for block type: ${block?.type}",
-                            Toasty.LENGTH_SHORT
-                        ).show()
+                        Toasty.error(context, "View not found for block type: ${block?.type}", Toasty.LENGTH_SHORT).show()
                     }
                 }
             }

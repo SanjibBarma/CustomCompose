@@ -1,6 +1,5 @@
 package com.example.customcompose.compose.referring
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,14 +22,22 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
-fun StarRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
+fun StarRatingBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    position: Int,
+    isActiveGroup: Boolean
+) {
     val context = LocalContext.current
     val ratingNumber = remember { mutableIntStateOf(0) }
     val isSkippable = block.skip?.id != "-1"
 
+    val question = block.question?.slug ?: ""
+    val blockId = block.id ?: ""
 
     Column {
         Text(block.question!!.slug)
@@ -44,17 +51,27 @@ fun StarRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
             //if list started from 0, then add +1 with the size
             for (i in 1..5) {
                 Star(
-                    isSelected = i <= ratingNumber.value,
+                    isSelected = i <= ratingNumber.intValue,
                     onClick = {
-                        ratingNumber.value = i
+                        ratingNumber.intValue = i
+
+                        val surveyHistoryModel = listOf(
+                            SurveyHistoryModel(
+                                question = question,
+                                answer = ratingNumber.intValue.toString(),
+                                id = blockId
+                            )
+                        )
+                        blockListViewModel.saveData(position, surveyHistoryModel)
 
                         block.referTo?.group_no?.let { groupId ->
                             block.referTo.id?.let { blockId ->
                                 blockListViewModel.addBlockToTheList(blockId, groupId)
                             }
                         }
-                        Toast.makeText(context, "Selected Rating: $i", Toast.LENGTH_SHORT).show()
-                    }
+//                        Toast.makeText(context, "Selected Rating: $i", Toast.LENGTH_SHORT).show()
+                    },
+                    isActiveGroup
                 )
             }
         }
@@ -64,6 +81,16 @@ fun StarRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
 
             Button(
                 onClick = {
+
+                    val surveyHistoryModel = listOf(
+                        SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = blockId
+                        )
+                    )
+                    blockListViewModel.saveData(position, surveyHistoryModel)
+
                     block.skip?.id?.let { blockId ->
                         block.skip.group_no.let { groupId ->
                             blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -71,6 +98,7 @@ fun StarRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = isActiveGroup
             ) {
                 Text("Skip")
             }
@@ -79,7 +107,7 @@ fun StarRatingBlock(block: Block, blockListViewModel: BlockListViewModel) {
 }
 
 @Composable
-fun Star(isSelected: Boolean, onClick: () -> Unit) {
+fun Star(isSelected: Boolean, onClick: () -> Unit, isActiveGroup: Boolean) {
     val starIcon = if (isSelected) {
         R.drawable.ic_star_on
     } else {
@@ -89,7 +117,8 @@ fun Star(isSelected: Boolean, onClick: () -> Unit) {
 
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(48.dp)
+        modifier = Modifier.size(48.dp),
+        enabled = isActiveGroup
     ) {
         Icon(
             painter = painterResource(id = starIcon),

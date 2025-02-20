@@ -1,7 +1,6 @@
-package com.example.customcompose.compose.referring
+package com.example.customcompose.compose.number_validation
 
 import android.os.Build
-import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,10 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,41 +39,58 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun DatePickerBlock(
+fun NonRefDate(
     block: Block,
     blockListViewModel: BlockListViewModel,
+    index: Int,
     position: Int,
     isActiveGroup: Boolean
 ) {
     val dateDialogState = rememberMaterialDialogState()
 
     val context = LocalContext.current
-    val isSkippable = block.skip?.id != "-1"
-    val existingData = blockListViewModel.getData(position)
-    var answer by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "") }
+    val isRequired = block.required
+
+    val existingData = blockListViewModel.getDataFromIndex(position, index)
+
+    var answer by remember { mutableStateOf(existingData?.answer ?: "") }
     val question = block.question?.slug ?: ""
     val blockId = block.id ?: ""
 
     var pickedDate by remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mutableStateOf<LocalDate?>(null)
+        mutableStateOf<LocalDate?>(existingData?.answer?.let { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            LocalDate.parse(it, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
         } else {
             TODO("VERSION.SDK_INT < O")
         }
+        })
     }
 
     val formattedDate by remember {
         derivedStateOf {
             pickedDate?.let {
-                DateTimeFormatter
-                    .ofPattern("dd/MM/yyyy")
-                    .format(it)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    DateTimeFormatter
+                        .ofPattern("dd/MM/yyyy")
+                        .format(it)
+                } else {
+                    TODO("VERSION.SDK_INT < O")
+                }
             } ?: ""
         }
     }
 
+    // Update answer and save data when formattedDate changes
     LaunchedEffect(formattedDate) {
         answer = formattedDate
+
+        val surveyHistoryModel = SurveyHistoryModel(
+            question = question,
+            answer = formattedDate,
+            id = blockId
+        )
+
+        blockListViewModel.saveDataAtIndex(position, index, surveyHistoryModel)
     }
 
     Column {
@@ -89,14 +102,14 @@ fun DatePickerBlock(
                 .fillMaxWidth()
                 .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
                 .padding(8.dp)
-                .clickable (enabled = isActiveGroup){ dateDialogState.show() }
+                .clickable(enabled = isActiveGroup) { dateDialogState.show() }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(formattedDate)
+                Text(answer)
                 Icon(
                     painter = painterResource(R.drawable.ic_calendar),
                     contentDescription = "Dropdown Arrow",
@@ -109,89 +122,19 @@ fun DatePickerBlock(
             dialogState = dateDialogState,
             buttons = {
                 positiveButton(text = "Ok") {
-                    Toast.makeText(context, "Clicked ok", Toast.LENGTH_LONG).show()
+                    // Toast.makeText(context, "Clicked ok", Toast.LENGTH_LONG).show()
                 }
                 negativeButton(text = "Cancel")
             }
         ) {
             datepicker(
-                initialDate = LocalDate.now(),
+                initialDate = pickedDate ?: LocalDate.now(),
                 title = "Pick a date",
-                //date validator will allow user to custom date selection
-//                        allowedDateValidator = {}
             ) {
                 pickedDate = it
             }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
-        Row (
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ){
-
-            if (isSkippable){
-                Button(
-                    onClick = {
-
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
-                                question = "",
-                                answer = "",
-                                id = blockId
-                            )
-                        )
-                        blockListViewModel.saveData(position, surveyHistoryModel)
-
-                        block.skip?.group_no?.let { groupId ->
-                            block.skip.id.let { blockId ->
-                                blockListViewModel.addBlockToTheList(blockId, groupId)
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Blue,
-                        contentColor = Color.White
-                    ),
-                    enabled = isActiveGroup
-                ) {
-                    Text("Skip")
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-
-            Button(
-                onClick = {
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
-                            question = question,
-                            answer = answer,
-                            id = blockId
-                        )
-                    )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
-
-
-                    block.referTo?.group_no?.let { groupId ->
-                        block.referTo.id?.let { blockId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Blue,
-                    contentColor = Color.White
-                ),
-                enabled = isActiveGroup
-            ) {
-                Text("Next")
-            }
-        }
     }
 }
-

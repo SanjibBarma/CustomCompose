@@ -33,12 +33,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
-fun MultipleChoiceBlock(block: Block, blockListViewModel: BlockListViewModel) {
-    var selectedOption by remember { mutableStateOf<String?>(null) }
+fun MultipleChoiceBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    position: Int,
+    isActiveGroup: Boolean
+) {
     val isSkippable = block.skip?.id != "-1"
+
+    val existingData = blockListViewModel.getData(position)
+    var selectedOption by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "") }
+    val question = block.question?.slug ?: ""
+    val blockId = block.id ?: ""
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text(text = block.question!!.slug)
@@ -54,10 +64,20 @@ fun MultipleChoiceBlock(block: Block, blockListViewModel: BlockListViewModel) {
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                         .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
-                        .clickable {
+                        .clickable (enabled = isActiveGroup){
                             selectedOption = option.value
+
+                            val surveyHistoryModel = listOf(
+                                SurveyHistoryModel(
+                                    question = question,
+                                    answer = selectedOption!!,
+                                    id = blockId
+                                )
+                            )
+                            blockListViewModel.saveData(position, surveyHistoryModel)
+
                             option.referTo?.id?.let { referToId ->
-                                if (selectedOption != null){
+                                if (selectedOption.isNotEmpty()){
                                     blockListViewModel.addBlockToTheList(referToId, option.referTo.group_no!!)
                                 }
                             }
@@ -76,12 +96,23 @@ fun MultipleChoiceBlock(block: Block, blockListViewModel: BlockListViewModel) {
                             selected = selectedOption == option.value,
                             onClick = {
                                 selectedOption = option.value
+
+                                val surveyHistoryModel = listOf(
+                                    SurveyHistoryModel(
+                                        question = question,
+                                        answer = selectedOption!!,
+                                        id = blockId
+                                    )
+                                )
+                                blockListViewModel.saveData(position, surveyHistoryModel)
+
                                 option.referTo?.id?.let { referToId ->
-                                    if (selectedOption != null) {
+                                    if (selectedOption.isNotEmpty()) {
                                         blockListViewModel.addBlockToTheList(referToId, option.referTo.group_no!!)
                                     }
                                 }
-                            }
+                            },
+                            enabled = isActiveGroup
                         )
                         Text(
                             text = option.value,
@@ -106,10 +137,20 @@ fun MultipleChoiceBlock(block: Block, blockListViewModel: BlockListViewModel) {
                                 .padding(4.dp)
                                 .size(80.dp)
                                 .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
-                                .clickable {
+                                .clickable (enabled = isActiveGroup){
                                     selectedOption = option.value
+
+                                    val surveyHistoryModel = listOf(
+                                        SurveyHistoryModel(
+                                            question = question,
+                                            answer = selectedOption!!,
+                                            id = blockId
+                                        )
+                                    )
+                                    blockListViewModel.saveData(position, surveyHistoryModel)
+
                                     option.referTo?.id?.let { referToId ->
-                                        if (selectedOption != null) {
+                                        if (selectedOption.isNotEmpty()) {
                                             blockListViewModel.addBlockToTheList(referToId, option.referTo.group_no!!)
                                         }
                                     }
@@ -129,6 +170,16 @@ fun MultipleChoiceBlock(block: Block, blockListViewModel: BlockListViewModel) {
         if (isSkippable){
             Button(
                 onClick = {
+
+                    val surveyHistoryModel = listOf(
+                        SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = blockId
+                        )
+                    )
+                    blockListViewModel.saveData(position, surveyHistoryModel)
+
                     block.skip?.group_no?.let { groupId ->
                         block.skip.id.let { blockId ->
                             blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -139,7 +190,8 @@ fun MultipleChoiceBlock(block: Block, blockListViewModel: BlockListViewModel) {
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Blue,
                     contentColor = Color.White
-                )
+                ),
+                enabled = isActiveGroup
             ) {
                 Text("Skip")
             }

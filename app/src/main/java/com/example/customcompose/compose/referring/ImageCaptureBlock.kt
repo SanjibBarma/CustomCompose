@@ -63,17 +63,33 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import es.dmoral.toasty.Toasty
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
-fun ImageCaptureBlock(block: Block, blockListViewModel: BlockListViewModel) {
+fun ImageCaptureBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    position: Int,
+    isActiveGroup: Boolean
+) {
     var showCamera by remember { mutableStateOf(false) }
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showPreview by remember { mutableStateOf(false) }
     val isSkippable = block.skip?.id != "-1"
+    val context = LocalContext.current
+    val photoFile = createImageFile(context)
+
+
+    val existingData = blockListViewModel.getData(position)
+    val question = block.question?.slug ?: ""
+    val blockId = block.id ?: ""
 
     Column {
         Text(block.question!!.slug)
@@ -152,7 +168,7 @@ fun ImageCaptureBlock(block: Block, blockListViewModel: BlockListViewModel) {
                         showCamera = false
                         showPreview = true
                     },
-                    onSwitchCameraClick = { /* Handle camera switch if needed */ }
+                    photoFile
                 )
             }
         }
@@ -169,6 +185,15 @@ fun ImageCaptureBlock(block: Block, blockListViewModel: BlockListViewModel) {
                     onForward = {
                         showPreview = false
 
+                        val surveyHistoryModel = listOf(
+                            SurveyHistoryModel(
+                                question = question,
+                                answer = photoFile!!.name,
+                                id = blockId
+                            )
+                        )
+                        blockListViewModel.saveData(position, surveyHistoryModel)
+
                         block.referTo?.id?.let { blockId ->
                             block.referTo.group_no?.let { groupId ->
                                 blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -184,6 +209,16 @@ fun ImageCaptureBlock(block: Block, blockListViewModel: BlockListViewModel) {
         if (isSkippable){
             Button(
                 onClick = {
+
+                    val surveyHistoryModel = listOf(
+                        SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = blockId
+                        )
+                    )
+                    blockListViewModel.saveData(position, surveyHistoryModel)
+
                     block.skip?.id?.let {blockId ->
                         block.skip.group_no.let { groupId ->
                             blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -238,7 +273,7 @@ fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable () -> Un
 @Composable
 fun CustomCameraPreview(
     onCaptureClick: (Uri) -> Unit,
-    onSwitchCameraClick: () -> Unit
+    photoFile: File?
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -293,7 +328,6 @@ fun CustomCameraPreview(
                 .size(70.dp)
                 .background(Color.White, CircleShape)
                 .clickable {
-                    val photoFile = createImageFile(context)
                     val photoURI = FileProvider.getUriForFile(
                         context,
                         "${context.packageName}.fileprovider",
@@ -342,7 +376,6 @@ fun CustomCameraPreview(
                     } else {
                         CameraSelector.LENS_FACING_BACK
                     }
-                    onSwitchCameraClick()
                 },
             contentAlignment = Alignment.Center
         ) {
@@ -441,10 +474,8 @@ fun rotateImage(bitmap: Bitmap, angle: Float): Bitmap {
 }
 
 private fun createImageFile(context: Context): File? {
+    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val fileName = "IMG_$timeStamp.jpg"
     val storageDir: File? = context.cacheDir
-    return File.createTempFile(
-        "JPEG_${System.currentTimeMillis()}_",
-        ".jpg",
-        storageDir
-    )
+    return File(storageDir, fileName)
 }

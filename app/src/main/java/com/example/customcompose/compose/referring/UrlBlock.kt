@@ -42,13 +42,21 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
-fun UrlBlock(block: Block, blockListViewModel: BlockListViewModel) {
+fun UrlBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    position: Int,
+    isActiveGroup: Boolean
+) {
     val stringUrl = block.options?.get(0)!!.value
     val isSkippable = block.skip?.id != "-1"
     var showDialog by remember { mutableStateOf(false) }
+    val blockId = block.id ?: ""
+
 
     Column(
         modifier = Modifier
@@ -62,7 +70,7 @@ fun UrlBlock(block: Block, blockListViewModel: BlockListViewModel) {
                 .fillMaxWidth()
                 .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
                 .padding(16.dp)
-                .clickable {
+                .clickable (enabled = isActiveGroup){
                     showDialog = true
 
                 },
@@ -82,6 +90,15 @@ fun UrlBlock(block: Block, blockListViewModel: BlockListViewModel) {
 
             Button(
                 onClick = {
+                    val surveyHistoryModel = listOf(
+                        SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = blockId
+                        )
+                    )
+                    blockListViewModel.saveData(position, surveyHistoryModel)
+
                     block.skip?.id?.let { blockId ->
                         block.skip.group_no.let { groupId ->
                             blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -89,6 +106,7 @@ fun UrlBlock(block: Block, blockListViewModel: BlockListViewModel) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = isActiveGroup
             ) {
                 Text("Skip")
             }
@@ -102,20 +120,40 @@ fun UrlBlock(block: Block, blockListViewModel: BlockListViewModel) {
                 blockListViewModel,
                 onClose = {
                     showDialog = false // Close the dialog when the close button is clicked
-                }
+                },
+                blockListViewModel,
+                position
             )
         }
     }
 }
 
 @Composable
-fun WebViewDialog(block: Block, url: String,  blockListViewModel: BlockListViewModel, onClose: () -> Unit) {
+fun WebViewDialog(
+    block: Block,
+    url: String,
+    blockListViewModel: BlockListViewModel,
+    onClose: () -> Unit,
+    blockListViewModel1: BlockListViewModel,
+    position: Int
+) {
     val context = LocalContext.current
     val activity = context as? Activity // Cast to Activity to access window
 
+    val question = block.question?.slug ?: ""
+    val blockId = block.id ?: ""
+
     Dialog(
         onDismissRequest = {
-            onClose
+            val surveyHistoryModel = listOf(
+                SurveyHistoryModel(
+                    question = question,
+                    answer = "Yes",
+                    id = blockId
+                )
+            )
+            blockListViewModel.saveData(position, surveyHistoryModel)
+
             block.options?.get(0)?.referTo?.id?.let { blockId ->
                 block.options[0].referTo?.group_no?.let { groupId ->
                     blockListViewModel.addBlockToTheList(blockId, groupId)
@@ -127,14 +165,12 @@ fun WebViewDialog(block: Block, url: String,  blockListViewModel: BlockListViewM
             dismissOnBackPress = true
         )
     ) {
-        // Set flags to occupy the entire screen, including behind system bars
         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
-        // Use a Layout to handle insets correctly
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.White) // Or your desired background
+                .background(Color.White)
                 .windowInsetsPadding(
                     WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Vertical) // Handle system bar insets
                 )
@@ -152,6 +188,15 @@ fun WebViewDialog(block: Block, url: String,  blockListViewModel: BlockListViewM
                     // Clear flags when the dialog is dismissed
                     activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
                     onClose()
+
+                    val surveyHistoryModel = listOf(
+                        SurveyHistoryModel(
+                            question = question,
+                            answer = "Yes",
+                            id = blockId
+                        )
+                    )
+                    blockListViewModel.saveData(position, surveyHistoryModel)
 
                     block.options?.get(0)?.referTo?.id?.let { blockId ->
                         block.options[0].referTo?.group_no?.let { groupId ->
