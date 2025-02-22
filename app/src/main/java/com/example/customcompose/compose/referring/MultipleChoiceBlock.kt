@@ -40,15 +40,19 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 fun MultipleChoiceBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
     val isSkippable = block.skip?.id != "-1"
+    val currentBlockId = block.id ?: ""
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
 
-    val existingData = blockListViewModel.getData(position)
-    var selectedOption by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "") }
+    var selectedOption by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
 
     Column(modifier = Modifier.fillMaxSize()) {
         Text(text = block.question!!.slug)
@@ -71,14 +75,19 @@ fun MultipleChoiceBlock(
                                 SurveyHistoryModel(
                                     question = question,
                                     answer = selectedOption!!,
-                                    id = blockId
+                                    id = currentBlockId
                                 )
                             )
-                            blockListViewModel.saveData(position, surveyHistoryModel)
 
                             option.referTo?.id?.let { referToId ->
                                 if (selectedOption.isNotEmpty()){
-                                    blockListViewModel.addBlockToTheList(referToId, option.referTo.group_no!!)
+                                    if (destination == "mainSurvey") {
+                                        blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
+                                    }else{
+                                        blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
+                                    }
                                 }
                             }
                         }
@@ -101,14 +110,19 @@ fun MultipleChoiceBlock(
                                     SurveyHistoryModel(
                                         question = question,
                                         answer = selectedOption!!,
-                                        id = blockId
+                                        id = currentBlockId
                                     )
                                 )
-                                blockListViewModel.saveData(position, surveyHistoryModel)
 
                                 option.referTo?.id?.let { referToId ->
                                     if (selectedOption.isNotEmpty()) {
-                                        blockListViewModel.addBlockToTheList(referToId, option.referTo.group_no!!)
+                                        if (destination == "mainSurvey") {
+                                            blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                            blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
+                                        }else{
+                                            blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                            blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
+                                        }
                                     }
                                 }
                             },
@@ -144,14 +158,19 @@ fun MultipleChoiceBlock(
                                         SurveyHistoryModel(
                                             question = question,
                                             answer = selectedOption!!,
-                                            id = blockId
+                                            id = currentBlockId
                                         )
                                     )
-                                    blockListViewModel.saveData(position, surveyHistoryModel)
 
                                     option.referTo?.id?.let { referToId ->
                                         if (selectedOption.isNotEmpty()) {
-                                            blockListViewModel.addBlockToTheList(referToId, option.referTo.group_no!!)
+                                            if (destination == "mainSurvey") {
+                                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                                blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
+                                            }else{
+                                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                                blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
+                                            }
                                         }
                                     }
                                 }
@@ -175,14 +194,19 @@ fun MultipleChoiceBlock(
                         SurveyHistoryModel(
                             question = "",
                             answer = "",
-                            id = blockId
+                            id = currentBlockId
                         )
                     )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
 
                     block.skip?.group_no?.let { groupId ->
                         block.skip.id.let { blockId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                            if (destination == "mainSurvey") {
+                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                            } else {
+                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            }
                         }
                     }
                 },

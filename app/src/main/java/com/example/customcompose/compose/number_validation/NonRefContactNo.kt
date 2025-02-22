@@ -52,13 +52,14 @@ fun NonRefContactNo(
             answer = phoneNumber,
             id = blockId
         )
-        blockListViewModel.saveDataAtIndex(position, index, surveyHistoryModel)
+        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
     }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
     ) {
+        println("Block Id is: ${block.id}")
         Text(text = block.question!!.slug)
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -66,11 +67,14 @@ fun NonRefContactNo(
         OutlinedTextField(
             value = phoneNumber,
             onValueChange = {
-                if (it.length <= 10) {  // Max 10 digits allowed
+                if (it.all { char -> char.isDigit() } && it.length <= 10) {
                     phoneNumber = it
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(56.dp).border(1.dp, color = Color.Gray),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .border(1.dp, color = Color.Gray),
             singleLine = true,
             leadingIcon = {
                 Row(
@@ -97,7 +101,7 @@ fun NonRefContactNo(
                 disabledTextColor = Color.Black
             ),
             keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Phone
+                keyboardType = KeyboardType.Number
             ),
             enabled = isActiveGroup
         )

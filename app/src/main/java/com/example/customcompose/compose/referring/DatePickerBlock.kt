@@ -39,6 +39,7 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
+import es.dmoral.toasty.Toasty
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -46,17 +47,22 @@ import java.time.format.DateTimeFormatter
 fun DatePickerBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
     val dateDialogState = rememberMaterialDialogState()
-
+    val currentBlockId = block.id ?: ""
     val context = LocalContext.current
     val isSkippable = block.skip?.id != "-1"
-    val existingData = blockListViewModel.getData(position)
-    var answer by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "") }
+
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
+
+    var answer by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
 
     var pickedDate by remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -140,14 +146,19 @@ fun DatePickerBlock(
                             SurveyHistoryModel(
                                 question = "",
                                 answer = "",
-                                id = blockId
+                                id = currentBlockId
                             )
                         )
-                        blockListViewModel.saveData(position, surveyHistoryModel)
 
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
-                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                }else{
+                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
                     },
@@ -166,19 +177,27 @@ fun DatePickerBlock(
 
             Button(
                 onClick = {
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
-                            question = question,
-                            answer = answer,
-                            id = blockId
+                    if (answer.isEmpty()){
+                        Toasty.warning(context, "Please enter a valid ${block.question.slug}", Toasty.LENGTH_SHORT).show()
+                    }else{
+                        val surveyHistoryModel = listOf(
+                            SurveyHistoryModel(
+                                question = question,
+                                answer = answer,
+                                id = currentBlockId
+                            )
                         )
-                    )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
 
-
-                    block.referTo?.group_no?.let { groupId ->
-                        block.referTo.id?.let { blockId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                        block.referTo?.group_no?.let { groupId ->
+                            block.referTo.id?.let { blockId ->
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                }else{
+                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
+                            }
                         }
                     }
                 },

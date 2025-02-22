@@ -8,16 +8,31 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.customcompose.model.Block
+import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
 
 @Composable
-fun SubmitButton(inputData: MutableMap<String, String>, flatten: List<Block>) {
+fun SubmitButton(blockListViewModel: BlockListViewModel) {
     Button(
         onClick = {
             val gson = Gson()
-            val json = gson.toJson(inputData)
-            Log.d("SURVEY_DATA", json)
+            val comboHistory = mutableListOf<SurveyHistoryModel>()
+            for (surveyBlockHistory in blockListViewModel.surveyBlockListItem.value) {
+                for (surveyHistory in surveyBlockHistory.surveyHistoryModel) {
+                    if (surveyHistory != null) {
+                        comboHistory.add(
+                            SurveyHistoryModel(
+                                question = surveyHistory.question,
+                                answer = surveyHistory.answer,
+                                id = surveyHistory.id
+                            )
+                        )
+                    }
+                }
+            }
+            val comboJson = gson.toJson(comboHistory)
+            Log.d("SURVEY_COMBO_DATA", comboJson)
         },
         modifier = Modifier
             .fillMaxWidth()

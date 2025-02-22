@@ -37,19 +37,23 @@ import es.dmoral.toasty.Toasty
 fun NumberInputBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
-
+    val currentBlockId = block.id ?: ""
     val isSkippable = block.skip?.id != "-1"
     val validationRegex = block.validations?.regex
 
-    val existingData = blockListViewModel.getData(position)
-    var text by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "") }
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
+
+    var text by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
 
     fun validateInput(input: String): Boolean {
         return if (validationRegex != null) {
@@ -99,14 +103,19 @@ fun NumberInputBlock(
                             SurveyHistoryModel(
                                 question = "",
                                 answer = "",
-                                id = blockId
+                                id = currentBlockId
                             )
                         )
-                        blockListViewModel.saveData(position, surveyHistoryModel)
 
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
-                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                }else{
+                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
                     },
@@ -134,14 +143,19 @@ fun NumberInputBlock(
                                 SurveyHistoryModel(
                                     question = question,
                                     answer = text,
-                                    id = blockId
+                                    id = currentBlockId
                                 )
                             )
-                            blockListViewModel.saveData(position, surveyHistoryModel)
 
                             block.referTo?.group_no?.let { groupId ->
                                 block.referTo.id?.let { blockId ->
-                                    blockListViewModel.addBlockToTheList(blockId, groupId)
+                                    if (destination == "mainSurvey") {
+                                        blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    }else{
+                                        blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                    }
                                 }
                             }
                         } else {

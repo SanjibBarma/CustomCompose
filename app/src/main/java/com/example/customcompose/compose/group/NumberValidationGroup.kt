@@ -24,15 +24,16 @@ import com.example.customcompose.compose.number_validation.NonRefNumberInput
 import com.example.customcompose.compose.number_validation.NonRefProductList
 import com.example.customcompose.compose.number_validation.NonRefTextInput
 import com.example.customcompose.model.Block
-import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import es.dmoral.toasty.Toasty
+
 @Composable
 fun NumberValidationGroup(
     blockListViewModel: BlockListViewModel,
     currentBlock: Block?,
-    survey: SurveyDataModel,
+    position: Int?,
     isActiveGroup: Boolean,
-    position: Int
+    destination: String
 ) {
     val context = LocalContext.current
 
@@ -47,27 +48,63 @@ fun NumberValidationGroup(
             modifier = Modifier
                 .padding(16.dp)
         ) {
-            for ((index, block) in survey.blocks.withIndex()){
+                println("Nonref Block Size: ${currentBlock?.blocks?.size}")
+
+            for ((index, block) in currentBlock?.blocks!!.withIndex()){
+//                println("Nonref Block Id is: ${block.id}")
                 when(block.type){
-                    "dropdown" -> NonRefDropdown(block, blockListViewModel, index, position, isActiveGroup)
-                    "date" -> NonRefDate(block, blockListViewModel, index, position, isActiveGroup)
-                    "multipleChoice+icon" -> NonRefMultipleChoice(block, blockListViewModel, index, position, isActiveGroup)
-                    "textInput" -> NonRefTextInput(block, blockListViewModel, index, position, isActiveGroup)
-                    "checkbox" -> NonRefCheckBox(block, blockListViewModel, index, position, isActiveGroup)
-                    "numberInput" -> NonRefNumberInput(block, blockListViewModel, index, position, isActiveGroup)
-                    "multipleChoice" -> NonRefMultipleChoice(block, blockListViewModel, index, position, isActiveGroup)
-                    "dropdown+condition" -> NonRefDropdown(block, blockListViewModel, index, position, isActiveGroup)
-                    "emailInput" -> NonRefEmailInput(block, blockListViewModel, index, position, isActiveGroup)
-                    "contactNo" -> NonRefContactNo(block, blockListViewModel, index, position, isActiveGroup)
-                    "product" -> NonRefProductList(block, blockListViewModel, index, position, isActiveGroup)
+                    "dropdown" -> NonRefDropdown(block, blockListViewModel, index, position!!, isActiveGroup)
+                    "date" -> NonRefDate(block, blockListViewModel, index, position!!, isActiveGroup)
+                    "multipleChoice+icon" -> NonRefMultipleChoice(block, blockListViewModel, index, position!!, isActiveGroup)
+                    "textInput" -> NonRefTextInput(block, blockListViewModel, index, position!!, isActiveGroup)
+                    "checkbox" -> NonRefCheckBox(block, blockListViewModel, index, position!!, isActiveGroup)
+                    "numberInput" -> NonRefNumberInput(block, blockListViewModel, index, position!!, isActiveGroup)
+                    "multipleChoice" -> NonRefMultipleChoice(block, blockListViewModel, index, position!!, isActiveGroup)
+                    "dropdown+condition" -> NonRefDropdown(block, blockListViewModel, index, position!!, isActiveGroup)
+                    "emailInput" -> NonRefEmailInput(block, blockListViewModel, index, position!!, isActiveGroup)
+                    "contactNo" -> NonRefContactNo(block, blockListViewModel, index, position!!, isActiveGroup)
+                    "product" -> NonRefProductList(block, blockListViewModel, index, position!!, isActiveGroup)
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = {
+                    if (currentBlock.surveyHistoryModel.isNotEmpty()){
+                        println("history list size: ${currentBlock.surveyHistoryModel}")
+                        for (nonRefBlocks in currentBlock.blocks){
+                            for (surveyHistory in currentBlock.surveyHistoryModel){
+//                                println("history Id is: ${surveyHistory?.id}")
+                                if (nonRefBlocks.id == surveyHistory?.id){
+                                    if (surveyHistory?.answer.isNullOrEmpty()){
+                                        Toasty.warning(context, "Provide a valid ${surveyHistory?.question}", Toasty.LENGTH_SHORT).show()
+                                        return@Button
+                                    }
+                                    if (nonRefBlocks.type == "contactNo"){
+                                        if (surveyHistory?.answer.isNullOrEmpty()){
+                                            Toasty.warning(context, "Provide a valid ${surveyHistory?.question}", Toasty.LENGTH_SHORT).show()
+                                            return@Button
+                                        }
+                                        if (nonRefBlocks.type == "contactNo"){
+                                            val phoneNumber = surveyHistory?.answer
+                                            val phoneRegex = "^(13|14|15|16|17|18|19)\\d{8}$".toRegex()
 
-                    blockListViewModel.addBlockToTheList(survey.jumping_logic[0].id, survey.jumping_logic[0].group_no)
+                                            if (phoneNumber?.length != 10) {
+                                                Toasty.warning(context, "Contact number must be 10 digits.", Toasty.LENGTH_SHORT).show()
+                                                return@Button
+                                            }
+                                            if (!phoneNumber.matches(phoneRegex)!!) {
+                                                Toasty.warning(context, "Contact number in not valid.", Toasty.LENGTH_SHORT).show()
+                                                return@Button
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    blockListViewModel.addBlockToTheSurveyFlow(currentBlock.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no)
                 },
                 modifier = Modifier
                     .fillMaxWidth(),

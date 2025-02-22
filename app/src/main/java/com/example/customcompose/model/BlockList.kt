@@ -10,17 +10,9 @@ data class BlockList(
     val surveyHistoryModel: List<SurveyHistoryModel?>,
 )
 
-@Serializable
-data class SurveyHistoryModel(
-    val question: String,
-    val answer: String,
-    val id: String,
-)
-
-data class NonRefDataCheck(
-    val index: Int,
-    val type: String,
-    val isRequired: String,
-    val position: Int
-
-)
+//@Serializable
+//data class SurveyHistoryModel(
+//    val question: String,
+//    val answer: String,
+//    val id: String,
+//)

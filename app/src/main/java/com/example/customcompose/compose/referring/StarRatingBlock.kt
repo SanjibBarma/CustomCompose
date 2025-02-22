@@ -13,6 +13,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,15 +30,24 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 fun StarRatingBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
     val context = LocalContext.current
-    val ratingNumber = remember { mutableIntStateOf(0) }
+    val currentBlockId = block.id ?: ""
+
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
+
+    val savedRating = remember { mutableStateOf(existingData?.firstOrNull()?.answer?.toIntOrNull() ?: 0) }
+    val ratingNumber = remember { mutableIntStateOf(savedRating.value) }
+
     val isSkippable = block.skip?.id != "-1"
 
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
 
     Column {
         Text(block.question!!.slug)
@@ -59,14 +69,19 @@ fun StarRatingBlock(
                             SurveyHistoryModel(
                                 question = question,
                                 answer = ratingNumber.intValue.toString(),
-                                id = blockId
+                                id = currentBlockId
                             )
                         )
-                        blockListViewModel.saveData(position, surveyHistoryModel)
 
                         block.referTo?.group_no?.let { groupId ->
                             block.referTo.id?.let { blockId ->
-                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                }else{
+                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
 //                        Toast.makeText(context, "Selected Rating: $i", Toast.LENGTH_SHORT).show()
@@ -86,14 +101,19 @@ fun StarRatingBlock(
                         SurveyHistoryModel(
                             question = "",
                             answer = "",
-                            id = blockId
+                            id = currentBlockId
                         )
                     )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
 
                     block.skip?.id?.let { blockId ->
                         block.skip.group_no.let { groupId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                            if (destination == "mainSurvey") {
+                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                            } else {
+                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            }
                         }
                     }
                 },

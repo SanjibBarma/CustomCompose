@@ -37,16 +37,21 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 fun DropdownBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
+    val currentBlockId = block.id ?: ""
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val isSkippable = block.skip?.id != "-1"
 
-    val existingData = blockListViewModel.getData(position)
-    var selectedOption by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "") }
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
+
+    var selectedOption by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
 
     Column {
         Text(block.question!!.slug)
@@ -86,15 +91,20 @@ fun DropdownBlock(
                         val surveyHistoryModel = listOf(
                             SurveyHistoryModel(
                                 question = question,
-                                answer = selectedOption!!,
-                                id = blockId
+                                answer = selectedOption,
+                                id = currentBlockId
                             )
                         )
-                        blockListViewModel.saveData(position, surveyHistoryModel)
 
                         option.referTo?.id?.let { blockId ->
                             option.referTo.group_no?.let { groupId ->
-                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                }else{
+                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
                         isDropdownExpanded = false
@@ -113,13 +123,18 @@ fun DropdownBlock(
                         SurveyHistoryModel(
                             question = "",
                             answer = "",
-                            id = blockId
+                            id = currentBlockId
                         )
                     )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
                     block.skip?.group_no?.let { groupId ->
                         block.skip.id.let { blockId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                            if (destination == "mainSurvey") {
+                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                            }else{
+                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            }
                         }
                     }
                 },

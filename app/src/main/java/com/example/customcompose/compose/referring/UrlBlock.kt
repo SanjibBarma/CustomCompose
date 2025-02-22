@@ -49,19 +49,22 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 fun UrlBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
+    val currentBlockId = block.id ?: ""
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
+
     val stringUrl = block.options?.get(0)!!.value
     val isSkippable = block.skip?.id != "-1"
     var showDialog by remember { mutableStateOf(false) }
-    val blockId = block.id ?: ""
 
 
-    Column(
-        modifier = Modifier
-            //.clickable (enabled = isActiveGroup){  }
-    ) {
+    Column{
         Text(block.question!!.slug)
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -85,8 +88,9 @@ fun UrlBlock(
             )
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
+
         if (isSkippable) {
-            Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = {
@@ -94,14 +98,19 @@ fun UrlBlock(
                         SurveyHistoryModel(
                             question = "",
                             answer = "",
-                            id = blockId
+                            id = currentBlockId
                         )
                     )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
 
                     block.skip?.id?.let { blockId ->
                         block.skip.group_no.let { groupId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                            if (destination == "mainSurvey") {
+                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                            }else{
+                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            }
                         }
                     }
                 },
@@ -112,17 +121,15 @@ fun UrlBlock(
             }
         }
 
-        // Show the dialog for WebViewBlock when triggered
         if (showDialog) {
             WebViewDialog(
                 block = block,
                 url = stringUrl,
                 blockListViewModel,
+                destination,
                 onClose = {
-                    showDialog = false // Close the dialog when the close button is clicked
-                },
-                blockListViewModel,
-                position
+                    showDialog = false
+                }
             )
         }
     }
@@ -133,15 +140,14 @@ fun WebViewDialog(
     block: Block,
     url: String,
     blockListViewModel: BlockListViewModel,
-    onClose: () -> Unit,
-    blockListViewModel1: BlockListViewModel,
-    position: Int
+    destination: String,
+    onClose: () -> Unit
 ) {
     val context = LocalContext.current
-    val activity = context as? Activity // Cast to Activity to access window
+    val activity = context as? Activity
 
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
+    val currentBlockId = block.id ?: ""
 
     Dialog(
         onDismissRequest = {
@@ -149,19 +155,25 @@ fun WebViewDialog(
                 SurveyHistoryModel(
                     question = question,
                     answer = "Yes",
-                    id = blockId
+                    id = currentBlockId
                 )
             )
-            blockListViewModel.saveData(position, surveyHistoryModel)
 
             block.options?.get(0)?.referTo?.id?.let { blockId ->
                 block.options[0].referTo?.group_no?.let { groupId ->
-                    blockListViewModel.addBlockToTheList(blockId, groupId)
+
+                    if (destination == "mainSurvey") {
+                        blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                    }else{
+                        blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                        blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                    }
                 }
             }
         },
         properties = DialogProperties(
-            usePlatformDefaultWidth = false, // Important: Prevent default width
+            usePlatformDefaultWidth = false,
             dismissOnBackPress = true
         )
     ) {
@@ -172,7 +184,7 @@ fun WebViewDialog(
                 .fillMaxSize()
                 .background(Color.White)
                 .windowInsetsPadding(
-                    WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Vertical) // Handle system bar insets
+                    WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Vertical)
                 )
         ) {
 
@@ -193,14 +205,20 @@ fun WebViewDialog(
                         SurveyHistoryModel(
                             question = question,
                             answer = "Yes",
-                            id = blockId
+                            id = currentBlockId
                         )
                     )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
 
                     block.options?.get(0)?.referTo?.id?.let { blockId ->
                         block.options[0].referTo?.group_no?.let { groupId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
+
+                            if (destination == "mainSurvey") {
+                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                            }else{
+                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            }
                         }
                     }
                 },

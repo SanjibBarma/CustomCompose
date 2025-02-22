@@ -1,16 +1,27 @@
-package com.example.customcompose.compose.number_validation
+package com.example.customcompose.compose.referring
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,39 +42,43 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 import java.io.File
 
 @Composable
-fun NonRefProductList(
+fun BrandBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    index: Int,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
-    val isRequired = block.required
-    val existingData = blockListViewModel.getDataFromIndex(position, index)
+    val currentBlockId = block.id ?: ""
+
+    val isSkippable = block.skip?.id != "-1"
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
 
     // If existing data is present, initialize selectedBrand and selectedItem with the saved answer.
-    var selectedBrand by remember { mutableStateOf(existingData?.answer ?: "") }
+    var selectedBrand by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
 
     val question = block.question?.slug ?: ""
     val options = block.options ?: emptyList()
     val context = LocalContext.current
-    val blockId = block.id ?: ""
 
     var selectedItem by remember {
         mutableStateOf<Option?>(options.find { it.slug == selectedBrand })
     }
 
-    LaunchedEffect (selectedBrand){
-        val surveyHistoryModel = SurveyHistoryModel(
-            question = question,
-            answer = selectedBrand,
-            id = blockId
-        )
-        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
-    }
+//    LaunchedEffect (selectedBrand){
+//        val surveyHistoryModel = SurveyHistoryModel(
+//            question = question,
+//            answer = selectedBrand,
+//            id = blockId
+//        )
+//        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
+//    }
 
     Column {
-        println("Block Id is: ${block.id}")
+        println("Block Id is: $currentBlockId")
         Text(text = question)
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -83,7 +98,8 @@ fun NonRefProductList(
                     } else null
                 }
 
-                val backgroundColor = if (selectedItem == option) ProductSelected else Color.White
+                val backgroundColor =
+                    if (selectedItem == option) ProductSelected else Color.White
 
                 Column(
                     modifier = Modifier
@@ -96,13 +112,26 @@ fun NonRefProductList(
                             selectedItem = option
 
                             // Save the new selection
-                            val surveyHistoryModel = SurveyHistoryModel(
-                                question = question,
-                                answer = selectedBrand,
-                                id = blockId
+                            val surveyHistoryModel = listOf(
+                                SurveyHistoryModel(
+                                    question = question,
+                                    answer = selectedBrand,
+                                    id = currentBlockId
+                                )
                             )
 
-                            blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
+                            option.referTo?.group_no?.let { groupId ->
+                                option.referTo.id?.let { nextBlockId ->
+                                    if (destination == "mainSurvey") {
+                                        blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                    }else{
+                                        blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                    }
+                                }
+                            }
+
                         }
                         .border(1.dp, color = Color.Gray, RoundedCornerShape(8.dp)),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -139,5 +168,38 @@ fun NonRefProductList(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
+
+        if (isSkippable) {
+
+            Button(
+                onClick = {
+                    val surveyHistoryModel = listOf(
+                        SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = currentBlockId
+                        )
+                    )
+//                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+
+                    block.skip?.id?.let { blockId ->
+                        block.skip.group_no.let { groupId ->
+//                            blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                            if (destination == "mainSurvey") {
+                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                            }else{
+                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isActiveGroup
+            ) {
+                Text("Skip")
+            }
+        }
     }
 }

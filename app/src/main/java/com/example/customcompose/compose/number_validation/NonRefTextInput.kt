@@ -49,13 +49,14 @@ fun NonRefTextInput(
             id = blockId
         )
 
-        blockListViewModel.saveDataAtIndex(position, index, surveyHistoryModel)
+        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
     }
 
     Column (
         modifier = Modifier
             .fillMaxWidth()
     ){
+        println("Block Id is: ${block.id}")
         Text(text = block.question!!.slug)
 
         Spacer(modifier = Modifier.height(8.dp))

@@ -2,7 +2,6 @@ package com.example.customcompose.compose.referring
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -36,16 +36,22 @@ import es.dmoral.toasty.Toasty
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, position: Int, isActiveGroup: Boolean,) {
+fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, isActiveGroup: Boolean, destination: String) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val isSkippable = block.skip?.id != "-1"
     val validationRegex = block.validations?.regex
+    val focusManager = LocalFocusManager.current
+    val currentBlockId = block.id ?: ""
 
-    val existingData = blockListViewModel.getData(position)
-    var text by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "")  }
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
+
+    var text by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "")  }
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
 
     fun validateInput(input: String): Boolean {
         return if (validationRegex != null) {
@@ -92,19 +98,24 @@ fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, position
                 Button(
                     onClick = {
                         keyboardController?.hide()
-
+                        focusManager.clearFocus()
                         val surveyHistoryModel = listOf(
                             SurveyHistoryModel(
                                 question = "",
                                 answer = "",
-                                id = blockId
+                                id = currentBlockId
                             )
                         )
-                        blockListViewModel.saveData(position, surveyHistoryModel)
 
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { nextBlockId ->
-                                blockListViewModel.addBlockToTheList(nextBlockId, groupId)
+                                if (destination == "mainSurvey"){
+                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                }else{
+                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                }
                             }
                         }
                     },
@@ -125,27 +136,33 @@ fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, position
             Button(
                 onClick = {
                     keyboardController?.hide()
+                    focusManager.clearFocus()
                     if (text.isNotBlank()) {
                         if (validateInput(text)) {
                             val surveyHistoryModel = listOf(
                                 SurveyHistoryModel(
                                     question = question,
                                     answer = text,
-                                    id = blockId
+                                    id = currentBlockId
                                 )
                             )
-                            blockListViewModel.saveData(position, surveyHistoryModel)
 
                             block.referTo?.group_no?.let { groupId ->
                                 block.referTo.id?.let { nextBlockId ->
-                                    blockListViewModel.addBlockToTheList(nextBlockId, groupId)
+                                    if (destination == "mainSurvey"){
+                                        blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                    }else{
+                                        blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                    }
                                 }
                             }
                         } else {
                             Toasty.warning(context, "Invalid input for ${block.question?.slug}", Toasty.LENGTH_SHORT).show()
                         }
                     } else {
-                        Toasty.warning(context, "Please enter a response for ${block.question?.slug}", Toasty.LENGTH_SHORT).show()
+                        Toasty.warning(context, "Please enter a valid ${block.question?.slug}", Toasty.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier

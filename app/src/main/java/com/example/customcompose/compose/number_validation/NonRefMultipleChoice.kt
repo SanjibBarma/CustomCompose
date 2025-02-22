@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,7 +44,17 @@ fun NonRefMultipleChoice(
     val question = block.question?.slug ?: ""
     val blockId = block.id ?: ""
 
+    LaunchedEffect (selectedOption){
+        val surveyHistoryModel = SurveyHistoryModel(
+            question = question,
+            answer = selectedOption,
+            id = blockId
+        )
+        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
+        println("Block Id is: ${block.id}")
         Text(text = block.question!!.slug)
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -63,7 +74,7 @@ fun NonRefMultipleChoice(
                             id = blockId
                         )
 
-                        blockListViewModel.saveDataAtIndex(position, index, surveyHistoryModel)
+                        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
                     }
                     .background(
                         if (selectedOption == option.value) Color.LightGray else Color.Transparent
@@ -86,7 +97,7 @@ fun NonRefMultipleChoice(
                                 id = blockId
                             )
 
-                            blockListViewModel.saveDataAtIndex(position, index, surveyHistoryModel)
+                            blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
 
                         },
                         enabled = isActiveGroup

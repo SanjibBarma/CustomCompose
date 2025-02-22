@@ -15,16 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.model.Block
-import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
 fun NonReferringGroup(
     blockListViewModel: BlockListViewModel,
-    currentBlock: Block?,
-    survey: SurveyDataModel,
+    currentBlock: Block,
+    position: Int?,
     isActiveGroup: Boolean,
-    position: Int
+    destination: String
 ) {
     Card(
         modifier = Modifier
@@ -40,7 +39,7 @@ fun NonReferringGroup(
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = {
-                    blockListViewModel.addBlockToTheList(survey.jumping_logic[0].id, survey.jumping_logic[0].group_no)
+                    blockListViewModel.addBlockToTheSurveyFlow(currentBlock.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no)
                 }
             ) {
                 Text("Next")

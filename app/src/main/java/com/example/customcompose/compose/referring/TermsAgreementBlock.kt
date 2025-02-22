@@ -32,14 +32,20 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 fun TermsAgreementBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
-    val existingData = blockListViewModel.getData(position)
-    var isChecked by remember { mutableStateOf(existingData.firstOrNull()?.answer == "Yes") }
+    val currentBlockId = block.id ?: ""
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
+
+    var isChecked by remember { mutableStateOf(existingData?.firstOrNull()?.answer == "Yes") }
+//    var isChecked by remember { mutableStateOf(false) }
 
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
 
     Column(
         modifier = Modifier
@@ -84,12 +90,17 @@ fun TermsAgreementBlock(
                     SurveyHistoryModel(
                         question = question,
                         answer = "Yes",
-                        id = blockId
+                        id = currentBlockId
                     )
                 )
-                blockListViewModel.saveData(position, surveyHistoryModel)
+                if (destination == "mainSurvey"){
+                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                    blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!)
+                }else{
+                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                    blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
+                }
 
-                blockListViewModel.addBlockToTheList(block.referTo?.id!!, block.referTo.group_no!!)
             },
             enabled = isChecked && isActiveGroup
         ) {

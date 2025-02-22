@@ -1,6 +1,8 @@
 package com.example.customcompose.compose.number_validation
 
 import android.os.Build
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,8 +38,10 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
+import es.dmoral.toasty.Toasty
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 @Composable
 fun NonRefDate(
@@ -47,22 +52,33 @@ fun NonRefDate(
     isActiveGroup: Boolean
 ) {
     val dateDialogState = rememberMaterialDialogState()
-
     val context = LocalContext.current
     val isRequired = block.required
-
     val existingData = blockListViewModel.getDataFromIndex(position, index)
 
     var answer by remember { mutableStateOf(existingData?.answer ?: "") }
     val question = block.question?.slug ?: ""
     val blockId = block.id ?: ""
 
+    val maxAge = block.validations?.max ?: 50
+    val minAge = block.validations?.min ?: 18
+
+    val currentDate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        LocalDate.now()
+    } else {
+        TODO("VERSION.SDK_INT < O")
+    }
+    val minDate = currentDate.minusYears(minAge.toLong())
+    val maxDate = currentDate.minusYears(100)
+
+
     var pickedDate by remember {
-        mutableStateOf<LocalDate?>(existingData?.answer?.let { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            LocalDate.parse(it, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        } else {
-            TODO("VERSION.SDK_INT < O")
-        }
+        mutableStateOf<LocalDate?>(existingData?.answer?.let {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                LocalDate.parse(it, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            } else {
+                null
+            }
         })
     }
 
@@ -70,11 +86,9 @@ fun NonRefDate(
         derivedStateOf {
             pickedDate?.let {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    DateTimeFormatter
-                        .ofPattern("dd/MM/yyyy")
-                        .format(it)
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy").format(it)
                 } else {
-                    TODO("VERSION.SDK_INT < O")
+                    ""
                 }
             } ?: ""
         }
@@ -90,10 +104,11 @@ fun NonRefDate(
             id = blockId
         )
 
-        blockListViewModel.saveDataAtIndex(position, index, surveyHistoryModel)
+        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
     }
 
     Column {
+        println("Block Id is: ${block.id}")
         Text(block.question!!.slug)
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -118,22 +133,35 @@ fun NonRefDate(
             }
         }
 
+
         MaterialDialog(
             dialogState = dateDialogState,
             buttons = {
-                positiveButton(text = "Ok") {
-                    // Toast.makeText(context, "Clicked ok", Toast.LENGTH_LONG).show()
-                }
+                positiveButton(text = "Ok") {}
                 negativeButton(text = "Cancel")
             }
         ) {
-            datepicker(
-                initialDate = pickedDate ?: LocalDate.now(),
-                title = "Pick a date",
-            ) {
-                pickedDate = it
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                datepicker(
+                    initialDate = pickedDate ?: minDate,
+                    title = "Pick a date",
+                    yearRange = maxDate.year..currentDate.year
+                ) { selectedDate ->
+                    val age = ChronoUnit.YEARS.between(selectedDate, currentDate)
+
+                    if (age in minAge..maxAge) {
+                        pickedDate = selectedDate
+                    } else {
+                        if (age > maxAge) {
+                            Toasty.warning(context, "Must be less than $maxAge years old", Toasty.LENGTH_SHORT).show()
+                        } else if (age < minAge) {
+                            Toasty.warning(context, "Must be more than $minAge years old", Toasty.LENGTH_SHORT).show()
+                        }
+                    }
+                }
             }
         }
+
 
         Spacer(modifier = Modifier.height(8.dp))
     }

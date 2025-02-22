@@ -38,17 +38,22 @@ import es.dmoral.toasty.Toasty
 fun OTPBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
     var otp by remember { mutableStateOf("") }
     val context = LocalContext.current
+    val currentBlockId = block.id ?: ""
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
 
-    val existingData = blockListViewModel.getData(position)
-    var showPopup by remember { mutableStateOf(existingData.firstOrNull() == null) } // Initialize based on existing data
+    var showPopup by remember { mutableStateOf(existingData?.firstOrNull() == null) }
+//    var showPopup by rememberSaveable { mutableStateOf(true) }
 
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
 
     if (showPopup) {
         Dialog(onDismissRequest = { /* Optional: handle dismiss if needed */ }) {
@@ -84,15 +89,15 @@ fun OTPBlock(
                     ) {
                         TextButton(
                             onClick = {
-                                val surveyHistoryModel = listOf(
-                                    SurveyHistoryModel(
-                                        question = "",
-                                        answer = "",
-                                        id = blockId
-                                    )
-                                )
-                                blockListViewModel.saveData(position, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheList(block.skip?.id!!, block.skip.group_no)
+//                                val surveyHistoryModel = listOf(
+//                                    SurveyHistoryModel(
+//                                        question = "",
+//                                        answer = "",
+//                                        id = blockId
+//                                    )
+//                                )
+//                                blockListViewModel.saveData(block.id, surveyHistoryModel)
+//                                blockListViewModel.addBlockToTheSurveyFlow(block.skip?.id!!, block.skip.group_no)
                             },
                             modifier = Modifier.padding(8.dp)
                         ) {
@@ -107,13 +112,18 @@ fun OTPBlock(
                                     SurveyHistoryModel(
                                         question = question,
                                         answer = "Yes",
-                                        id = blockId
+                                        id = currentBlockId
                                     )
                                 )
-                                blockListViewModel.saveData(position, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheList(block.referTo?.id!!, block.referTo.group_no!!)
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!)
+                                }else{
+                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
+                                }
 
-                                Toasty.success(context, "blockId ${block.referTo?.id!!} groupId: ${block.referTo.group_no!!}")
+//                                Toasty.success(context, "blockId ${block.referTo?.id!!} groupId: ${block.referTo.group_no!!}")
 
                                 showPopup = false // Dismiss dialog
                             },

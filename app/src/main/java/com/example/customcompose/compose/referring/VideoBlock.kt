@@ -60,24 +60,32 @@ import kotlin.math.max
 fun VideoBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
     val context = LocalContext.current
     var videoThumbnail by remember { mutableStateOf<Bitmap?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     val coroutineScope = rememberCoroutineScope()
-    val videoFileName = "X promo.mp4"
+//    val videoFileName = "X promo.mp4"
+    val currentBlockId = block.id ?: ""
+
+    val videoFileName = block.options?.get(0)!!.value.substringAfterLast("/")
+    val imageFile = File(context.cacheDir, videoFileName)
 
     val videoPath = getVideoPathFromCache(context, videoFileName)
     var showDialog by remember { mutableStateOf(false) } // State for showing the dialog
     var videoUri by remember { mutableStateOf<Uri?>(null) } // Store the video Uri
     val isSkippable = block.skip?.id != "-1"
 
-    val existingData = blockListViewModel.getData(position)
-    var text by remember { mutableStateOf(existingData.firstOrNull()?.answer ?: "") }
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
+
+    var videoName by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
 
 
     LaunchedEffect(videoPath) {
@@ -238,14 +246,20 @@ fun VideoBlock(
                                             SurveyHistoryModel(
                                                 question = question,
                                                 answer = "Yes",
-                                                id = blockId
+                                                id = currentBlockId
                                             )
                                         )
-                                        blockListViewModel.saveData(position, surveyHistoryModel)
 
-                                        block.options?.get(0)?.referTo?.id?.let { blockId ->
+                                        block.options[0].referTo?.id?.let { blockId ->
                                             block.options[0].referTo!!.group_no?.let { groupId ->
-                                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                                                if (destination == "mainSurvey") {
+                                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                                }else{
+                                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                                }
+
                                             }
                                         }
                                     }
@@ -285,14 +299,19 @@ fun VideoBlock(
                         SurveyHistoryModel(
                             question = "",
                             answer = "",
-                            id = blockId
+                            id = currentBlockId
                         )
                     )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
 
                     block.skip?.id?.let { blockId ->
                         block.skip.group_no.let { groupId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                            if (destination == "mainSurvey") {
+                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                            }else{
+                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            }
                         }
                     }
                 },

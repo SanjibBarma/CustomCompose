@@ -13,15 +13,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.compose.referring.BrandBlock
+import com.example.customcompose.compose.referring.CheckListBlock
 import com.example.customcompose.model.Block
-import com.example.customcompose.model.SurveyDataModel
-import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.compose.referring.CheckboxBlock
 import com.example.customcompose.compose.referring.DatePickerBlock
 import com.example.customcompose.compose.referring.DropdownBlock
 import com.example.customcompose.compose.referring.EditTextBlock
 import com.example.customcompose.compose.referring.EmojiRatingBlock
+import com.example.customcompose.compose.referring.ImageBlock
 import com.example.customcompose.compose.referring.ImageCaptureBlock
+import com.example.customcompose.compose.referring.InteractiveGalleryBlock
 import com.example.customcompose.compose.referring.MultipleChoiceBlock
 import com.example.customcompose.compose.referring.NumberInputBlock
 import com.example.customcompose.compose.referring.OTPBlock
@@ -29,15 +31,15 @@ import com.example.customcompose.compose.referring.StarRatingBlock
 import com.example.customcompose.compose.referring.TermsAgreementBlock
 import com.example.customcompose.compose.referring.UrlBlock
 import com.example.customcompose.compose.referring.VideoBlock
+import com.example.customcompose.viewmodel.BlockListViewModel
 import es.dmoral.toasty.Toasty
 
 @Composable
 fun ReferringGroup(
     blockListViewModel: BlockListViewModel,
-    block: Block?,
-    survey: SurveyDataModel,
+    surveyBlock: Block,
     isActiveGroup: Boolean,
-    position: Int
+    destination: String
 ) {
     val context = LocalContext.current
 
@@ -52,31 +54,35 @@ fun ReferringGroup(
         Column(modifier = Modifier
             .padding(16.dp)
         ) {
-
-            when (block?.type) {
-                "audio_start" -> EditTextBlock(block, blockListViewModel, position, isActiveGroup)
-                "textInput" -> EditTextBlock(block, blockListViewModel, position, isActiveGroup)
-                "terms" -> TermsAgreementBlock(block, blockListViewModel, position, isActiveGroup)
-                "otp" -> OTPBlock(block, blockListViewModel, position, isActiveGroup)
-                "dropdown" -> DropdownBlock(block, blockListViewModel, position, isActiveGroup)
-                "multipleChoice" -> MultipleChoiceBlock(block, blockListViewModel, position, isActiveGroup)
-                "numberInput" -> NumberInputBlock(block, blockListViewModel, position, isActiveGroup)
-                "checkbox" -> CheckboxBlock(block, blockListViewModel, position, isActiveGroup)
-                "emoji_rating" -> EmojiRatingBlock(block, blockListViewModel, position, isActiveGroup)
-                "camera" -> ImageCaptureBlock(block, blockListViewModel, position, isActiveGroup)
-                "url" -> UrlBlock(block, blockListViewModel, position, isActiveGroup)
-                "video" -> VideoBlock(block, blockListViewModel, position, isActiveGroup)
-                "star_rating" -> StarRatingBlock(block, blockListViewModel, position, isActiveGroup)
-                "date" -> DatePickerBlock(block, blockListViewModel, position, isActiveGroup)
+            when (surveyBlock.block?.type) {
+                "audio_start" -> EditTextBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "textInput" -> EditTextBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "terms" -> TermsAgreementBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "otp" -> OTPBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "dropdown" -> DropdownBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "multipleChoice" -> MultipleChoiceBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "numberInput" -> NumberInputBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "checkbox" -> CheckboxBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "emoji_rating" -> EmojiRatingBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "camera" -> ImageCaptureBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "url" -> UrlBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "video" -> VideoBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "star_rating" -> StarRatingBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "date" -> DatePickerBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "checklist" -> CheckListBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "product" -> BrandBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "interactive_gallery" -> InteractiveGalleryBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+                "image" -> ImageBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
 
                 else -> {
-                    Text("Unsupported block type: ${block?.type}", color = Color.Red)
+                    Text("Unsupported block type: ${surveyBlock.block?.type}", color = Color.Red)
 
-                    LaunchedEffect(block?.type) {
-                        Toasty.error(context, "View not found for block type: ${block?.type}", Toasty.LENGTH_SHORT).show()
+                    LaunchedEffect(surveyBlock.block?.type) {
+                        Toasty.error(context, "View not found for block type: ${surveyBlock.block?.type}", Toasty.LENGTH_SHORT).show()
                     }
                 }
             }
+
         }
     }
 }

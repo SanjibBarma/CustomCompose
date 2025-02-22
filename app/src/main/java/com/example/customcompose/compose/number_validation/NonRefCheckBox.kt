@@ -13,6 +13,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -35,12 +36,23 @@ fun NonRefCheckBox(
 
     val existingData = blockListViewModel.getDataFromIndex(position, index)
     val selectedOptions = remember { mutableStateOf(existingData?.answer?.split(",")?.toSet() ?: emptySet()) }
+//    val selectedOptions = remember { mutableStateOf<Set<Any>>(emptySet()) }
 
     val question = block.question?.slug ?: ""
     val blockId = block.id ?: ""
 
+    LaunchedEffect (selectedOptions){
+        val surveyHistoryModel = SurveyHistoryModel(
+            question = question,
+            answer = selectedOptions.toString(),
+            id = blockId
+        )
+        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
+    }
+
 
     Column {
+        println("Block Id is: ${block.id}")
         Text(text = question)
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -72,7 +84,7 @@ fun NonRefCheckBox(
                                 id = blockId
                             )
 
-                            blockListViewModel.saveDataAtIndex(position, index, surveyHistoryModel)
+                            blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
                         },
                         enabled = isActiveGroup
                     )

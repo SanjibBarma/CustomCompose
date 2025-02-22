@@ -19,6 +19,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +48,17 @@ fun NonRefDropdown(
     val question = block.question?.slug ?: ""
     val blockId = block.id ?: ""
 
+    LaunchedEffect (selectedOption){
+        val surveyHistoryModel = SurveyHistoryModel(
+            question = question,
+            answer = selectedOption,
+            id = blockId
+        )
+        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
+    }
+
     Column {
+        println("Block Id is: ${block.id}")
         Text(block.question!!.slug)
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -89,7 +100,7 @@ fun NonRefDropdown(
                             id = blockId
                         )
 
-                        blockListViewModel.saveDataAtIndex(position, index, surveyHistoryModel)
+                        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
 
                         isDropdownExpanded = false
                     },

@@ -19,33 +19,45 @@ class MainActivity : ComponentActivity() {
     val gson = Gson()
     val surveyDataModelList: List<SurveyDataModel> = gson.fromJson(JSON_STRING, Array<SurveyDataModel>::class.java).toList()
 
+    private val requiredPermissions = arrayOf(
+        android.Manifest.permission.RECORD_AUDIO,
+        android.Manifest.permission.POST_NOTIFICATIONS
+    )
+
     private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-            } else {
-                Toast.makeText(this, "Camera permission is required", Toast.LENGTH_SHORT).show()
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val allGranted = permissions.all { it.value }
+            if (!allGranted) {
+                Toast.makeText(
+                    this,
+                    "All permissions are required for full functionality",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+        if (!hasRequiredPermissions()) {
+            requestPermissionLauncher.launch(requiredPermissions)
         }
 
-        val blockListViewModel = BlockListViewModel(surveyDataModelList)
+
+
+        val blockListViewModel = BlockListViewModel(applicationContext, surveyDataModelList)
         setContent {
             CustomComposeTheme {
-//                DynamicScreenTest(surveyDataModelList)
                 DynamicScreen(blockListViewModel, surveyDataModelList)
-//                val viewModel = ListViewModel()
-//                TestScreen(viewModel)
             }
+        }
+    }
+
+    private fun hasRequiredPermissions(): Boolean {
+        return requiredPermissions.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
     }
 }

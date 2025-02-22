@@ -2,7 +2,6 @@
 
 package com.example.customcompose.views
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,19 +25,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.compose.group.NonReferringGroup
 import com.example.customcompose.compose.group.NumberValidationGroup
-import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.compose.group.ReferringGroup
 import kotlinx.coroutines.launch
 
 import androidx.compose.material3.*
+import com.example.customcompose.compose.SubmitButton
 import com.example.customcompose.model.SurveyDataModel
+import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
 fun DynamicScreen(
     blockListViewModel: BlockListViewModel,
     surveyDataModelList: List<SurveyDataModel>
 ) {
-    val viewListItem by blockListViewModel.blockListItem.collectAsState()
+    val surveyViewListItem by blockListViewModel.surveyBlockListItem.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val isSubmitted by blockListViewModel.isSubmitted.collectAsState()
@@ -62,10 +62,10 @@ fun DynamicScreen(
                 .imePadding()
                 .padding(paddingValues)
         ) {
-            if (viewListItem.isEmpty()) {
+            if (surveyViewListItem.isEmpty()) {
                 Button(
                     onClick = {
-                        blockListViewModel.addBlockToTheList(surveyDataModelList[0].blocks[0].id, surveyDataModelList[0].group)
+                        blockListViewModel.addBlockToTheSurveyFlow(surveyDataModelList[0].blocks[0].id!!, surveyDataModelList[0].group)
                     },
                     modifier = Modifier.fillMaxWidth().padding(top = 100.dp)
                 ) {
@@ -73,38 +73,39 @@ fun DynamicScreen(
                 }
             }
 
-            LaunchedEffect(viewListItem.size) {
-                if (viewListItem.isNotEmpty()) {
+            LaunchedEffect(surveyViewListItem.size) {
+                if (surveyViewListItem.isNotEmpty()) {
                     coroutineScope.launch {
-                        listState.animateScrollToItem(viewListItem.size - 1)
+                        listState.animateScrollToItem(surveyViewListItem.size - 1)
                     }
                 }
             }
 
             LazyColumn(state = listState) {
-                items(viewListItem) { childView ->
-                    val survey = childView.group
-                    val block = childView.block
-                    val isCurrentGroupActive = !isSubmitted && viewListItem.lastOrNull()?.group?.group == survey.group
+                items(surveyViewListItem) { childView ->
+                    val isCurrentGroupActive = !isSubmitted && surveyViewListItem.lastOrNull()?.group == childView.group
                     val position = childView.position
-                    when (survey.type) {
-                        "referring" -> ReferringGroup(blockListViewModel, block, survey, isCurrentGroupActive, position)
-                        "non-referring" -> NonReferringGroup(blockListViewModel, block, survey, isCurrentGroupActive, position)
-                        "numbervalidation" -> NumberValidationGroup(blockListViewModel, block, survey, isCurrentGroupActive, position)
+                    println("Type Name: ${childView.type}")
+                    println("BlockData: $childView")
+                    when (childView.type) {
+                        "referring" -> ReferringGroup(blockListViewModel, childView, isCurrentGroupActive, "mainSurvey")
+                        "non-referring" -> NonReferringGroup(blockListViewModel, childView, position, isCurrentGroupActive, "mainSurvey")
+                        "numbervalidation" -> NumberValidationGroup(blockListViewModel, childView, position, isCurrentGroupActive, "mainSurvey")
                     }
                 }
 
                 if (isSubmitted) {
                     item {
-                        Button(
-                            onClick = {
-                                // blockListViewModel.addBlockToTheList("100", "7")
-                                Toast.makeText(context, "Submit", Toast.LENGTH_SHORT).show()
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Submit")
-                        }
+//                        Button(
+//                            onClick = {
+//                                // blockListViewModel.addBlockToTheList("100", "7")
+//                                Toast.makeText(context, "Submit", Toast.LENGTH_SHORT).show()
+//                            },
+//                            modifier = Modifier.fillMaxWidth()
+//                        ) {
+//                            Text("Submit")
+//                        }
+                        SubmitButton(blockListViewModel)
                     }
                 }
             }

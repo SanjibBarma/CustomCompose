@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -60,6 +61,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
@@ -67,6 +69,7 @@ import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import es.dmoral.toasty.Toasty
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -76,55 +79,53 @@ import java.util.Locale
 fun ImageCaptureBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
     var showCamera by remember { mutableStateOf(false) }
-    var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showPreview by remember { mutableStateOf(false) }
     val isSkippable = block.skip?.id != "-1"
     val context = LocalContext.current
-    val photoFile = createImageFile(context)
 
+    // ক্যাশ ডিরেক্টরিতে ইমেজ ফাইল তৈরি করা হচ্ছে
+    val cacheDir = context.cacheDir
+    val cachedImageFile = File(cacheDir, blockListViewModel.getData(block.id!!)?.firstOrNull()?.answer ?: "")
 
-    val existingData = blockListViewModel.getData(position)
+    // ক্যাশড ইমেজ আছে কিনা চেক করে Uri সেট করা হচ্ছে
+    var capturedImageUri by remember {
+        mutableStateOf<Uri?>(if (cachedImageFile.exists()) cachedImageFile.toUri() else null)
+    }
+
     val question = block.question?.slug ?: ""
     val blockId = block.id ?: ""
 
     Column {
-        Text(block.question!!.slug)
+        Text(text = block.question!!.slug)
         Spacer(modifier = Modifier.height(8.dp))
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.LightGray.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                .clickable {
-                    showCamera = true
-                }
+                .clickable { showCamera = true }
                 .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                 .height(200.dp),
             contentAlignment = Alignment.Center
         ) {
-
-            if (capturedImageUri != null) {
-                val context = LocalContext.current
-                val bitmap = remember(capturedImageUri) {
+            val bitmap = remember(capturedImageUri) {
+                capturedImageUri?.let { uri ->
                     try {
-                        val inputStream = context.contentResolver.openInputStream(capturedImageUri!!)
+                        val inputStream = context.contentResolver.openInputStream(uri)
                         val originalBitmap = BitmapFactory.decodeStream(inputStream)
                         inputStream?.close()
 
-                        val exif = context.contentResolver.openInputStream(capturedImageUri!!)?.use {
-                            ExifInterface(it)
-                        }
-
+                        val exif = context.contentResolver.openInputStream(uri)?.use { ExifInterface(it) }
                         val orientation = exif?.getAttributeInt(
                             ExifInterface.TAG_ORIENTATION,
                             ExifInterface.ORIENTATION_UNDEFINED
                         )
 
-                        // Apply rotation based on EXIF orientation
+                        // এক্সিফ ডাটা দেখে ইমেজ রোটেট করা হচ্ছে
                         when (orientation) {
                             ExifInterface.ORIENTATION_ROTATE_90 -> rotateImage(originalBitmap, 90f)
                             ExifInterface.ORIENTATION_ROTATE_180 -> rotateImage(originalBitmap, 180f)
@@ -136,20 +137,16 @@ fun ImageCaptureBlock(
                         null
                     }
                 }
+            }
 
-                bitmap?.let {
-                    Image(
-                        bitmap = it.asImageBitmap(),
-                        contentDescription = "Captured Image",
-                        modifier = Modifier.fillMaxSize()
-                            .clickable {
-                                showCamera = true
-                            },
-                        contentScale = ContentScale.Crop
-                    )
-                }
-            } else {
-                // Show the camera icon
+            bitmap?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentDescription = "Captured Image",
+                    modifier = Modifier.fillMaxSize().clickable { showCamera = true },
+                    contentScale = ContentScale.Crop
+                )
+            } ?: run {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_camera),
                     contentDescription = "Open Camera",
@@ -157,24 +154,25 @@ fun ImageCaptureBlock(
                     tint = Color.Blue
                 )
             }
-
         }
 
         if (showCamera) {
-            FullScreenDialog(onDismissRequest = { showCamera = false }) { // Use FullScreenDialog
+            FullScreenDialog(onDismissRequest = { showCamera = false }) {
+                val photoFile = createImageFile(context)
                 CustomCameraPreview(
                     onCaptureClick = { uri ->
                         capturedImageUri = uri
+                        saveCapturedImageToCache(context, uri)
                         showCamera = false
                         showPreview = true
                     },
-                    photoFile
+                    photoFile = photoFile
                 )
             }
         }
 
         if (showPreview && capturedImageUri != null) {
-            FullScreenDialog(onDismissRequest = { /*showPreview = false*/ }) { // Use FullScreenDialog
+            FullScreenDialog(onDismissRequest = { }) {
                 ImagePreview(
                     imageUri = capturedImageUri!!,
                     onRetake = {
@@ -184,19 +182,23 @@ fun ImageCaptureBlock(
                     },
                     onForward = {
                         showPreview = false
-
                         val surveyHistoryModel = listOf(
                             SurveyHistoryModel(
                                 question = question,
-                                answer = photoFile!!.name,
+                                answer = capturedImageUri!!.lastPathSegment ?: "",
                                 id = blockId
                             )
                         )
-                        blockListViewModel.saveData(position, surveyHistoryModel)
 
-                        block.referTo?.id?.let { blockId ->
+                        block.referTo?.id?.let { refBlockId ->
                             block.referTo.group_no?.let { groupId ->
-                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.saveData(block.id, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(refBlockId, groupId)
+                                } else {
+                                    blockListViewModel.saveDataToCheckList(block.id, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(refBlockId, groupId)
+                                }
                             }
                         }
                     },
@@ -206,10 +208,9 @@ fun ImageCaptureBlock(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (isSkippable){
+        if (isSkippable) {
             Button(
                 onClick = {
-
                     val surveyHistoryModel = listOf(
                         SurveyHistoryModel(
                             question = "",
@@ -217,11 +218,16 @@ fun ImageCaptureBlock(
                             id = blockId
                         )
                     )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
 
-                    block.skip?.id?.let {blockId ->
-                        block.skip.group_no.let { groupId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                    block.skip?.id?.let { skipBlockId ->
+                        block.skip.group_no?.let { groupId ->
+                            if (destination == "mainSurvey") {
+                                blockListViewModel.saveData(block.id, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheSurveyFlow(skipBlockId, groupId)
+                            } else {
+                                blockListViewModel.saveDataToCheckList(block.id, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheCheckList(skipBlockId, groupId)
+                            }
                         }
                     }
                 },
@@ -233,6 +239,7 @@ fun ImageCaptureBlock(
     }
 }
 
+
 @Composable
 fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
     val context = LocalContext.current
@@ -242,31 +249,17 @@ fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable () -> Un
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
-            // Add these for immersive mode if needed
-            // decorFitsSystemWindows = false
         )
     ) {
-        // Set flags to occupy the entire screen, including behind system bars
-        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
-        // Use a Layout to handle insets correctly
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Black) // Or your desired background
-                .windowInsetsPadding(
-                    WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Vertical)
-                )
+                .background(Color.Black)
         ) {
             content()
         }
 
-        // IMPORTANT: Clear flags when the dialog is dismissed
-        DisposableEffect(Unit) {
-            onDispose {
-                activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-            }
-        }
     }
 }
 
@@ -301,12 +294,7 @@ fun CustomCameraPreview(
             val cameraProvider = cameraProviderFuture.get()
             cameraProvider.unbindAll()
             try {
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    cameraSelector,
-                    preview,
-                    imageCapture
-                )
+                cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageCapture)
                 preview.setSurfaceProvider(previewView.surfaceProvider)
             } catch (exc: Exception) {
                 exc.printStackTrace()
@@ -317,14 +305,14 @@ fun CustomCameraPreview(
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             factory = { previewView },
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().navigationBarsPadding() ,
             update = { it.scaleType = PreviewView.ScaleType.FILL_CENTER }
         )
 
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
+                .padding(bottom = 60.dp)
                 .size(70.dp)
                 .background(Color.White, CircleShape)
                 .clickable {
@@ -340,7 +328,11 @@ fun CustomCameraPreview(
                         ContextCompat.getMainExecutor(context),
                         object : ImageCapture.OnImageSavedCallback {
                             override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                                onCaptureClick(photoURI)
+                                val savedUri = Uri.fromFile(photoFile)
+
+                                rotateImageIfRequired(context, savedUri, photoFile!!)
+
+                                onCaptureClick(savedUri)
                             }
 
                             override fun onError(exception: ImageCaptureException) {
@@ -359,7 +351,7 @@ fun CustomCameraPreview(
             Icon(
                 painter = painterResource(id = R.drawable.ic_camera),
                 contentDescription = "Capture",
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(50.dp),
                 tint = Color.Black
             )
         }
@@ -367,7 +359,7 @@ fun CustomCameraPreview(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 16.dp, end = 16.dp)
+                .padding(bottom = 60.dp, end = 32.dp)
                 .size(32.dp)
                 .background(Color.White, CircleShape)
                 .clickable {
@@ -445,7 +437,9 @@ fun ImagePreview(imageUri: Uri, onRetake: () -> Unit, onForward: () -> Unit) {
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .background(Color.Black.copy(alpha = 0.7f))
-                .padding(16.dp),
+                .padding(16.dp)
+                .padding(bottom = 50.dp)
+                .navigationBarsPadding() ,
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             Button(onClick = {
@@ -478,4 +472,46 @@ private fun createImageFile(context: Context): File? {
     val fileName = "IMG_$timeStamp.jpg"
     val storageDir: File? = context.cacheDir
     return File(storageDir, fileName)
+}
+
+fun saveCapturedImageToCache(context: Context, uri: Uri) {
+    val inputStream = context.contentResolver.openInputStream(uri)
+    val bitmap = BitmapFactory.decodeStream(inputStream)
+    inputStream?.close()
+
+    val fileName = uri.lastPathSegment ?: "captured_image.jpg"
+    val file = File(context.cacheDir, fileName)
+
+    try {
+        FileOutputStream(file).use { out ->
+            bitmap?.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        }
+    } catch (e: IOException) {
+        e.printStackTrace()
+    }
+}
+fun rotateImageIfRequired(context: Context, uri: Uri, file: File) {
+    try {
+        val inputStream = context.contentResolver.openInputStream(uri)
+        val exif = inputStream?.use { ExifInterface(it) }
+        val orientation = exif?.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_UNDEFINED
+        )
+
+        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+        val rotatedBitmap = when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> rotateImage(bitmap, 90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> rotateImage(bitmap, 180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> rotateImage(bitmap, 270f)
+            else -> bitmap
+        }
+
+        // ফিক্সড ইমেজ ফাইল হিসেবে পুনরায় সেভ করা হচ্ছে
+        FileOutputStream(file).use { out ->
+            rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }

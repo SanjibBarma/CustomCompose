@@ -2,6 +2,7 @@ package com.example.customcompose.compose.referring
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,26 +23,33 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import es.dmoral.toasty.Toasty
 
 @Composable
 fun CheckboxBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
+    val currentBlockId = block.id ?: ""
     val isSkippable = block.skip?.id != "-1"
 
-    // Get existing data
-    val existingData = blockListViewModel.getData(position)
-    val selectedOptions = remember { mutableStateOf(existingData.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
+    }
 
+    val selectedOptions = remember { mutableStateOf(existingData?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
+    val answer = selectedOptions.value.joinToString(",")
     val question = block.question?.slug ?: ""
-    val blockId = block.id ?: ""
+    val context = LocalContext.current
 
     Column {
         Text(text = question)
@@ -54,11 +62,18 @@ fun CheckboxBlock(
             Surface(
                 modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
                 shape = RoundedCornerShape(4.dp),
-                border = BorderStroke(1.dp, Color.Blue)
+                border = BorderStroke(1.dp, Color.Gray)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(Color.White)
+                    modifier = Modifier.background(if (isActiveGroup) Color.White else Color.LightGray)
+                        .clickable {
+                            selectedOptions.value = if (isSelected) {
+                                selectedOptions.value - option.value
+                            } else {
+                                selectedOptions.value + option.value
+                            }
+                        }
                 ) {
                     Checkbox(
                         checked = isSelected,
@@ -90,14 +105,19 @@ fun CheckboxBlock(
                             SurveyHistoryModel(
                                 question = "",
                                 answer = "",
-                                id = blockId
+                                id = currentBlockId
                             )
                         )
-                        blockListViewModel.saveData(position, surveyHistoryModel)
 
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
-                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                }else{
+                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
                     },
@@ -115,19 +135,26 @@ fun CheckboxBlock(
 
             Button(
                 onClick = {
-                    val answer = selectedOptions.value.joinToString(",") // Convert Set to Comma-Separated String
                     val surveyHistoryModel = listOf(
                         SurveyHistoryModel(
                             question = question,
                             answer = answer,
-                            id = blockId
+                            id = currentBlockId
                         )
                     )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
-
-                    block.referTo?.group_no?.let { groupId ->
-                        block.referTo.id?.let { nextBlockId ->
-                            blockListViewModel.addBlockToTheList(nextBlockId, groupId)
+                    if (answer.isEmpty()){
+                        Toasty.warning(context, "Must select any one.", Toasty.LENGTH_SHORT).show()
+                    }else{
+                        block.referTo?.group_no?.let { groupId ->
+                            block.referTo.id?.let { nextBlockId ->
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                }else{
+                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                }
+                            }
                         }
                     }
                 },

@@ -38,12 +38,12 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 fun EmojiRatingBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
-    position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    destination: String
 ) {
     val isSkippable = block.skip?.id != "-1"
 
-    val blockId = block.id ?: ""
+    val currentBlockId = block.id ?: ""
 
     val emojiImageArray = intArrayOf(
         R.drawable.ic_angry,
@@ -61,10 +61,18 @@ fun EmojiRatingBlock(
         "Great"
     )
 
-    val existingData = blockListViewModel.getData(position)
-    var selectedEmojiIndex by remember {
-        mutableStateOf(existingData.firstOrNull()?.answer?.toIntOrNull())
+    val existingData = if (destination == "mainSurvey") {
+        blockListViewModel.getData(currentBlockId)
+    } else {
+        blockListViewModel.getDataFromCheckList(currentBlockId)
     }
+
+    var selectedEmojiIndex by remember {
+        mutableStateOf(existingData?.firstOrNull()?.answer ?: "")
+    }
+
+    val selectedIndex = emojiTitles.indexOf(selectedEmojiIndex).takeIf { it != -1 }
+
 
     Column {
         Text(block.question!!.slug)
@@ -79,27 +87,33 @@ fun EmojiRatingBlock(
                 EmojiBox(
                     emojiImageResource = emojiResource,
                     title = emojiTitles[index],
-                    isSelected = selectedEmojiIndex == index,
+                    isSelected = selectedIndex == index,
                     onSelect = {
-                        selectedEmojiIndex = index
+                        selectedEmojiIndex = emojiTitles[index]
                         val surveyHistoryModel = listOf(
                             SurveyHistoryModel(
-                                question = block.question?.slug ?: "",
+                                question = block.question.slug ?: "",
                                 answer = emojiTitles[index],
-                                id = blockId
+                                id = currentBlockId
                             )
                         )
-                        blockListViewModel.saveData(position, surveyHistoryModel)
 
                         block.referTo?.id?.let { blockId ->
                             block.referTo.group_no?.let { groupId ->
-                                blockListViewModel.addBlockToTheList(blockId, groupId)
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                } else {
+                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
                     },
                     isActiveGroup
                 )
             }
+
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -111,14 +125,19 @@ fun EmojiRatingBlock(
                         SurveyHistoryModel(
                             question = "",
                             answer = "",
-                            id = blockId
+                            id = currentBlockId
                         )
                     )
-                    blockListViewModel.saveData(position, surveyHistoryModel)
 
                     block.skip?.group_no?.let { groupId ->
                         block.skip.id.let { blockId ->
-                            blockListViewModel.addBlockToTheList(blockId, groupId)
+                            if (destination == "mainSurvey") {
+                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                            }else{
+                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            }
                         }
                     }
                 },
