@@ -22,8 +22,7 @@ data class Block(
     val validations: Validations?,
     val group: String?,
     val blocks: List<Block>?,
-    val block: Block?,
-    val surveyHistoryModel: List<SurveyHistoryModel?>,
+    var surveyHistoryModel: List<SurveyHistoryModel?>,
     val jumping_logic: List<JumpingLogic>?,
     val position: Int?
 )

@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,16 +51,8 @@ fun BrandBlock(
     destination: String
 ) {
     val currentBlockId = block.id ?: ""
-
     val isSkippable = block.skip?.id != "-1"
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
-
-    // If existing data is present, initialize selectedBrand and selectedItem with the saved answer.
-    var selectedBrand by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
+    var selectedBrand by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
 
     val question = block.question?.slug ?: ""
     val options = block.options ?: emptyList()
@@ -68,138 +62,134 @@ fun BrandBlock(
         mutableStateOf<Option?>(options.find { it.slug == selectedBrand })
     }
 
-//    LaunchedEffect (selectedBrand){
-//        val surveyHistoryModel = SurveyHistoryModel(
-//            question = question,
-//            answer = selectedBrand,
-//            id = blockId
-//        )
-//        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
-//    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ){
+        Column (
+            modifier = Modifier.padding(8.dp)
+        ){
+            println("Block Id is: $currentBlockId")
+            Text(text = question)
 
-    Column {
-        println("Block Id is: $currentBlockId")
-        Text(text = question)
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(
+                modifier = Modifier.fillMaxWidth()
+                    .clickable (enabled = isActiveGroup){  }
+            ) {
+                items(options) { option ->
 
-        LazyRow(
-            modifier = Modifier.fillMaxWidth()
-                .clickable (enabled = isActiveGroup){  }
-        ) {
-            items(options) { option ->
+                    val fileName = option.value.substringAfterLast("/")
+                    val imageFile = File(context.cacheDir, fileName) // 🔹 Use only filename
 
-                val fileName = option.value.substringAfterLast("/")
-                val imageFile = File(context.cacheDir, fileName) // 🔹 Use only filename
+                    val imageBitmap = remember(option.value) { // Cache bitmap
+                        if (imageFile.exists()) {
+                            BitmapFactory.decodeFile(imageFile.absolutePath)?.asImageBitmap()
+                        } else null
+                    }
 
-                val imageBitmap = remember(option.value) { // Cache bitmap
-                    if (imageFile.exists()) {
-                        BitmapFactory.decodeFile(imageFile.absolutePath)?.asImageBitmap()
-                    } else null
-                }
+                    val backgroundColor =
+                        if (selectedItem == option) ProductSelected else Color.White
 
-                val backgroundColor =
-                    if (selectedItem == option) ProductSelected else Color.White
+                    Column(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .height(100.dp)
+                            .width(110.dp)
+                            .background(backgroundColor)
+                            .clickable(enabled = isActiveGroup) {
+                                selectedBrand = option.slug!!
+                                selectedItem = option
 
-                Column(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .height(100.dp)
-                        .width(110.dp)
-                        .background(backgroundColor)
-                        .clickable(enabled = isActiveGroup) {
-                            selectedBrand = option.slug!!
-                            selectedItem = option
-
-                            // Save the new selection
-                            val surveyHistoryModel = listOf(
-                                SurveyHistoryModel(
+                                // Save the new selection
+                                val surveyHistoryModel = SurveyHistoryModel(
                                     question = question,
                                     answer = selectedBrand,
                                     id = currentBlockId
                                 )
-                            )
 
-                            option.referTo?.group_no?.let { groupId ->
-                                option.referTo.id?.let { nextBlockId ->
-                                    if (destination == "mainSurvey") {
-                                        blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
-                                    }else{
-                                        blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                        blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                option.referTo?.group_no?.let { groupId ->
+                                    option.referTo.id?.let { nextBlockId ->
+                                        if (destination == "mainSurvey") {
+                                            block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                            blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                        }else{
+                                            blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                            blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                        }
                                     }
                                 }
+
                             }
+                            .border(1.dp, color = Color.Gray, RoundedCornerShape(8.dp)),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(modifier = Modifier.height(4.dp))
 
+                        if (imageBitmap != null) {
+                            Image(
+                                bitmap = imageBitmap,
+                                contentDescription = option.value,
+                                modifier = Modifier.height(60.dp).width(100.dp).background(Color.White)
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_brand_image),
+                                contentDescription = "Default Icon",
+                                modifier = Modifier.height(60.dp).width(100.dp).background(Color.White)
+                            )
                         }
-                        .border(1.dp, color = Color.Gray, RoundedCornerShape(8.dp)),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(modifier = Modifier.height(4.dp))
 
-                    if (imageBitmap != null) {
-                        Image(
-                            bitmap = imageBitmap,
-                            contentDescription = option.value,
-                            modifier = Modifier.height(60.dp).width(100.dp).background(Color.White)
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_brand_image),
-                            contentDescription = "Default Icon",
-                            modifier = Modifier.height(60.dp).width(100.dp).background(Color.White)
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = option.slug!!,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.width(100.dp),
+                            fontSize = 12.sp,
+                            fontWeight = Bold
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = option.slug!!,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.width(100.dp),
-                        fontSize = 12.sp,
-                        fontWeight = Bold
-                    )
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        if (isSkippable) {
+            if (isSkippable) {
 
-            Button(
-                onClick = {
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
+                Button(
+                    onClick = {
+                        val surveyHistoryModel = SurveyHistoryModel(
                             question = "",
                             answer = "",
                             id = currentBlockId
                         )
-                    )
-//                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
 
-                    block.skip?.id?.let { blockId ->
-                        block.skip.group_no.let { groupId ->
-//                            blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                            if (destination == "mainSurvey") {
-                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                            }else{
-                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                        block.skip?.id?.let { blockId ->
+                            block.skip.group_no.let { groupId ->
+                                if (destination == "mainSurvey") {
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                }else{
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isActiveGroup
-            ) {
-                Text("Skip")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = isActiveGroup
+                ) {
+                    Text("Skip")
+                }
             }
         }
     }
+
 }

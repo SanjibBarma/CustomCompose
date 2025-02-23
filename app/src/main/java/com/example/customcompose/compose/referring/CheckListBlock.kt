@@ -19,6 +19,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,26 +44,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.customcompose.compose.group.NonReferringGroup
-import com.example.customcompose.compose.group.NumberValidationGroup
-import com.example.customcompose.compose.group.ReferringGroup
+import com.example.customcompose.compose.CheckGroupOrBlock
+import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.launch
 
 @Composable
 fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiveGroup: Boolean, destination: String) {
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
+    val context = LocalContext.current
+    val sharedPrefHelper = remember { SharedPrefHelper(context) }
+//    val selectedOptions = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
+    val selectedOptions = remember { mutableStateOf(sharedPrefHelper.getSet() ?: emptySet()) }
 
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
-
-    val selectedOptions = remember { mutableStateOf(existingData?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
     val showDialog = remember { mutableStateOf(false) }
 
     var checkListBlockId by remember { mutableStateOf("")  }
@@ -71,83 +70,162 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
     val question = block.question?.slug ?: ""
     val selectedSingleOption = remember { mutableStateOf("") }
 
-    Column {
-        Text(text = question)
-        Spacer(modifier = Modifier.height(8.dp))
 
-        block.options?.forEach { option ->
-            val isSelected = selectedOptions.value.contains(option.value)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ){
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Text(text = question)
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Surface(
-                modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(4.dp),
-                border = BorderStroke(1.dp, Color.Gray),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(if (isActiveGroup) Color.White else Color.LightGray)
-                        .clickable {
-                            selectedOptions.value = if (isSelected) {
-                                selectedOptions.value + option.value
-                            } else {
-                                selectedOptions.value - option.value
-                            }
+            block.options?.forEach { option ->
+                val isSelected = selectedOptions.value.contains(option.value)
 
-                            if(isSelected){
-                                showDialog.value = true
-                            }
-                        }
+                Surface(
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(4.dp),
+                    border = BorderStroke(1.dp, Color.Gray),
                 ) {
-                    Checkbox(
-                        checked = isSelected,
-                        onCheckedChange = { isChecked ->
-                            selectedOptions.value = if (isChecked) {
-                                selectedOptions.value + option.value
-                            } else {
-                                selectedOptions.value - option.value
-                            }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.background(if (isActiveGroup) Color.White else Color.LightGray)
+//                            .clickable {
+//                                selectedOptions.value = if (isSelected) {
+//                                    selectedOptions.value + option.value
+//                                } else {
+//                                    selectedOptions.value - option.value
+//                                }
+//
+//                                if(isSelected){
+//                                    showDialog.value = true
+//                                }
+//                            }
+                    ) {
+                        Checkbox(
+                            checked = isSelected,
+                            onCheckedChange = { isChecked ->
+                                selectedOptions.value = if (isChecked) {
+                                    selectedOptions.value + option.value
+                                } else {
+                                    selectedOptions.value - option.value
+                                }
 
-                            if (isChecked) {
-                                checkListBlockId = option.referTo?.id ?: ""
-                                checkListGroupId = option.referTo?.group_no ?: ""
-                                selectedSingleOption.value = option.value
-                                showDialog.value = true
-                            }
-                        },
-                        enabled = isActiveGroup
+                                if (isChecked) {
+                                    checkListBlockId = option.referTo?.id ?: ""
+                                    checkListGroupId = option.referTo?.group_no ?: ""
+                                    selectedSingleOption.value = option.value
+
+                                    if (!sharedPrefHelper.existsItem(option.value)){
+                                        showDialog.value = true
+                                        blockListViewModel.clearCheckList()
+                                        blockListViewModel.addBlockToTheCheckList(checkListBlockId, checkListGroupId)
+                                    }
+//                                    sharedPrefHelper.saveItem(option.value)
+                                }else{
+                                    sharedPrefHelper.removeItem(option.value)
+                                }
+                            },
+                            enabled = isActiveGroup
+                        )
+                        Text(option.value)
+                    }
+                }
+
+
+                if (showDialog.value) {
+                    CheckListDialog(
+                        selectedOption = selectedSingleOption.value,
+                        blockId = checkListBlockId,
+                        groupId = checkListGroupId,
+                        blockListViewModel = blockListViewModel,
+                        onClose = {
+                            val surveyHistoryModel = listOf(
+                                SurveyHistoryModel(
+                                    question = question,
+                                    answer = answer,
+                                    id = currentBlockId
+                                )
+                            )
+//                block.surveyHistoryModel = surveyHistoryModel
+//                if (destination == "mainSurvey") {
+//                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+//                }
+                            /*else{
+                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                            }*/
+//                            if (sharedPrefHelper.existsItem(option.value)){
+                                showDialog.value = false
+//                            }
+//                showDialog.value = false
+                        }
                     )
-                    Text(option.value)
                 }
             }
-        }
 
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Row (
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ){
-            if (isSkippable){
-                Button(
-                    onClick = {
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
+            Row (
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ){
+                if (isSkippable){
+                    Button(
+                        onClick = {
+                            val surveyHistoryModel = SurveyHistoryModel(
                                 question = "",
                                 answer = "",
                                 id = currentBlockId
                             )
+                            block.skip?.group_no?.let { groupId ->
+                                block.skip.id.let { blockId ->
+                                    if (destination == "mainSurvey") {
+                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    }else{
+                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Blue,
+                            contentColor = Color.White
+                        ),
+                        enabled = isActiveGroup
+                    ) {
+                        Text("Skip")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                Button(
+                    onClick = {
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = question,
+                            answer = answer,
+                            id = currentBlockId
                         )
-                        block.skip?.group_no?.let { groupId ->
-                            block.skip.id.let { blockId ->
+                        block.referTo?.group_no?.let { groupId ->
+                            block.referTo.id?.let { nextBlockId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
                                 }else{
-                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                 }
                             }
                         }
@@ -161,70 +239,11 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
                     ),
                     enabled = isActiveGroup
                 ) {
-                    Text("Skip")
+                    Text("Next")
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-
-            Button(
-                onClick = {
-//                    val answer = selectedOptions.value.joinToString(",")
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
-                            question = question,
-                            answer = answer,
-                            id = currentBlockId
-                        )
-                    )
-                    block.referTo?.group_no?.let { groupId ->
-                        block.referTo.id?.let { nextBlockId ->
-                            if (destination == "mainSurvey") {
-                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
-                            }else{
-                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Blue,
-                    contentColor = Color.White
-                ),
-                enabled = isActiveGroup
-            ) {
-                Text("Next")
             }
         }
     }
-    if (showDialog.value) {
-        CheckListDialog(
-            selectedOption = selectedSingleOption.value,
-            blockId = checkListBlockId,
-            groupId = checkListGroupId,
-            blockListViewModel = blockListViewModel,
-            onClose = {
-                val surveyHistoryModel = listOf(
-                    SurveyHistoryModel(
-                        question = question,
-                        answer = answer,
-                        id = currentBlockId
-                    )
-                )
-                if (destination == "mainSurvey") {
-                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                }/*else{
-                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                }*/
-                showDialog.value = false
-            }
-        )
-    }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -236,20 +255,21 @@ fun CheckListDialog(selectedOption: String, blockId: String, groupId: String, bl
     val coroutineScope = rememberCoroutineScope()
     val isCheckList by blockListViewModel.isCheckList.collectAsState()
     val context = LocalContext.current
+    val sharedPrefHelper = remember { SharedPrefHelper(context) }
 
-    LaunchedEffect(blockId, groupId) {
-        coroutineScope.launch {
-            blockListViewModel.clearCheckList()
-            blockListViewModel.addBlockToTheCheckList(blockId, groupId)
-        }
-    }
+//    LaunchedEffect(blockId, groupId) {
+//        coroutineScope.launch {
+//            //blockListViewModel.clearCheckList()
+//            blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+//        }
+//    }
 
 
     Dialog(
         onDismissRequest = onClose,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
-            dismissOnBackPress = false
+            dismissOnBackPress = true
         )
     ) {
         Scaffold(
@@ -266,7 +286,7 @@ fun CheckListDialog(selectedOption: String, blockId: String, groupId: String, bl
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(8.dp)
                     .imePadding()
                     .padding(paddingValues)
             ) {
@@ -284,15 +304,14 @@ fun CheckListDialog(selectedOption: String, blockId: String, groupId: String, bl
                         val position = childView.position
                         println("Type Name: ${childView.type}")
                         println("BlockData: $childView")
-                        when (childView.type) {
-                            "referring" -> ReferringGroup(blockListViewModel, childView, isCurrentGroupActive, "checkList")
-                            "non-referring" -> NonReferringGroup(blockListViewModel, childView, position, isCurrentGroupActive, "checkList")
-                            "numbervalidation" -> NumberValidationGroup(blockListViewModel, childView, position, isCurrentGroupActive, "checkList")
-                        }
+                        CheckGroupOrBlock(blockListViewModel, childView, isCurrentGroupActive, position, "checkList")
                     }
 
                     if (isCheckList) {
                         onClose()
+                        blockListViewModel.clearCheckList()
+                        blockListViewModel.updateCheckList(false)
+                        sharedPrefHelper.saveItem(selectedOption)
                     }
                 }
             }

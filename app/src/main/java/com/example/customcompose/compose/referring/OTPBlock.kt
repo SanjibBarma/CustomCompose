@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,19 +46,14 @@ fun OTPBlock(
     var otp by remember { mutableStateOf("") }
     val context = LocalContext.current
     val currentBlockId = block.id ?: ""
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
 
-    var showPopup by remember { mutableStateOf(existingData?.firstOrNull() == null) }
+    var showPopup by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull() == null) }
 //    var showPopup by rememberSaveable { mutableStateOf(true) }
 
     val question = block.question?.slug ?: ""
 
     if (showPopup) {
-        Dialog(onDismissRequest = { /* Optional: handle dismiss if needed */ }) {
+        Dialog(onDismissRequest = { }) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -108,18 +105,16 @@ fun OTPBlock(
 
                         Button(
                             onClick = {
-                                val surveyHistoryModel = listOf(
-                                    SurveyHistoryModel(
-                                        question = question,
-                                        answer = "Yes",
-                                        id = currentBlockId
-                                    )
+                                val surveyHistoryModel =  SurveyHistoryModel(
+                                    question = question,
+                                    answer = "Yes",
+                                    id = currentBlockId
                                 )
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!)
                                 }else{
-                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
                                 }
 
@@ -139,18 +134,26 @@ fun OTPBlock(
     }
 
     if (!showPopup) {
-        Box(
+        Card(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(vertical = 16.dp),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(8.dp),
+            elevation = CardDefaults.cardElevation(4.dp),
+            colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
         ) {
-            Text(
-                text = "Verified successfully.",
-                color = Color.Green,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(8.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Verified successfully.",
+                    color = Color.Green,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
         }
     }
 }

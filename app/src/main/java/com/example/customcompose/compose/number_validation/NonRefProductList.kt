@@ -113,13 +113,13 @@ fun NonRefProductList(
                         Image(
                             bitmap = imageBitmap,
                             contentDescription = option.value,
-                            modifier = Modifier.height(60.dp).width(100.dp).background(Color.White)
+                            modifier = Modifier.height(60.dp).width(100.dp).background(Color.White).padding(top = 8.dp)
                         )
                     } else {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_brand_image),
                             contentDescription = "Default Icon",
-                            modifier = Modifier.height(60.dp).width(100.dp).background(Color.White)
+                            modifier = Modifier.height(60.dp).width(100.dp).background(Color.White).padding(top = 8.dp)
                         )
                     }
 

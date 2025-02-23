@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,94 +62,90 @@ fun EmojiRatingBlock(
         "Great"
     )
 
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
-
-    var selectedEmojiIndex by remember {
-        mutableStateOf(existingData?.firstOrNull()?.answer ?: "")
-    }
-
+    var selectedEmojiIndex by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
     val selectedIndex = emojiTitles.indexOf(selectedEmojiIndex).takeIf { it != -1 }
 
-
-    Column {
-        Text(block.question!!.slug)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp)
         ) {
-            emojiImageArray.forEachIndexed { index, emojiResource ->
-                EmojiBox(
-                    emojiImageResource = emojiResource,
-                    title = emojiTitles[index],
-                    isSelected = selectedIndex == index,
-                    onSelect = {
-                        selectedEmojiIndex = emojiTitles[index]
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
+            Text(block.question!!.slug)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                emojiImageArray.forEachIndexed { index, emojiResource ->
+                    EmojiBox(
+                        emojiImageResource = emojiResource,
+                        title = emojiTitles[index],
+                        isSelected = selectedIndex == index,
+                        onSelect = {
+                            selectedEmojiIndex = emojiTitles[index]
+                            val surveyHistoryModel = SurveyHistoryModel(
                                 question = block.question.slug ?: "",
                                 answer = emojiTitles[index],
                                 id = currentBlockId
                             )
+
+                            block.referTo?.id?.let { blockId ->
+                                block.referTo.group_no?.let { groupId ->
+                                    if (destination == "mainSurvey") {
+                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    } else {
+                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                    }
+                                }
+                            }
+                        },
+                        isActiveGroup
+                    )
+                }
+
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (isSkippable) {
+                Button(
+                    onClick = {
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = currentBlockId
                         )
 
-                        block.referTo?.id?.let { blockId ->
-                            block.referTo.group_no?.let { groupId ->
+                        block.skip?.group_no?.let { groupId ->
+                            block.skip.id.let { blockId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                 } else {
-                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }
                             }
                         }
                     },
-                    isActiveGroup
-                )
-            }
-
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (isSkippable) {
-            Button(
-                onClick = {
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
-                            question = "",
-                            answer = "",
-                            id = currentBlockId
-                        )
-                    )
-
-                    block.skip?.group_no?.let { groupId ->
-                        block.skip.id.let { blockId ->
-                            if (destination == "mainSurvey") {
-                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                            }else{
-                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Blue,
-                    contentColor = Color.White
-                ),
-                enabled = isActiveGroup
-            ) {
-                Text("Skip")
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Blue,
+                        contentColor = Color.White
+                    ),
+                    enabled = isActiveGroup
+                ) {
+                    Text("Skip")
+                }
             }
         }
     }

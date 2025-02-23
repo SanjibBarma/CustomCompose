@@ -21,7 +21,8 @@ class MainActivity : ComponentActivity() {
 
     private val requiredPermissions = arrayOf(
         android.Manifest.permission.RECORD_AUDIO,
-        android.Manifest.permission.POST_NOTIFICATIONS
+        android.Manifest.permission.POST_NOTIFICATIONS,
+        android.Manifest.permission.CAMERA
     )
 
     private val requestPermissionLauncher =

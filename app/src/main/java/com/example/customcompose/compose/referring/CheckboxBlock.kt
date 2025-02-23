@@ -1,5 +1,6 @@
 package com.example.customcompose.compose.referring
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,9 +28,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 
 @Composable
@@ -40,132 +45,152 @@ fun CheckboxBlock(
     val currentBlockId = block.id ?: ""
     val isSkippable = block.skip?.id != "-1"
 
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
+    val context = LocalContext.current
+    val sharedPrefHelper = remember { SharedPrefHelper(context) }
 
-    val selectedOptions = remember { mutableStateOf(existingData?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
+    val selectedOptions = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
     val answer = selectedOptions.value.joinToString(",")
     val question = block.question?.slug ?: ""
-    val context = LocalContext.current
 
-    Column {
-        Text(text = question)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ){
+        Column (
+            modifier = Modifier.padding(8.dp)
+        ){
+            Text(text = question)
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        block.options?.forEach { option ->
-            val isSelected = selectedOptions.value.contains(option.value)
+            block.options?.forEach { option ->
+                val isSelected = selectedOptions.value.contains(option.value)
 
-            Surface(
-                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
-                shape = RoundedCornerShape(4.dp),
-                border = BorderStroke(1.dp, Color.Gray)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(if (isActiveGroup) Color.White else Color.LightGray)
-                        .clickable {
-                            selectedOptions.value = if (isSelected) {
-                                selectedOptions.value - option.value
-                            } else {
-                                selectedOptions.value + option.value
-                            }
-                        }
+                Surface(
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(4.dp),
+                    border = BorderStroke(1.dp, Color.Gray)
                 ) {
-                    Checkbox(
-                        checked = isSelected,
-                        onCheckedChange = { isChecked ->
-                            selectedOptions.value = if (isChecked) {
-                                selectedOptions.value + option.value
-                            } else {
-                                selectedOptions.value - option.value
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .background(if (isActiveGroup) Color.White else Color.LightGray)
+                            .clickable {
+                                selectedOptions.value = if (isSelected) {
+                                    selectedOptions.value - option.value
+                                } else {
+                                    selectedOptions.value + option.value
+                                }
                             }
-                        },
-                        enabled = isActiveGroup
-                    )
-                    Text(option.value)
+                    ) {
+                        Checkbox(
+                            checked = isSelected,
+                            onCheckedChange = { isChecked ->
+                                selectedOptions.value = if (isChecked) {
+                                    selectedOptions.value + option.value
+                                } else {
+                                    selectedOptions.value - option.value
+                                }
+
+//                                if (isChecked) {
+//                                    sharedPrefHelper.saveItem(option.value)
+//                                }else{
+//                                    sharedPrefHelper.removeItem(option.value)
+//                                }
+                            },
+                            enabled = isActiveGroup
+                        )
+                        Text(option.value)
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Row (
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ){
-            if (isSkippable){
-                Button(
-                    onClick = {
+            Row (
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ){
+                if (isSkippable){
+                    Button(
+                        onClick = {
 
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
+                            val surveyHistoryModel = SurveyHistoryModel(
                                 question = "",
                                 answer = "",
                                 id = currentBlockId
                             )
-                        )
 
-                        block.skip?.group_no?.let { groupId ->
-                            block.skip.id.let { blockId ->
-                                if (destination == "mainSurvey") {
-                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                                }else{
-                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            block.skip?.group_no?.let { groupId ->
+                                block.skip.id.let { blockId ->
+                                    if (destination == "mainSurvey") {
+                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    }else{
+                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Blue,
+                            contentColor = Color.White
+                        ),
+                        enabled = isActiveGroup
+                    ) {
+                        Text("Skip")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                Button(
+                    onClick = {
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = question,
+                            answer = answer,
+                            id = currentBlockId
+                        )
+                        if (answer.isEmpty()){
+                            Toasty.warning(context, "Must select any one.", Toasty.LENGTH_SHORT).show()
+                        }else{
+//                            val gson = Gson()
+//                            val comboJson = gson.toJson(selectedOptions)
+//                            val setJson = gson.toJson(sharedPrefHelper.getSet())
+//                            Log.d("CheckboxBlockItemSet: ", comboJson)
+//                            Log.d("CheckboxBlockItemShared: ", setJson)
+                            block.referTo?.group_no?.let { groupId ->
+                                block.referTo.id?.let { nextBlockId ->
+                                    if (destination == "mainSurvey") {
+                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                    }else{
+                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                    }
                                 }
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Blue,
                         contentColor = Color.White
                     ),
                     enabled = isActiveGroup
                 ) {
-                    Text("Skip")
+                    Text("Next")
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-
-            Button(
-                onClick = {
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
-                            question = question,
-                            answer = answer,
-                            id = currentBlockId
-                        )
-                    )
-                    if (answer.isEmpty()){
-                        Toasty.warning(context, "Must select any one.", Toasty.LENGTH_SHORT).show()
-                    }else{
-                        block.referTo?.group_no?.let { groupId ->
-                            block.referTo.id?.let { nextBlockId ->
-                                if (destination == "mainSurvey") {
-                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
-                                }else{
-                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
-                                }
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Blue,
-                    contentColor = Color.White
-                ),
-                enabled = isActiveGroup
-            ) {
-                Text("Next")
             }
         }
     }

@@ -19,6 +19,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -45,179 +47,174 @@ fun MultipleChoiceBlock(
 ) {
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
-
-    var selectedOption by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
+    var selectedOption by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
     val question = block.question?.slug ?: ""
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text(text = block.question!!.slug)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Text(text = block.question!!.slug)
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        val hasLongOption = block.options?.any { it.value.length > 15 } == true
+            val hasLongOption = block.options?.any { it.value.length > 15 } == true
 
-        if (hasLongOption) {
-            block.options?.forEach { option ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
-                        .clickable (enabled = isActiveGroup){
-                            selectedOption = option.value
+            if (hasLongOption) {
+                block.options?.forEach { option ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                            .clickable(enabled = isActiveGroup) {
+                                selectedOption = option.value
 
-                            val surveyHistoryModel = listOf(
-                                SurveyHistoryModel(
+                                val surveyHistoryModel = SurveyHistoryModel(
                                     question = question,
                                     answer = selectedOption!!,
                                     id = currentBlockId
                                 )
-                            )
-
-                            option.referTo?.id?.let { referToId ->
-                                if (selectedOption.isNotEmpty()){
-                                    if (destination == "mainSurvey") {
-                                        blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                        blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
-                                    }else{
-                                        blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                        blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
-                                    }
-                                }
-                            }
-                        }
-                        .background(
-                            if (selectedOption == option.value) Color.LightGray else Color.Transparent
-                        )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = selectedOption == option.value,
-                            onClick = {
-                                selectedOption = option.value
-
-                                val surveyHistoryModel = listOf(
-                                    SurveyHistoryModel(
-                                        question = question,
-                                        answer = selectedOption!!,
-                                        id = currentBlockId
-                                    )
-                                )
-
                                 option.referTo?.id?.let { referToId ->
                                     if (selectedOption.isNotEmpty()) {
                                         if (destination == "mainSurvey") {
-                                            blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                            block.surveyHistoryModel = listOf(surveyHistoryModel)
                                             blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
-                                        }else{
-                                            blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                        } else {
+                                            blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                             blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
                                         }
                                     }
                                 }
-                            },
-                            enabled = isActiveGroup
-                        )
-                        Text(
-                            text = option.value,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 100.dp, max = 300.dp)
-            ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(block.options ?: emptyList()) { option ->
-                        Box(
+                            }
+                            .background(
+                                if (selectedOption == option.value) Color.LightGray else Color.Transparent
+                            )
+                    ) {
+                        Row(
                             modifier = Modifier
-                                .padding(4.dp)
-                                .size(80.dp)
-                                .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
-                                .clickable (enabled = isActiveGroup){
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedOption == option.value,
+                                onClick = {
                                     selectedOption = option.value
 
-                                    val surveyHistoryModel = listOf(
-                                        SurveyHistoryModel(
-                                            question = question,
-                                            answer = selectedOption!!,
-                                            id = currentBlockId
-                                        )
+                                    val surveyHistoryModel = SurveyHistoryModel(
+                                        question = question,
+                                        answer = selectedOption!!,
+                                        id = currentBlockId
                                     )
 
                                     option.referTo?.id?.let { referToId ->
                                         if (selectedOption.isNotEmpty()) {
                                             if (destination == "mainSurvey") {
-                                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                                block.surveyHistoryModel = listOf(surveyHistoryModel)
                                                 blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
-                                            }else{
-                                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                            } else {
+                                                blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                                 blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
                                             }
                                         }
                                     }
-                                }
-                                .background(
-                                    if (selectedOption == option.value) Color.LightGray else Color.Transparent
-                                ),  // Change background if selected
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = option.value, textAlign = TextAlign.Center)
+                                },
+                                enabled = isActiveGroup
+                            )
+                            Text(
+                                text = option.value,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 100.dp, max = 300.dp)
+                ) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(block.options ?: emptyList()) { option ->
+                            Box(
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .size(80.dp)
+                                    .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                                    .clickable(enabled = isActiveGroup) {
+                                        selectedOption = option.value
+
+                                        val surveyHistoryModel = SurveyHistoryModel(
+                                            question = question,
+                                            answer = selectedOption!!,
+                                            id = currentBlockId
+                                        )
+
+                                        option.referTo?.id?.let { referToId ->
+                                            if (selectedOption.isNotEmpty()) {
+                                                if (destination == "mainSurvey") {
+                                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                                    blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
+                                                } else {
+                                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                                    blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .background(
+                                        if (selectedOption == option.value) Color.LightGray else Color.Transparent
+                                    ),  // Change background if selected
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = option.value, textAlign = TextAlign.Center)
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (isSkippable){
-            Button(
-                onClick = {
+            if (isSkippable) {
+                Button(
+                    onClick = {
 
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
+                        val surveyHistoryModel = SurveyHistoryModel(
                             question = "",
                             answer = "",
                             id = currentBlockId
                         )
-                    )
 
-                    block.skip?.group_no?.let { groupId ->
-                        block.skip.id.let { blockId ->
-                            if (destination == "mainSurvey") {
-                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                            } else {
-                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                        block.skip?.group_no?.let { groupId ->
+                            block.skip.id.let { blockId ->
+                                if (destination == "mainSurvey") {
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                } else {
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Blue,
-                    contentColor = Color.White
-                ),
-                enabled = isActiveGroup
-            ) {
-                Text("Skip")
+                    },
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Blue,
+                        contentColor = Color.White
+                    ),
+                    enabled = isActiveGroup
+                ) {
+                    Text("Skip")
+                }
             }
         }
     }

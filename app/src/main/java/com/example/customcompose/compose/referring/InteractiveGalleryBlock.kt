@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -62,12 +64,7 @@ fun InteractiveGalleryBlock(
     val currentBlockId = block.id ?: ""
 
     val isSkippable = block.skip?.id != "-1"
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
-    var selectedImage by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
+    var selectedImage by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
     val options = block.options ?: emptyList()
     var selectedItem by remember {
         mutableStateOf<Option?>(options.find { it.value == selectedImage })
@@ -79,16 +76,18 @@ fun InteractiveGalleryBlock(
     val lazyListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val hasItems = options.isNotEmpty()
-//    LaunchedEffect (selectedBrand){
-//        val surveyHistoryModel = SurveyHistoryModel(
-//            question = question,
-//            answer = selectedBrand,
-//            id = blockId
-//        )
-//        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
-//    }
 
-    Column {
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ){
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
         println("Block Id is: $currentBlockId")
         Text(text = question)
 
@@ -147,21 +146,19 @@ fun InteractiveGalleryBlock(
                                     selectedImage = option.value!!
                                     selectedItem = option
 
-                                    val surveyHistoryModel = listOf(
-                                        SurveyHistoryModel(
-                                            question = question,
-                                            answer = selectedImage,
-                                            id = currentBlockId
-                                        )
+                                    val surveyHistoryModel = SurveyHistoryModel(
+                                        question = question,
+                                        answer = selectedImage,
+                                        id = currentBlockId
                                     )
 
                                     option.referTo?.group_no?.let { groupId ->
                                         option.referTo.id?.let { nextBlockId ->
                                             if (destination == "mainSurvey") {
-                                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                                block.surveyHistoryModel = listOf(surveyHistoryModel)
                                                 blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
                                             } else {
-                                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                                blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                                 blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                             }
                                         }
@@ -257,22 +254,19 @@ fun InteractiveGalleryBlock(
 
             Button(
                 onClick = {
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
-                            question = "",
-                            answer = "",
-                            id = currentBlockId
-                        )
+                    val surveyHistoryModel = SurveyHistoryModel(
+                        question = "",
+                        answer = "",
+                        id = currentBlockId
                     )
 
                     block.skip?.id?.let { blockId ->
                         block.skip.group_no.let { groupId ->
-//                            blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                             if (destination == "mainSurvey") {
-                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                block.surveyHistoryModel = listOf(surveyHistoryModel)
                                 blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                             } else {
-                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                 blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                             }
                         }
@@ -284,5 +278,6 @@ fun InteractiveGalleryBlock(
                 Text("Skip")
             }
         }
+    }
     }
 }

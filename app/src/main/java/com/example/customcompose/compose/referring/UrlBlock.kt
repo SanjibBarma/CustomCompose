@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -53,84 +55,87 @@ fun UrlBlock(
     destination: String
 ) {
     val currentBlockId = block.id ?: ""
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
 
     val stringUrl = block.options?.get(0)!!.value
     val isSkippable = block.skip?.id != "-1"
     var showDialog by remember { mutableStateOf(false) }
 
 
-    Column{
-        Text(block.question!!.slug)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
-                .padding(16.dp)
-                .clickable (enabled = isActiveGroup){
-                    showDialog = true
-
-                },
-            verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp)
         ) {
-            Text(
-                text = stringUrl,
-                style = TextStyle(color = Color.Blue),
-                modifier = Modifier.clickable {
-                    showDialog = true
-                }
-            )
-        }
+            Text(block.question!!.slug)
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                    .padding(16.dp)
+                    .clickable(enabled = isActiveGroup) {
+                        showDialog = true
 
-        if (isSkippable) {
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringUrl,
+                    style = TextStyle(color = Color.Blue),
+                    modifier = Modifier.clickable {
+                        showDialog = true
+                    }
+                )
+            }
 
-            Button(
-                onClick = {
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (isSkippable) {
+
+                Button(
+                    onClick = {
+                        val surveyHistoryModel = SurveyHistoryModel(
                             question = "",
                             answer = "",
                             id = currentBlockId
                         )
-                    )
 
-                    block.skip?.id?.let { blockId ->
-                        block.skip.group_no.let { groupId ->
-                            if (destination == "mainSurvey") {
-                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                            }else{
-                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                        block.skip?.id?.let { blockId ->
+                            block.skip.group_no.let { groupId ->
+                                if (destination == "mainSurvey") {
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                } else {
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isActiveGroup
-            ) {
-                Text("Skip")
-            }
-        }
-
-        if (showDialog) {
-            WebViewDialog(
-                block = block,
-                url = stringUrl,
-                blockListViewModel,
-                destination,
-                onClose = {
-                    showDialog = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = isActiveGroup
+                ) {
+                    Text("Skip")
                 }
-            )
+            }
+
+            if (showDialog) {
+                WebViewDialog(
+                    block = block,
+                    url = stringUrl,
+                    blockListViewModel,
+                    destination,
+                    onClose = {
+                        showDialog = false
+                    }
+                )
+            }
         }
     }
 }
@@ -151,22 +156,20 @@ fun WebViewDialog(
 
     Dialog(
         onDismissRequest = {
-            val surveyHistoryModel = listOf(
-                SurveyHistoryModel(
-                    question = question,
-                    answer = "Yes",
-                    id = currentBlockId
-                )
+            val surveyHistoryModel = SurveyHistoryModel(
+                question = question,
+                answer = "Yes",
+                id = currentBlockId
             )
 
             block.options?.get(0)?.referTo?.id?.let { blockId ->
                 block.options[0].referTo?.group_no?.let { groupId ->
 
                     if (destination == "mainSurvey") {
-                        blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                        block.surveyHistoryModel = listOf(surveyHistoryModel)
                         blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                     }else{
-                        blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                     }
                 }
@@ -201,22 +204,20 @@ fun WebViewDialog(
                     activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
                     onClose()
 
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
-                            question = question,
-                            answer = "Yes",
-                            id = currentBlockId
-                        )
+                    val surveyHistoryModel = SurveyHistoryModel(
+                        question = question,
+                        answer = "Yes",
+                        id = currentBlockId
                     )
 
                     block.options?.get(0)?.referTo?.id?.let { blockId ->
                         block.options[0].referTo?.group_no?.let { groupId ->
 
                             if (destination == "mainSurvey") {
-                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                block.surveyHistoryModel = listOf(surveyHistoryModel)
                                 blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                             }else{
-                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                 blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                             }
                         }

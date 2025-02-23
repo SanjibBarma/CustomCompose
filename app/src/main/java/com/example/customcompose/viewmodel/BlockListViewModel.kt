@@ -9,11 +9,16 @@ import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.model.SurveyHistoryModel
 import es.dmoral.toasty.Toasty
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class BlockListViewModel(private val context: Context, private val surveyDataModelList: List<SurveyDataModel>) : ViewModel() {
+class BlockListViewModel(
+    private val context: Context,
+    private val surveyDataModelList: List<SurveyDataModel>
+) : ViewModel() {
     private val _surveyBlockListItem = MutableStateFlow<List<Block>>(emptyList())
     val surveyBlockListItem = _surveyBlockListItem.asStateFlow()
 
@@ -31,47 +36,51 @@ class BlockListViewModel(private val context: Context, private val surveyDataMod
                 val group = surveyDataModelList.find { it.group == groupId }
                 val block = group?.blocks?.find { it.id == blockId }
 
-                if (block!!.type == "audio_start"){
-                    startAudioService(block.referTo?.id, block.referTo?.group_no)
-                }else if (block.type == "audio_end"){
-                    stopAudioService(block.referTo?.id, block.referTo?.group_no)
-                }else if (block.type == "lookup"){
-                    lookupApiCall(block.referTo?.id, block.referTo?.group_no)
-                } else{
-                    if (group != null && block != null) {
-                        val existingBlock =
-                            _surveyBlockListItem.value.find { it.id == blockId && it.group == groupId }
+                if (group?.type == "non-referring" || group?.type == "numbervalidation") {
+                    val newBlock = Block(
+                        id = null,
+                        skip = null,
+                        type = group.type,
+                        options = null,
+                        referTo = null,
+                        question = null,
+                        required = null,
+                        validations = null,
+                        group = group.group,
+                        blocks = group.blocks,
+                        surveyHistoryModel = emptyList(),
+                        jumping_logic = group.jumping_logic,
+                        position = _surveyBlockListItem.value.size
+                    )
 
-                        if (existingBlock != null) {
-                            val updatedList =
-                                _surveyBlockListItem.value.takeWhile { it != existingBlock } /*+ existingBlock*/
-                            _surveyBlockListItem.value = updatedList
-                            println("Block already exists. Cleared items after position of ${block.id}")
-                        } else {
-                            val newBlock = Block(
-                                id = block.id,
-                                skip = block.skip,
-                                type = group.type,
-                                options = block.options,
-                                referTo = block.referTo,
-                                question = block.question,
-                                required = block.required,
-                                validations = block.validations,
-                                group = group.group,
-                                blocks = group.blocks,
-                                block = block,
-                                surveyHistoryModel = emptyList(),
-                                jumping_logic = group.jumping_logic,
-                                position = _surveyBlockListItem.value.size
-                            )
+                    _surveyBlockListItem.value = _surveyBlockListItem.value.toMutableList().apply { add(newBlock) }
+                } else {
+                    if (block!!.type == "audio_start") {
+                        startAudioService(block.referTo?.id, block.referTo?.group_no)
+                    } else if (block.type == "audio_end") {
+                        stopAudioService(block.referTo?.id, block.referTo?.group_no)
+                    } else if (block.type == "lookup") {
+                        lookupApiCall(block.referTo?.id, block.referTo?.group_no)
+                    } else {
+                        if (group != null && block != null) {
+                            val existingBlock =
+                                _surveyBlockListItem.value.find { it.id == blockId && it.group == groupId }
 
-                            _surveyBlockListItem.value =
-                                _surveyBlockListItem.value.toMutableList().apply { add(newBlock) }
-                            println("New Block Added: ${block.id}")
+                            if (existingBlock != null) {
+                                val updatedList =
+                                    _surveyBlockListItem.value.takeWhile { it != existingBlock } /*+ existingBlock*/
+                                _surveyBlockListItem.value = updatedList
+                                println("Block already exists. Cleared items after position of ${block.id}")
+                            } else {
+                                _surveyBlockListItem.value = _surveyBlockListItem.value.toMutableList().apply { add(block) }
+                                println("New Block Added: ${block.id}")
+                            }
+                            //println("Updated List: ${_blockListItem.value.map { it.block.id }}")
                         }
-                        //println("Updated List: ${_blockListItem.value.map { it.block.id }}")
                     }
                 }
+
+
             }
         }
     }
@@ -154,12 +163,13 @@ class BlockListViewModel(private val context: Context, private val surveyDataMod
     }
 
 
+
+
     private val _checkListBlockListItem = MutableStateFlow<List<Block>>(emptyList())
     val checkListBlockListItem = _checkListBlockListItem.asStateFlow()
 
     private val _isCheckList = MutableStateFlow(false)
     val isCheckList = _isCheckList.asStateFlow()
-
 
     fun addBlockToTheCheckList(blockId: String, groupId: String) {
         println("blockId $blockId groupId: $groupId")
@@ -167,43 +177,62 @@ class BlockListViewModel(private val context: Context, private val surveyDataMod
         viewModelScope.launch {
             if (blockId == "checklist") {
                 _isCheckList.value = true
+                delay(500)
+                _checkListBlockListItem.value = emptyList()
             } else {
                 _isCheckList.value = false
                 val group = surveyDataModelList.find { it.group == groupId }
                 val block = group?.blocks?.find { it.id == blockId }
 
-                if (group != null && block != null) {
-                    val existingBlock =
-                        _checkListBlockListItem.value.find { it.id == blockId && it.group == groupId }
+                if (group?.type == "non-referring" || group?.type == "numbervalidation") {
+                    val newBlock = Block(
+                        id = block?.id,
+                        skip = block?.skip,
+                        type = group.type,
+                        options = block?.options,
+                        referTo = block?.referTo,
+                        question = block?.question,
+                        required = block?.required,
+                        validations = block?.validations,
+                        group = group.group,
+                        blocks = group.blocks,
+                        surveyHistoryModel = emptyList(),
+                        jumping_logic = group.jumping_logic,
+                        position = _surveyBlockListItem.value.size
+                    )
 
-                    if (existingBlock != null) {
-                        val updatedList =
-                            _checkListBlockListItem.value.takeWhile { it != existingBlock } /*+ existingBlock*/
-                        _checkListBlockListItem.value = updatedList
-                        println("Block already exists. Cleared items after position of ${block.id}")
-                    } else {
-                        val newBlock = Block(
-                            id = block.id,
-                            skip = block.skip,
-                            type = group.type,
-                            options = block.options,
-                            referTo = block.referTo,
-                            question = block.question,
-                            required = block.required,
-                            validations = block.validations,
-                            group = group.group,
-                            blocks = group.blocks,
-                            block = block,
-                            surveyHistoryModel = emptyList(),
-                            jumping_logic = group.jumping_logic,
-                            position = _checkListBlockListItem.value.size
-                        )
+                    _surveyBlockListItem.value = _surveyBlockListItem.value.toMutableList().apply { add(newBlock) }
+                }else{
+                    if (group != null && block != null) {
+                        val existingBlock =
+                            _checkListBlockListItem.value.find { it.id == blockId && it.group == groupId }
 
-                        _checkListBlockListItem.value =
-                            _checkListBlockListItem.value.toMutableList().apply { add(newBlock) }
-                        println("New Block Added: ${block.id}")
+                        if (existingBlock != null) {
+                            val updatedList = _checkListBlockListItem.value.takeWhile { it != existingBlock } /*+ existingBlock*/
+                            _checkListBlockListItem.value = updatedList
+                            println("Block already exists. Cleared items after position of ${block.id}")
+                        } else {
+//                            val newBlock = Block(
+//                                id = block.id,
+//                                skip = block.skip,
+//                                type = group.type,
+//                                options = block.options,
+//                                referTo = block.referTo,
+//                                question = block.question,
+//                                required = block.required,
+//                                validations = block.validations,
+//                                group = group.group,
+//                                blocks = group.blocks,
+//                                surveyHistoryModel = emptyList(),
+//                                jumping_logic = group.jumping_logic,
+//                                position = _checkListBlockListItem.value.size
+//                            )
+
+                            _checkListBlockListItem.value = _checkListBlockListItem.value.toMutableList().apply { add(block) }
+                            println("New Block Added: ${block.id}")
+                        }
+                        //println("Updated List: ${_blockListItem.value.map { it.block.id }}")
                     }
-                    //println("Updated List: ${_blockListItem.value.map { it.block.id }}")
                 }
             }
         }
@@ -214,22 +243,46 @@ class BlockListViewModel(private val context: Context, private val surveyDataMod
         return _checkListBlockListItem.value.find { it.id == blockId }!!.surveyHistoryModel
     }
 
+//    //save data for every individual _checkListBlockListItem
+//    fun saveDataToCheckList(blockId: String, data: List<SurveyHistoryModel?>) {
+//        viewModelScope.launch {
+//            val updatedList = _checkListBlockListItem.value.map {
+//                if (it.id == blockId) it.copy(surveyHistoryModel = data) else it
+//            }
+//            _checkListBlockListItem.value = updatedList
+//            println("Data saved at position: $blockId")
+//        }
+//    }
 
-    //save data for every individual _checkListBlockListItem
-    fun saveDataToCheckList(blockId: String, data: List<SurveyHistoryModel?>) {
-        viewModelScope.launch {
-            val updatedList = _checkListBlockListItem.value.map {
-                if (it.id == blockId) it.copy(surveyHistoryModel = data) else it
-            }
-            _checkListBlockListItem.value = updatedList
-            println("Data saved at position: $blockId")
+    fun clearCheckList() {
+        if (_checkListBlockListItem.value.isNotEmpty()) {
+            _checkListBlockListItem.value = emptyList()
+            //_isCheckList.value = false
         }
     }
 
-    fun clearCheckList() {
-        if (_checkListBlockListItem.value.isNotEmpty() && _isCheckList.value){
-            _checkListBlockListItem.value = emptyList()
-            _isCheckList.value = false
+
+    private val _checkListHistory = MutableStateFlow<List<SurveyHistoryModel>>(emptyList())
+    val checkListHistory = _checkListHistory.asStateFlow()
+
+    fun saveHistoryForChecklist(blockId: String, history: SurveyHistoryModel) {
+        viewModelScope.launch {
+            _checkListHistory.update { currentList ->
+                val updatedList = currentList.map {
+                    if (it.id == blockId) history else it // Replace if id matches
+                }
+                if (updatedList.any { it.id == blockId }) {
+                    updatedList // If blockId exists, return updated list
+                } else {
+                    updatedList + history // Otherwise, add new entry
+                }
+            }
+        }
+    }
+
+    fun updateCheckList(value: Boolean) {
+        viewModelScope.launch {
+            _isCheckList.emit(value)
         }
     }
 

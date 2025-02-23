@@ -1,6 +1,8 @@
 package com.example.customcompose.compose.referring
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +14,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,75 +40,89 @@ fun TermsAgreementBlock(
     destination: String
 ) {
     val currentBlockId = block.id ?: ""
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
 
-    var isChecked by remember { mutableStateOf(existingData?.firstOrNull()?.answer == "Yes") }
+    var isChecked by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer == "Yes") }
+
 //    var isChecked by remember { mutableStateOf(false) }
 
     val question = block.question?.slug ?: ""
 
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ) {
-        Text(text = block.question!!.slug)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
-                .padding(8.dp)
-                .verticalScroll(rememberScrollState())
+        Column(
+            modifier = Modifier.padding(8.dp)
         ) {
-            Column {
-                block.validations?.terms?.forEach { term ->
-                    Text(text = term, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
+            Text(text = block.question!!.slug)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
+                    .padding(8.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Column {
+                    block.validations?.terms?.forEach { term ->
+                        Text(
+                            text = term,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = isChecked, onCheckedChange = { isChecked = it }, enabled = isActiveGroup)
-            Text(text = "I agree to the terms and conditions", fontSize = 14.sp)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                //isEnabled = false;
-                val surveyHistoryModel = listOf(
-                    SurveyHistoryModel(
-                        question = question,
-                        answer = "Yes",
-                        id = currentBlockId
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = isChecked,
+                    onCheckedChange = { isChecked = it },
+                    enabled = isActiveGroup
                 )
-                if (destination == "mainSurvey"){
-                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                    blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!)
-                }else{
-                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                    blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
-                }
+                Text(text = "I agree to the terms and conditions", fontSize = 14.sp)
+            }
 
-            },
-            enabled = isChecked && isActiveGroup
-        ) {
-            Text("I Agree")
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column (
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ){
+                Button(
+                    onClick = {
+                        //isEnabled = false;
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = question,
+                            answer = "Yes",
+                            id = currentBlockId
+                        )
+                        if (destination == "mainSurvey") {
+                            block.surveyHistoryModel = listOf(surveyHistoryModel)
+                            blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!)
+                        } else {
+                            blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                            blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
+                        }
+
+                    },
+                    enabled = isChecked && isActiveGroup
+                ) {
+                    Text("I Agree")
+                }
+            }
         }
     }
 }

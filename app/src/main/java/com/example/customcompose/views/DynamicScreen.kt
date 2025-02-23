@@ -23,12 +23,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.customcompose.compose.group.NonReferringGroup
-import com.example.customcompose.compose.group.NumberValidationGroup
-import com.example.customcompose.compose.group.ReferringGroup
 import kotlinx.coroutines.launch
 
 import androidx.compose.material3.*
+import com.example.customcompose.compose.CheckGroupOrBlock
 import com.example.customcompose.compose.SubmitButton
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -57,9 +55,6 @@ fun DynamicScreen(
     ) { paddingValues ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .imePadding()
                 .padding(paddingValues)
         ) {
             if (surveyViewListItem.isEmpty()) {
@@ -87,24 +82,12 @@ fun DynamicScreen(
                     val position = childView.position
                     println("Type Name: ${childView.type}")
                     println("BlockData: $childView")
-                    when (childView.type) {
-                        "referring" -> ReferringGroup(blockListViewModel, childView, isCurrentGroupActive, "mainSurvey")
-                        "non-referring" -> NonReferringGroup(blockListViewModel, childView, position, isCurrentGroupActive, "mainSurvey")
-                        "numbervalidation" -> NumberValidationGroup(blockListViewModel, childView, position, isCurrentGroupActive, "mainSurvey")
-                    }
+
+                    CheckGroupOrBlock(blockListViewModel, childView, isCurrentGroupActive, position, "mainSurvey")
                 }
 
                 if (isSubmitted) {
                     item {
-//                        Button(
-//                            onClick = {
-//                                // blockListViewModel.addBlockToTheList("100", "7")
-//                                Toast.makeText(context, "Submit", Toast.LENGTH_SHORT).show()
-//                            },
-//                            modifier = Modifier.fillMaxWidth()
-//                        ) {
-//                            Text("Submit")
-//                        }
                         SubmitButton(blockListViewModel)
                     }
                 }

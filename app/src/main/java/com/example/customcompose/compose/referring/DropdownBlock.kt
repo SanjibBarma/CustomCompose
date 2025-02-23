@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -44,108 +46,109 @@ fun DropdownBlock(
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val isSkippable = block.skip?.id != "-1"
 
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
-
-    var selectedOption by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
+    var selectedOption by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
     val question = block.question?.slug ?: ""
 
-    Column {
-        Text(block.question!!.slug)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Box(
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ){
+        Column (
             modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
                 .padding(8.dp)
-                .clickable (enabled = isActiveGroup){ isDropdownExpanded = true }
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+        ){
+            Text(block.question!!.slug)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
+                    .padding(8.dp)
+                    .clickable (enabled = isActiveGroup){ isDropdownExpanded = true }
             ) {
-                Text(selectedOption)
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Dropdown Arrow",
-                    modifier = Modifier.size(24.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(selectedOption)
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Dropdown Arrow",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
-        }
 
-        DropdownMenu(
-            expanded = isDropdownExpanded,
-            onDismissRequest = { isDropdownExpanded = false }
-        ) {
-            block.options?.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option.value) },
-                    onClick = {
-                        selectedOption = option.value
+            DropdownMenu(
+                expanded = isDropdownExpanded,
+                onDismissRequest = { isDropdownExpanded = false }
+            ) {
+                block.options?.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.value) },
+                        onClick = {
+                            selectedOption = option.value
 
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
+                            val surveyHistoryModel =  SurveyHistoryModel(
                                 question = question,
                                 answer = selectedOption,
                                 id = currentBlockId
                             )
-                        )
 
-                        option.referTo?.id?.let { blockId ->
-                            option.referTo.group_no?.let { groupId ->
-                                if (destination == "mainSurvey") {
-                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                                }else{
-                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            option.referTo?.id?.let { blockId ->
+                                option.referTo.group_no?.let { groupId ->
+                                    if (destination == "mainSurvey") {
+                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    }else{
+                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                    }
                                 }
                             }
-                        }
-                        isDropdownExpanded = false
-                    },
-                    enabled = isActiveGroup
-                )
+                            isDropdownExpanded = false
+                        },
+                        enabled = isActiveGroup
+                    )
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        if (isSkippable) {
-            Button(
-                onClick = {
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
+            if (isSkippable) {
+                Button(
+                    onClick = {
+                        val surveyHistoryModel = SurveyHistoryModel(
                             question = "",
                             answer = "",
                             id = currentBlockId
                         )
-                    )
-                    block.skip?.group_no?.let { groupId ->
-                        block.skip.id.let { blockId ->
-                            if (destination == "mainSurvey") {
-                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                            }else{
-                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                        block.skip?.group_no?.let { groupId ->
+                            block.skip.id.let { blockId ->
+                                if (destination == "mainSurvey") {
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                }else{
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Blue,
-                    contentColor = Color.White
-                ),
-                enabled = isActiveGroup
-            ) {
-                Text("Skip")
+                    },
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Blue,
+                        contentColor = Color.White
+                    ),
+                    enabled = isActiveGroup
+                ) {
+                    Text("Skip")
+                }
             }
         }
     }

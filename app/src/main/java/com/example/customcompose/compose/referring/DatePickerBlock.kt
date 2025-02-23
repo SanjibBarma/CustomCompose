@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,13 +57,7 @@ fun DatePickerBlock(
     val context = LocalContext.current
     val isSkippable = block.skip?.id != "-1"
 
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
-
-    var answer by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
+    var answer by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
     val question = block.question?.slug ?: ""
 
     var pickedDate by remember {
@@ -86,7 +82,16 @@ fun DatePickerBlock(
         answer = formattedDate
     }
 
-    Column {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ){
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
         Text(block.question!!.slug)
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -95,7 +100,7 @@ fun DatePickerBlock(
                 .fillMaxWidth()
                 .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
                 .padding(8.dp)
-                .clickable (enabled = isActiveGroup){ dateDialogState.show() }
+                .clickable(enabled = isActiveGroup) { dateDialogState.show() }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -132,31 +137,29 @@ fun DatePickerBlock(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row (
+        Row(
             modifier = Modifier
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
-        ){
+        ) {
 
-            if (isSkippable){
+            if (isSkippable) {
                 Button(
                     onClick = {
 
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
-                                question = "",
-                                answer = "",
-                                id = currentBlockId
-                            )
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = currentBlockId
                         )
 
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                                }else{
-                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                } else {
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }
                             }
@@ -177,24 +180,26 @@ fun DatePickerBlock(
 
             Button(
                 onClick = {
-                    if (answer.isEmpty()){
-                        Toasty.warning(context, "Please enter a valid ${block.question.slug}", Toasty.LENGTH_SHORT).show()
-                    }else{
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
-                                question = question,
-                                answer = answer,
-                                id = currentBlockId
-                            )
+                    if (answer.isEmpty()) {
+                        Toasty.warning(
+                            context,
+                            "Please enter a valid ${block.question.slug}",
+                            Toasty.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = question,
+                            answer = answer,
+                            id = currentBlockId
                         )
 
                         block.referTo?.group_no?.let { groupId ->
                             block.referTo.id?.let { blockId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                                }else{
-                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                } else {
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }
                             }
@@ -211,6 +216,7 @@ fun DatePickerBlock(
                 Text("Next")
             }
         }
+    }
     }
 }
 

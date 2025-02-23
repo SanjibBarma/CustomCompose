@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -46,13 +49,7 @@ fun NumberInputBlock(
     val isSkippable = block.skip?.id != "-1"
     val validationRegex = block.validations?.regex
 
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
-
-    var text by remember { mutableStateOf(existingData?.firstOrNull()?.answer ?: "") }
+    var text by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
     val question = block.question?.slug ?: ""
 
     fun validateInput(input: String): Boolean {
@@ -63,7 +60,16 @@ fun NumberInputBlock(
         }
     }
 
-    Column {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ){
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
         Text(text = block.question!!.slug)
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -99,21 +105,19 @@ fun NumberInputBlock(
                     onClick = {
                         keyboardController?.hide()
 
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
-                                question = "",
-                                answer = "",
-                                id = currentBlockId
-                            )
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = currentBlockId
                         )
 
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                 }else{
-                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }
                             }
@@ -139,21 +143,19 @@ fun NumberInputBlock(
                     if (text.isNotBlank()) {
                         if (validateInput(text)) {
 
-                            val surveyHistoryModel = listOf(
-                                SurveyHistoryModel(
-                                    question = question,
-                                    answer = text,
-                                    id = currentBlockId
-                                )
+                            val surveyHistoryModel = SurveyHistoryModel(
+                                question = question,
+                                answer = text,
+                                id = currentBlockId
                             )
 
                             block.referTo?.group_no?.let { groupId ->
                                 block.referTo.id?.let { blockId ->
                                     if (destination == "mainSurvey") {
-                                        blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
+                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
                                         blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                     }else{
-                                        blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                     }
                                 }
@@ -175,5 +177,6 @@ fun NumberInputBlock(
                 Text("Next")
             }
         }
+    }
     }
 }

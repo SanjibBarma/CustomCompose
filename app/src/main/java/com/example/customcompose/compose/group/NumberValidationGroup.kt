@@ -46,7 +46,7 @@ fun NumberValidationGroup(
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(8.dp)
         ) {
                 println("Nonref Block Size: ${currentBlock?.blocks?.size}")
 

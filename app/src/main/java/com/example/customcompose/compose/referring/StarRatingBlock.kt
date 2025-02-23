@@ -6,8 +6,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -36,91 +39,90 @@ fun StarRatingBlock(
     val context = LocalContext.current
     val currentBlockId = block.id ?: ""
 
-    val existingData = if (destination == "mainSurvey") {
-        blockListViewModel.getData(currentBlockId)
-    } else {
-        blockListViewModel.getDataFromCheckList(currentBlockId)
-    }
-
-    val savedRating = remember { mutableStateOf(existingData?.firstOrNull()?.answer?.toIntOrNull() ?: 0) }
+    val savedRating = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer?.toIntOrNull() ?: 0) }
     val ratingNumber = remember { mutableIntStateOf(savedRating.value) }
 
     val isSkippable = block.skip?.id != "-1"
 
     val question = block.question?.slug ?: ""
 
-    Column {
-        Text(block.question!!.slug)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp)
         ) {
+            Text(block.question!!.slug)
+            Spacer(modifier = Modifier.height(8.dp))
 
-            //if list started from 0, then add +1 with the size
-            for (i in 1..5) {
-                Star(
-                    isSelected = i <= ratingNumber.intValue,
-                    onClick = {
-                        ratingNumber.intValue = i
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
 
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
+                for (i in 1..5) {
+                    Star(
+                        isSelected = i <= ratingNumber.intValue,
+                        onClick = {
+                            ratingNumber.intValue = i
+
+                            val surveyHistoryModel = SurveyHistoryModel(
                                 question = question,
                                 answer = ratingNumber.intValue.toString(),
                                 id = currentBlockId
                             )
-                        )
 
-                        block.referTo?.group_no?.let { groupId ->
-                            block.referTo.id?.let { blockId ->
-                                if (destination == "mainSurvey") {
-                                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                                }else{
-                                    blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                            block.referTo?.group_no?.let { groupId ->
+                                block.referTo.id?.let { blockId ->
+                                    if (destination == "mainSurvey") {
+                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    } else {
+                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                        blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                    }
                                 }
                             }
-                        }
 //                        Toast.makeText(context, "Selected Rating: $i", Toast.LENGTH_SHORT).show()
-                    },
-                    isActiveGroup
-                )
+                        },
+                        isActiveGroup
+                    )
+                }
             }
-        }
 
-        if (isSkippable) {
-            Spacer(modifier = Modifier.height(8.dp))
+            if (isSkippable) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = {
+                Button(
+                    onClick = {
 
-                    val surveyHistoryModel = listOf(
-                        SurveyHistoryModel(
+                        val surveyHistoryModel = SurveyHistoryModel(
                             question = "",
                             answer = "",
                             id = currentBlockId
                         )
-                    )
 
-                    block.skip?.id?.let { blockId ->
-                        block.skip.group_no.let { groupId ->
-                            if (destination == "mainSurvey") {
-                                blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
-                            } else {
-                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                        block.skip?.id?.let { blockId ->
+                            block.skip.group_no.let { groupId ->
+                                if (destination == "mainSurvey") {
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                } else {
+                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
                             }
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isActiveGroup
-            ) {
-                Text("Skip")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = isActiveGroup
+                ) {
+                    Text("Skip")
+                }
             }
         }
     }
