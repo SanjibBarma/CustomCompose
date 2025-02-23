@@ -81,13 +81,13 @@ fun MultipleChoiceBlock(
                                     answer = selectedOption!!,
                                     id = currentBlockId
                                 )
+                                block.surveyHistoryModel = listOf(surveyHistoryModel)
+
                                 option.referTo?.id?.let { referToId ->
                                     if (selectedOption.isNotEmpty()) {
                                         if (destination == "mainSurvey") {
-                                            block.surveyHistoryModel = listOf(surveyHistoryModel)
                                             blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
                                         } else {
-                                            blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                             blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
                                         }
                                     }
@@ -113,14 +113,13 @@ fun MultipleChoiceBlock(
                                         answer = selectedOption!!,
                                         id = currentBlockId
                                     )
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                                     option.referTo?.id?.let { referToId ->
                                         if (selectedOption.isNotEmpty()) {
                                             if (destination == "mainSurvey") {
-                                                block.surveyHistoryModel = listOf(surveyHistoryModel)
                                                 blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
                                             } else {
-                                                blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                                 blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
                                             }
                                         }
@@ -159,14 +158,13 @@ fun MultipleChoiceBlock(
                                             answer = selectedOption!!,
                                             id = currentBlockId
                                         )
+                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                                         option.referTo?.id?.let { referToId ->
                                             if (selectedOption.isNotEmpty()) {
                                                 if (destination == "mainSurvey") {
-                                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                                     blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
                                                 } else {
-                                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                                     blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
                                                 }
                                             }
@@ -193,14 +191,13 @@ fun MultipleChoiceBlock(
                             answer = "",
                             id = currentBlockId
                         )
+                        block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
                                 if (destination == "mainSurvey") {
-                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                 } else {
-                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }
                             }

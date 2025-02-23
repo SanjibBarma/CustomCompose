@@ -111,14 +111,13 @@ fun BrandBlock(
                                     answer = selectedBrand,
                                     id = currentBlockId
                                 )
+                                block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                                 option.referTo?.group_no?.let { groupId ->
                                     option.referTo.id?.let { nextBlockId ->
                                         if (destination == "mainSurvey") {
-                                            block.surveyHistoryModel = listOf(surveyHistoryModel)
                                             blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
                                         }else{
-                                            blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                             blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                         }
                                     }
@@ -170,14 +169,13 @@ fun BrandBlock(
                             answer = "",
                             id = currentBlockId
                         )
+                        block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                         block.skip?.id?.let { blockId ->
                             block.skip.group_no.let { groupId ->
                                 if (destination == "mainSurvey") {
-                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                 }else{
-                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }
                             }

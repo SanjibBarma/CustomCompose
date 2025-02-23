@@ -75,14 +75,13 @@ fun StarRatingBlock(
                                 answer = ratingNumber.intValue.toString(),
                                 id = currentBlockId
                             )
+                            block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                             block.referTo?.group_no?.let { groupId ->
                                 block.referTo.id?.let { blockId ->
                                     if (destination == "mainSurvey") {
-                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
                                         blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                     } else {
-                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                     }
                                 }
@@ -105,14 +104,13 @@ fun StarRatingBlock(
                             answer = "",
                             id = currentBlockId
                         )
+                        block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                         block.skip?.id?.let { blockId ->
                             block.skip.group_no.let { groupId ->
                                 if (destination == "mainSurvey") {
-                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                 } else {
-                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }
                             }

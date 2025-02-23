@@ -110,14 +110,13 @@ fun NumberInputBlock(
                             answer = "",
                             id = currentBlockId
                         )
+                        block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
                                 if (destination == "mainSurvey") {
-                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                 }else{
-                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }
                             }
@@ -148,14 +147,13 @@ fun NumberInputBlock(
                                 answer = text,
                                 id = currentBlockId
                             )
+                            block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                             block.referTo?.group_no?.let { groupId ->
                                 block.referTo.id?.let { blockId ->
                                     if (destination == "mainSurvey") {
-                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
                                         blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                     }else{
-                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                     }
                                 }

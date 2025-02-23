@@ -26,8 +26,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 import androidx.compose.material3.*
+import androidx.compose.runtime.remember
 import com.example.customcompose.compose.CheckGroupOrBlock
 import com.example.customcompose.compose.SubmitButton
+import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 
@@ -41,6 +43,7 @@ fun DynamicScreen(
     val coroutineScope = rememberCoroutineScope()
     val isSubmitted by blockListViewModel.isSubmitted.collectAsState()
     val context = LocalContext.current
+    val sharedPrefHelper = remember { SharedPrefHelper(context) }
 
     Scaffold(
         topBar = {
@@ -60,6 +63,7 @@ fun DynamicScreen(
             if (surveyViewListItem.isEmpty()) {
                 Button(
                     onClick = {
+                        sharedPrefHelper.clearCheckList()
                         blockListViewModel.addBlockToTheSurveyFlow(surveyDataModelList[0].blocks[0].id!!, surveyDataModelList[0].group)
                     },
                     modifier = Modifier.fillMaxWidth().padding(top = 100.dp)

@@ -2,7 +2,6 @@ package com.example.customcompose.compose.referring
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -85,7 +84,7 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
             Spacer(modifier = Modifier.height(8.dp))
 
             block.options?.forEach { option ->
-                val isSelected = selectedOptions.value.contains(option.value)
+                val isSelected = selectedOptions.value.map { it.trim() }.contains(option.value.trim())
 
                 Surface(
                     modifier = Modifier
@@ -128,7 +127,6 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
                                         blockListViewModel.clearCheckList()
                                         blockListViewModel.addBlockToTheCheckList(checkListBlockId, checkListGroupId)
                                     }
-//                                    sharedPrefHelper.saveItem(option.value)
                                 }else{
                                     sharedPrefHelper.removeItem(option.value)
                                 }
@@ -138,41 +136,30 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
                         Text(option.value)
                     }
                 }
-
-
-                if (showDialog.value) {
-                    CheckListDialog(
-                        selectedOption = selectedSingleOption.value,
-                        blockId = checkListBlockId,
-                        groupId = checkListGroupId,
-                        blockListViewModel = blockListViewModel,
-                        onClose = {
-                            val surveyHistoryModel = listOf(
-                                SurveyHistoryModel(
-                                    question = question,
-                                    answer = answer,
-                                    id = currentBlockId
-                                )
-                            )
-//                block.surveyHistoryModel = surveyHistoryModel
-//                if (destination == "mainSurvey") {
-//                    blockListViewModel.saveData(currentBlockId, surveyHistoryModel)
-//                }
-                            /*else{
-                                blockListViewModel.saveDataToCheckList(currentBlockId, surveyHistoryModel)
-                            }*/
-//                            if (sharedPrefHelper.existsItem(option.value)){
-                                showDialog.value = false
-//                            }
-//                showDialog.value = false
-                        }
-                    )
-                }
             }
 
+            if (showDialog.value) {
+                CheckListDialog(
+                    selectedOption = selectedSingleOption.value,
+                    blockListViewModel = blockListViewModel,
+                    onClose = {
+                        val surveyHistoryModel = listOf(
+                            SurveyHistoryModel(
+                                question = question,
+                                answer = answer,
+                                id = currentBlockId
+                            )
+                        )
 
+                        showDialog.value = false
+                    },
+                    onDismiss = {
+                        showDialog.value = false
+                        selectedOptions.value = selectedOptions.value - selectedSingleOption.value
+                    }
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
-
             Row (
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -185,13 +172,13 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
                                 answer = "",
                                 id = currentBlockId
                             )
+                            block.surveyHistoryModel = listOf(surveyHistoryModel)
+
                             block.skip?.group_no?.let { groupId ->
                                 block.skip.id.let { blockId ->
                                     if (destination == "mainSurvey") {
-                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
                                         blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                     }else{
-                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                     }
                                 }
@@ -213,22 +200,27 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
 
                 Button(
                     onClick = {
-                        val surveyHistoryModel = SurveyHistoryModel(
-                            question = question,
-                            answer = answer,
-                            id = currentBlockId
-                        )
-                        block.referTo?.group_no?.let { groupId ->
-                            block.referTo.id?.let { nextBlockId ->
-                                if (destination == "mainSurvey") {
-                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
-                                }else{
-                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
-                                    blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                        if (selectedOptions.value.size != block.options?.size){
+                            Toasty.warning(context,"Please fill all the box", Toasty.LENGTH_SHORT).show()
+                        }else{
+                            val surveyHistoryModel = SurveyHistoryModel(
+                                question = question,
+                                answer = answer,
+                                id = currentBlockId
+                            )
+                            block.surveyHistoryModel = listOf(surveyHistoryModel)
+
+                            block.referTo?.group_no?.let { groupId ->
+                                block.referTo.id?.let { nextBlockId ->
+                                    if (destination == "mainSurvey") {
+                                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                    }else{
+                                        blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                    }
                                 }
                             }
                         }
+
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -248,7 +240,12 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CheckListDialog(selectedOption: String, blockId: String, groupId: String, blockListViewModel: BlockListViewModel, onClose: () -> Unit) {
+fun CheckListDialog(
+    selectedOption: String,
+    blockListViewModel: BlockListViewModel,
+    onClose: () -> Unit,
+    onDismiss: () -> Unit
+) {
 
     val surveyViewListItem by blockListViewModel.checkListBlockListItem.collectAsState()
     val listState = remember { LazyListState() }
@@ -257,16 +254,10 @@ fun CheckListDialog(selectedOption: String, blockId: String, groupId: String, bl
     val context = LocalContext.current
     val sharedPrefHelper = remember { SharedPrefHelper(context) }
 
-//    LaunchedEffect(blockId, groupId) {
-//        coroutineScope.launch {
-//            //blockListViewModel.clearCheckList()
-//            blockListViewModel.addBlockToTheCheckList(blockId, groupId)
-//        }
-//    }
-
-
     Dialog(
-        onDismissRequest = onClose,
+        onDismissRequest = {
+            onDismiss()
+        },
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             dismissOnBackPress = true

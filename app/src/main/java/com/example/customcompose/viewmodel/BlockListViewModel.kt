@@ -38,7 +38,7 @@ class BlockListViewModel(
 
                 if (group?.type == "non-referring" || group?.type == "numbervalidation") {
                     val newBlock = Block(
-                        id = null,
+                        id = block?.id,
                         skip = null,
                         type = group.type,
                         options = null,
@@ -63,19 +63,16 @@ class BlockListViewModel(
                         lookupApiCall(block.referTo?.id, block.referTo?.group_no)
                     } else {
                         if (group != null && block != null) {
-                            val existingBlock =
-                                _surveyBlockListItem.value.find { it.id == blockId && it.group == groupId }
+                            val existingBlock = _surveyBlockListItem.value.find { it.id == blockId}
 
                             if (existingBlock != null) {
-                                val updatedList =
-                                    _surveyBlockListItem.value.takeWhile { it != existingBlock } /*+ existingBlock*/
+                                val updatedList = _surveyBlockListItem.value.takeWhile { it != existingBlock } /*+ existingBlock*/
                                 _surveyBlockListItem.value = updatedList
                                 println("Block already exists. Cleared items after position of ${block.id}")
                             } else {
                                 _surveyBlockListItem.value = _surveyBlockListItem.value.toMutableList().apply { add(block) }
                                 println("New Block Added: ${block.id}")
                             }
-                            //println("Updated List: ${_blockListItem.value.map { it.block.id }}")
                         }
                     }
                 }
@@ -205,33 +202,17 @@ class BlockListViewModel(
                 }else{
                     if (group != null && block != null) {
                         val existingBlock =
-                            _checkListBlockListItem.value.find { it.id == blockId && it.group == groupId }
+                            _checkListBlockListItem.value.find { it.id == blockId }
 
                         if (existingBlock != null) {
                             val updatedList = _checkListBlockListItem.value.takeWhile { it != existingBlock } /*+ existingBlock*/
                             _checkListBlockListItem.value = updatedList
                             println("Block already exists. Cleared items after position of ${block.id}")
                         } else {
-//                            val newBlock = Block(
-//                                id = block.id,
-//                                skip = block.skip,
-//                                type = group.type,
-//                                options = block.options,
-//                                referTo = block.referTo,
-//                                question = block.question,
-//                                required = block.required,
-//                                validations = block.validations,
-//                                group = group.group,
-//                                blocks = group.blocks,
-//                                surveyHistoryModel = emptyList(),
-//                                jumping_logic = group.jumping_logic,
-//                                position = _checkListBlockListItem.value.size
-//                            )
 
                             _checkListBlockListItem.value = _checkListBlockListItem.value.toMutableList().apply { add(block) }
                             println("New Block Added: ${block.id}")
                         }
-                        //println("Updated List: ${_blockListItem.value.map { it.block.id }}")
                     }
                 }
             }
@@ -243,17 +224,6 @@ class BlockListViewModel(
         return _checkListBlockListItem.value.find { it.id == blockId }!!.surveyHistoryModel
     }
 
-//    //save data for every individual _checkListBlockListItem
-//    fun saveDataToCheckList(blockId: String, data: List<SurveyHistoryModel?>) {
-//        viewModelScope.launch {
-//            val updatedList = _checkListBlockListItem.value.map {
-//                if (it.id == blockId) it.copy(surveyHistoryModel = data) else it
-//            }
-//            _checkListBlockListItem.value = updatedList
-//            println("Data saved at position: $blockId")
-//        }
-//    }
-
     fun clearCheckList() {
         if (_checkListBlockListItem.value.isNotEmpty()) {
             _checkListBlockListItem.value = emptyList()
@@ -262,23 +232,23 @@ class BlockListViewModel(
     }
 
 
-    private val _checkListHistory = MutableStateFlow<List<SurveyHistoryModel>>(emptyList())
-    val checkListHistory = _checkListHistory.asStateFlow()
-
-    fun saveHistoryForChecklist(blockId: String, history: SurveyHistoryModel) {
-        viewModelScope.launch {
-            _checkListHistory.update { currentList ->
-                val updatedList = currentList.map {
-                    if (it.id == blockId) history else it // Replace if id matches
-                }
-                if (updatedList.any { it.id == blockId }) {
-                    updatedList // If blockId exists, return updated list
-                } else {
-                    updatedList + history // Otherwise, add new entry
-                }
-            }
-        }
-    }
+//    private val _checkListHistory = MutableStateFlow<List<SurveyHistoryModel>>(emptyList())
+//    val checkListHistory = _checkListHistory.asStateFlow()
+//
+//    fun saveHistoryForChecklist(blockId: String, history: SurveyHistoryModel) {
+//        viewModelScope.launch {
+//            _checkListHistory.update { currentList ->
+//                val updatedList = currentList.map {
+//                    if (it.id == blockId) history else it // Replace if id matches
+//                }
+//                if (updatedList.any { it.id == blockId }) {
+//                    updatedList // If blockId exists, return updated list
+//                } else {
+//                    updatedList + history // Otherwise, add new entry
+//                }
+//            }
+//        }
+//    }
 
     fun updateCheckList(value: Boolean) {
         viewModelScope.launch {

@@ -33,4 +33,8 @@ class SharedPrefHelper(context: Context) {
     fun existsItem(item: String): Boolean {
         return getSet().contains(item)
     }
+
+    fun clearCheckList() {
+        prefs.edit().remove("checkList").apply()
+    }
 }

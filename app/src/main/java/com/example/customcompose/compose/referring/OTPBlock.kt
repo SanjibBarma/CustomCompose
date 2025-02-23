@@ -110,11 +110,11 @@ fun OTPBlock(
                                     answer = "Yes",
                                     id = currentBlockId
                                 )
+                                block.surveyHistoryModel = listOf(surveyHistoryModel)
+
                                 if (destination == "mainSurvey") {
-                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!)
                                 }else{
-                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
                                 }
 

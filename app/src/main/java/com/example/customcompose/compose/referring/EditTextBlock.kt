@@ -112,14 +112,13 @@ fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, isActive
                                     answer = "",
                                     id = currentBlockId
                                 )
+                                block.surveyHistoryModel= listOf(surveyHistoryModel)
 
                                 block.skip?.group_no?.let { groupId ->
                                     block.skip.id.let { nextBlockId ->
                                         if (destination == "mainSurvey"){
-                                            block.surveyHistoryModel= listOf(surveyHistoryModel)
                                             blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
                                         }else{
-                                            blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                             blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                         }
                                     }
@@ -150,14 +149,13 @@ fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, isActive
                                         answer = text,
                                         id = currentBlockId
                                     )
+                                    block.surveyHistoryModel= listOf(surveyHistoryModel)
 
                                     block.referTo?.group_no?.let { groupId ->
                                         block.referTo.id?.let { nextBlockId ->
                                             if (destination == "mainSurvey"){
-                                                block.surveyHistoryModel= listOf(surveyHistoryModel)
                                                 blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
                                             }else{
-                                                blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                                 blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                             }
                                         }

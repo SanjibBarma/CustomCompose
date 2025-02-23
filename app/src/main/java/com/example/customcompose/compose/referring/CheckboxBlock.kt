@@ -46,7 +46,6 @@ fun CheckboxBlock(
     val isSkippable = block.skip?.id != "-1"
 
     val context = LocalContext.current
-    val sharedPrefHelper = remember { SharedPrefHelper(context) }
 
     val selectedOptions = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
     val answer = selectedOptions.value.joinToString(",")
@@ -96,12 +95,6 @@ fun CheckboxBlock(
                                 } else {
                                     selectedOptions.value - option.value
                                 }
-
-//                                if (isChecked) {
-//                                    sharedPrefHelper.saveItem(option.value)
-//                                }else{
-//                                    sharedPrefHelper.removeItem(option.value)
-//                                }
                             },
                             enabled = isActiveGroup
                         )
@@ -125,14 +118,13 @@ fun CheckboxBlock(
                                 answer = "",
                                 id = currentBlockId
                             )
+                            block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                             block.skip?.group_no?.let { groupId ->
                                 block.skip.id.let { blockId ->
                                     if (destination == "mainSurvey") {
-                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
                                         blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                     }else{
-                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                     }
                                 }
@@ -162,18 +154,13 @@ fun CheckboxBlock(
                         if (answer.isEmpty()){
                             Toasty.warning(context, "Must select any one.", Toasty.LENGTH_SHORT).show()
                         }else{
-//                            val gson = Gson()
-//                            val comboJson = gson.toJson(selectedOptions)
-//                            val setJson = gson.toJson(sharedPrefHelper.getSet())
-//                            Log.d("CheckboxBlockItemSet: ", comboJson)
-//                            Log.d("CheckboxBlockItemShared: ", setJson)
+                            block.surveyHistoryModel = listOf(surveyHistoryModel)
+
                             block.referTo?.group_no?.let { groupId ->
                                 block.referTo.id?.let { nextBlockId ->
                                     if (destination == "mainSurvey") {
-                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
                                         blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
                                     }else{
-                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                         blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                     }
                                 }

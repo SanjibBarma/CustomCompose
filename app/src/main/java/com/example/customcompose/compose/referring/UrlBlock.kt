@@ -105,14 +105,13 @@ fun UrlBlock(
                             answer = "",
                             id = currentBlockId
                         )
+                        block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                         block.skip?.id?.let { blockId ->
                             block.skip.group_no.let { groupId ->
                                 if (destination == "mainSurvey") {
-                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                                 } else {
-                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }
                             }
@@ -161,15 +160,13 @@ fun WebViewDialog(
                 answer = "Yes",
                 id = currentBlockId
             )
+            block.surveyHistoryModel = listOf(surveyHistoryModel)
 
             block.options?.get(0)?.referTo?.id?.let { blockId ->
                 block.options[0].referTo?.group_no?.let { groupId ->
-
                     if (destination == "mainSurvey") {
-                        block.surveyHistoryModel = listOf(surveyHistoryModel)
                         blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                     }else{
-                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                     }
                 }
@@ -209,15 +206,13 @@ fun WebViewDialog(
                         answer = "Yes",
                         id = currentBlockId
                     )
+                    block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                     block.options?.get(0)?.referTo?.id?.let { blockId ->
                         block.options[0].referTo?.group_no?.let { groupId ->
-
                             if (destination == "mainSurvey") {
-                                block.surveyHistoryModel = listOf(surveyHistoryModel)
                                 blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
                             }else{
-                                blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                 blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                             }
                         }

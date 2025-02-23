@@ -208,14 +208,13 @@ fun ImageCaptureBlock(
                                 answer = capturedImageUri!!.lastPathSegment ?: "",
                                 id = currentBlockId
                             )
+                            block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                             block.referTo?.id?.let { refBlockId ->
                                 block.referTo.group_no?.let { groupId ->
                                     if (destination == "mainSurvey") {
-                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
                                         blockListViewModel.addBlockToTheSurveyFlow(refBlockId, groupId)
                                     } else {
-                                        blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                         blockListViewModel.addBlockToTheCheckList(refBlockId, groupId)
                                     }
                                 }
@@ -235,14 +234,13 @@ fun ImageCaptureBlock(
                             answer = "",
                             id = currentBlockId
                         )
+                        block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                         block.skip?.id?.let { skipBlockId ->
                             block.skip.group_no?.let { groupId ->
                                 if (destination == "mainSurvey") {
-                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
                                     blockListViewModel.addBlockToTheSurveyFlow(skipBlockId, groupId)
                                 } else {
-                                    blockListViewModel.saveHistoryForChecklist(currentBlockId, surveyHistoryModel)
                                     blockListViewModel.addBlockToTheCheckList(skipBlockId, groupId)
                                 }
                             }
