@@ -41,6 +41,7 @@ class AudioRecorderService : Service() {
     }
 
     private fun startRecording() {
+        println("Service Started")
         val cacheDir = cacheDir
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         outputFile = File(cacheDir, "$timestamp.mp3")

@@ -28,11 +28,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.ui.theme.OtpVerify
 import com.example.customcompose.viewmodel.BlockListViewModel
 import es.dmoral.toasty.Toasty
 
@@ -149,8 +151,9 @@ fun OTPBlock(
             ) {
                 Text(
                     text = "Verified successfully.",
-                    color = Color.Green,
+                    color = OtpVerify,
                     style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(8.dp)
                 )
             }

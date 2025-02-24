@@ -116,7 +116,7 @@ fun NonRefProductList(
                             modifier = Modifier.height(60.dp).width(100.dp).background(Color.White).padding(top = 8.dp)
                         )
                     } else {
-                        Icon(
+                        Image(
                             painter = painterResource(id = R.drawable.ic_brand_image),
                             contentDescription = "Default Icon",
                             modifier = Modifier.height(60.dp).width(100.dp).background(Color.White).padding(top = 8.dp)

@@ -84,16 +84,15 @@ fun BrandBlock(
                 items(options) { option ->
 
                     val fileName = option.value.substringAfterLast("/")
-                    val imageFile = File(context.cacheDir, fileName) // 🔹 Use only filename
+                    val imageFile = File(context.cacheDir, fileName)
 
-                    val imageBitmap = remember(option.value) { // Cache bitmap
+                    val imageBitmap = remember(option.value) {
                         if (imageFile.exists()) {
                             BitmapFactory.decodeFile(imageFile.absolutePath)?.asImageBitmap()
                         } else null
                     }
 
-                    val backgroundColor =
-                        if (selectedItem == option) ProductSelected else Color.White
+                    val backgroundColor = if (selectedItem == option) ProductSelected else Color.White
 
                     Column(
                         modifier = Modifier

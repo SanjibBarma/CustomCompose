@@ -1,8 +1,11 @@
 package com.example.customcompose.compose.referring
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -21,8 +25,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -40,14 +44,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.customcompose.R
 import com.example.customcompose.compose.CheckGroupOrBlock
 import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.launch
 
@@ -68,7 +75,8 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
     val answer = selectedOptions.value.joinToString(",")
     val question = block.question?.slug ?: ""
     val selectedSingleOption = remember { mutableStateOf("") }
-
+    val isSelectionLocked = selectedOptions.value.size == block.options?.size
+    val checkListHistory = blockListViewModel.checkListHistory.collectAsState()
 
     Card(
         modifier = Modifier
@@ -96,28 +104,14 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.background(if (isActiveGroup) Color.White else Color.LightGray)
-//                            .clickable {
-//                                selectedOptions.value = if (isSelected) {
-//                                    selectedOptions.value + option.value
-//                                } else {
-//                                    selectedOptions.value - option.value
-//                                }
-//
-//                                if(isSelected){
-//                                    showDialog.value = true
-//                                }
-//                            }
-                    ) {
-                        Checkbox(
-                            checked = isSelected,
-                            onCheckedChange = { isChecked ->
-                                selectedOptions.value = if (isChecked) {
+                            .clickable {
+                                selectedOptions.value = if (isSelected) {
                                     selectedOptions.value + option.value
                                 } else {
                                     selectedOptions.value - option.value
                                 }
 
-                                if (isChecked) {
+                                if (isSelected) {
                                     checkListBlockId = option.referTo?.id ?: ""
                                     checkListGroupId = option.referTo?.group_no ?: ""
                                     selectedSingleOption.value = option.value
@@ -130,9 +124,58 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
                                 }else{
                                     sharedPrefHelper.removeItem(option.value)
                                 }
-                            },
-                            enabled = isActiveGroup
-                        )
+                            }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clickable {
+                                    if (isSelectionLocked) {
+                                        Toasty.warning(context, "You have completed maximum number of checklist!", Toasty.LENGTH_SHORT).show()
+                                    } else {
+                                        val isChecked = !isSelected
+                                        selectedOptions.value = if (isChecked) {
+                                            selectedOptions.value + option.value
+                                        } else {
+                                            selectedOptions.value - option.value
+                                        }
+
+                                        if (isChecked) {
+                                            checkListBlockId = option.referTo?.id ?: ""
+                                            checkListGroupId = option.referTo?.group_no ?: ""
+                                            selectedSingleOption.value = option.value
+
+                                            if (!sharedPrefHelper.existsItem(option.value)) {
+                                                showDialog.value = true
+                                                blockListViewModel.clearCheckList()
+                                                blockListViewModel.addBlockToTheCheckList(checkListBlockId, checkListGroupId)
+                                            }
+                                        } else {
+                                            sharedPrefHelper.removeItem(option.value)
+
+                                            val index = block.options?.indexOf(option) ?: -1
+                                            if (index != -1) {
+                                                blockListViewModel.removeHistoryByIndex(index)
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(16.dp)
+                        ) {
+                            val drawableResource = if (isSelected) {
+                                R.drawable.ic_checked
+                            } else {
+                                R.drawable.ic_non_checked
+                            }
+
+                            Icon(
+                                painter = painterResource(id = drawableResource),
+                                contentDescription = "Custom Check",
+                                modifier = Modifier
+                                    .size(24.dp),
+                                tint = if (isSelected) Color.Green else Color.Gray
+                            )
+                        }
+
                         Text(option.value)
                     }
                 }
@@ -143,14 +186,6 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
                     selectedOption = selectedSingleOption.value,
                     blockListViewModel = blockListViewModel,
                     onClose = {
-                        val surveyHistoryModel = listOf(
-                            SurveyHistoryModel(
-                                question = question,
-                                answer = answer,
-                                id = currentBlockId
-                            )
-                        )
-
                         showDialog.value = false
                     },
                     onDismiss = {
@@ -200,18 +235,63 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
 
                 Button(
                     onClick = {
-                        if (selectedOptions.value.size != block.options?.size){
-                            Toasty.warning(context,"Please fill all the box", Toasty.LENGTH_SHORT).show()
+
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = question,
+                            answer = answer,
+                            id = currentBlockId
+                        )
+
+                        if (block.validations != null && block.validations.partial){
+                            if (selectedOptions.value.size == block.validations.min!!){
+                                block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                if (checkListHistory.value.isNotEmpty()){
+                                    for (indexHistoryList in checkListHistory.value){
+                                        for (indexHistory in indexHistoryList){
+                                            val checkListHistory = SurveyHistoryModel(
+                                                question = indexHistory.question,
+                                                answer = indexHistory.answer,
+                                                id = indexHistory.id
+                                            )
+
+                                            block.surveyHistoryModel = block.surveyHistoryModel + checkListHistory
+                                        }
+                                    }
+                                }
+
+                                block.referTo?.group_no?.let { groupId ->
+                                    block.referTo.id?.let { nextBlockId ->
+                                        if (destination == "mainSurvey") {
+                                            blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                        }else{
+                                            blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                        }
+                                    }
+                                }
+                            }else{
+                                Toasty.warning(context, "Minimum ${block.validations.min} fields are required!", Toasty.LENGTH_SHORT).show()
+                            }
+                        }else if (selectedOptions.value.size != block.options?.size){
+                            Toasty.warning(context,"All task fields are required", Toasty.LENGTH_SHORT).show()
                         }else{
-                            val surveyHistoryModel = SurveyHistoryModel(
-                                question = question,
-                                answer = answer,
-                                id = currentBlockId
-                            )
                             block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                             block.referTo?.group_no?.let { groupId ->
                                 block.referTo.id?.let { nextBlockId ->
+                                    if (checkListHistory.value.isNotEmpty()){
+                                        for (indexHistoryList in checkListHistory.value){
+                                            for (indexHistory in indexHistoryList){
+                                                val checkListHistory = SurveyHistoryModel(
+                                                    question = indexHistory.question,
+                                                    answer = indexHistory.answer,
+                                                    id = indexHistory.id
+                                                )
+
+                                                block.surveyHistoryModel = block.surveyHistoryModel + checkListHistory
+                                            }
+                                        }
+                                    }
+
                                     if (destination == "mainSurvey") {
                                         blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
                                     }else{
@@ -299,6 +379,23 @@ fun CheckListDialog(
                     }
 
                     if (isCheckList) {
+
+                        val comboHistory = mutableListOf<SurveyHistoryModel>()
+                        for (surveyBlockHistory in blockListViewModel.checkListBlockListItem.value) {
+                            for (surveyHistory in surveyBlockHistory.surveyHistoryModel) {
+                                if (surveyHistory != null) {
+                                    comboHistory.add(
+                                        SurveyHistoryModel(
+                                            question = surveyHistory.question,
+                                            answer = surveyHistory.answer,
+                                            id = surveyHistory.id
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        blockListViewModel.addCheckListHistory(comboHistory)
+
                         onClose()
                         blockListViewModel.clearCheckList()
                         blockListViewModel.updateCheckList(false)

@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.compose.group.NonReferringGroup
 import com.example.customcompose.compose.group.NumberValidationGroup
+import com.example.customcompose.compose.referring.AudioServiceBlock
 import com.example.customcompose.compose.referring.BrandBlock
 import com.example.customcompose.compose.referring.CheckListBlock
 import com.example.customcompose.compose.referring.CheckboxBlock
@@ -48,7 +49,8 @@ fun CheckGroupOrBlock(
 
     Column{
         when (surveyBlock.type) {
-//                "audio_start" -> EditTextBlock(surveyBlock.block, blockListViewModel, isActiveGroup, destination)
+//            "audio_start" -> AudioServiceBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
+//            "audio_end" -> AudioServiceBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "textInput" -> EditTextBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "terms" -> TermsAgreementBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "otp" -> OTPBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)

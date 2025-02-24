@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.ui.theme.ProductSelected
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
@@ -72,7 +73,7 @@ fun MultipleChoiceBlock(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                            .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                            .border(1.dp, if (selectedOption == option.value) Color.Black else Color.Gray, RoundedCornerShape(8.dp))
                             .clickable(enabled = isActiveGroup) {
                                 selectedOption = option.value
 
@@ -94,7 +95,7 @@ fun MultipleChoiceBlock(
                                 }
                             }
                             .background(
-                                if (selectedOption == option.value) Color.LightGray else Color.Transparent
+                                if (selectedOption == option.value) ProductSelected else Color.White
                             )
                     ) {
                         Row(
@@ -149,7 +150,7 @@ fun MultipleChoiceBlock(
                                 modifier = Modifier
                                     .padding(4.dp)
                                     .size(80.dp)
-                                    .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                                    .border(1.dp, if (selectedOption == option.value) Color.Black else Color.Gray, RoundedCornerShape(8.dp))
                                     .clickable(enabled = isActiveGroup) {
                                         selectedOption = option.value
 
@@ -171,7 +172,7 @@ fun MultipleChoiceBlock(
                                         }
                                     }
                                     .background(
-                                        if (selectedOption == option.value) Color.LightGray else Color.Transparent
+                                        if (selectedOption == option.value) ProductSelected else Color.White
                                     ),  // Change background if selected
                                 contentAlignment = Alignment.Center
                             ) {

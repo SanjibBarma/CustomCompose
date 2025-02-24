@@ -134,7 +134,7 @@ fun InteractiveGalleryBlock(
 
                     Box(
                         modifier = Modifier
-                            .border(1.dp, if (isSelected) Color.Blue else Color.Transparent, RoundedCornerShape(8.dp))
+                            .border(1.dp, if (isSelected) Color.Black else Color.Transparent, RoundedCornerShape(8.dp))
                     ) {
                         Column(
                             modifier = Modifier
@@ -180,7 +180,7 @@ fun InteractiveGalleryBlock(
                                             .background(Color.White)
                                     )
                                 }else{
-                                    Icon(
+                                    Image(
                                         painter = painterResource(id = R.drawable.tom_jerry),
                                         contentDescription = "Default Icon",
                                         modifier = Modifier
@@ -197,13 +197,12 @@ fun InteractiveGalleryBlock(
                                             .background(Color.Black.copy(alpha = 0.4f))
                                             .clip(RoundedCornerShape(8.dp))
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CheckCircle,
-                                            contentDescription = "Selected",
-                                            tint = Color.White,
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                        )
+//                                        Image(
+//                                            imageVector = Icons.Default.CheckCircle,
+//                                            contentDescription = "Selected",
+//                                            modifier = Modifier
+//                                                .align(Alignment.Center)
+//                                        )
                                     }
                                 }
                             }
