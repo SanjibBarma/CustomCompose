@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.helper.AudioRecorderService
+import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.model.SurveyHistoryModel
@@ -12,13 +13,15 @@ import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class BlockListViewModel(
     private val context: Context,
     private val surveyDataModelList: List<SurveyDataModel>
 ) : ViewModel() {
+
+    private val sharedPrefHelper =  SharedPrefHelper(context)
+
     private val _surveyBlockListItem = MutableStateFlow<List<Block>>(emptyList())
     val surveyBlockListItem = _surveyBlockListItem.asStateFlow()
 
@@ -26,8 +29,31 @@ class BlockListViewModel(
     val isSubmitted = _isSubmitted.asStateFlow()
 
     fun addBlockToTheSurveyFlow(blockId: String, groupId: String) {
-        println("blockId $blockId groupId: $groupId")
 
+        val group = surveyDataModelList.find { it.group == groupId }
+        val block = group?.blocks?.find { it.id == blockId }
+
+        if (group?.type == "non-referring" || group?.type == "numbervalidation") {
+            loadCurrentGrouporBlock(blockId, groupId)
+        }else{
+            if (groupId != sharedPrefHelper.getPreviousGroupId()){
+                //            println("checkJumpingLogic    blockId $blockId groupId: $groupId")
+                val group = surveyDataModelList.find { it.group == sharedPrefHelper.getPreviousGroupId() }
+
+                val currentGroupId = group?.jumping_logic?.get(0)?.group_no
+                val currentBlockId = group?.jumping_logic?.get(0)?.id
+
+                currentBlockId?.let { currentGroupId?.let { it1 -> loadCurrentGrouporBlock(it, it1) } }
+                //sharedPrefHelper.savePreviousGroupId(groupId)
+            }else{
+                loadCurrentGrouporBlock(blockId, groupId)
+                println("checkJumpingLogic    blockId $blockId groupId: $groupId")
+                println("checkJumpingLogicGroupId    ${sharedPrefHelper.getPreviousGroupId()}")
+            }
+        }
+    }
+
+    private fun loadCurrentGrouporBlock(blockId: String, groupId: String) {
         viewModelScope.launch {
             if (blockId == "submit" && groupId == "submit") {
                 _isSubmitted.value = true
@@ -79,6 +105,9 @@ class BlockListViewModel(
 
 
             }
+        }
+        if (groupId != "submit"){
+            sharedPrefHelper.savePreviousGroupId(groupId)
         }
     }
 
@@ -232,9 +261,23 @@ class BlockListViewModel(
     }
 
 
-//    private val _checkListHistory = MutableStateFlow<List<SurveyHistoryModel>>(emptyList())
-//    val checkListHistory = _checkListHistory.asStateFlow()
-//
+    private val _checkListHistory = MutableStateFlow<List<List<SurveyHistoryModel>>>(emptyList())
+    val checkListHistory = _checkListHistory.asStateFlow()
+
+    fun addCheckListHistory(historyList: List<SurveyHistoryModel>){
+        viewModelScope.launch {
+            _checkListHistory.value = _checkListHistory.value.toMutableList().apply { add(historyList) }
+        }
+    }
+
+    fun removeHistoryByIndex(index: Int) {
+        if (index >= 0 && index < checkListHistory.value.size) {
+            val updatedHistory = checkListHistory.value.toMutableList()
+            updatedHistory.removeAt(index)
+            _checkListHistory.value = updatedHistory
+        }
+    }
+
 //    fun saveHistoryForChecklist(blockId: String, history: SurveyHistoryModel) {
 //        viewModelScope.launch {
 //            _checkListHistory.update { currentList ->

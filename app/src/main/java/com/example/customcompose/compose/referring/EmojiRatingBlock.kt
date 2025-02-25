@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.ui.theme.ProductSelected
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
@@ -157,7 +158,7 @@ fun EmojiBox(
     onSelect: () -> Unit,
     isActiveGroup: Boolean
 ) {
-    val backgroundColor = if (isSelected) Color.LightGray else Color.White
+    val backgroundColor = if (isSelected) ProductSelected else Color.White
     val borderColor = if (isSelected) Color.Black else Color.Transparent
 
     Card(

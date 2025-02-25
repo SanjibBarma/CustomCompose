@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.ui.theme.StatRating
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
@@ -133,7 +134,7 @@ fun Star(isSelected: Boolean, onClick: () -> Unit, isActiveGroup: Boolean) {
     } else {
         R.drawable.ic_star_off
     }
-    val starColor = if (isSelected) Color.Yellow else Color.Gray
+    val starColor = if (isSelected) StatRating else Color.Gray
 
     IconButton(
         onClick = onClick,

@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken
 
 class SharedPrefHelper(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+    private val  PREVIOUS_GROUP = "PREVIOUS_GROUP";
 
     fun saveItem(newItem: String) {
         val existingSet = getSet().toMutableSet()
@@ -36,5 +37,13 @@ class SharedPrefHelper(context: Context) {
 
     fun clearCheckList() {
         prefs.edit().remove("checkList").apply()
+    }
+
+    fun savePreviousGroupId(value: String) {
+        prefs.edit().putString(PREVIOUS_GROUP, value).apply()
+    }
+
+    fun getPreviousGroupId(): String? {
+        return prefs.getString(PREVIOUS_GROUP, null)
     }
 }

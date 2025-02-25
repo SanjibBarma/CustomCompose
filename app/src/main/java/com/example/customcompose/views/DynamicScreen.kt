@@ -63,8 +63,10 @@ fun DynamicScreen(
             if (surveyViewListItem.isEmpty()) {
                 Button(
                     onClick = {
+//                        sharedPrefHelper.savePreviousGroupId("")
                         sharedPrefHelper.clearCheckList()
                         blockListViewModel.addBlockToTheSurveyFlow(surveyDataModelList[0].blocks[0].id!!, surveyDataModelList[0].group)
+                        sharedPrefHelper.savePreviousGroupId(surveyDataModelList[0].group)
                     },
                     modifier = Modifier.fillMaxWidth().padding(top = 100.dp)
                 ) {
