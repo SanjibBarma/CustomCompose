@@ -88,7 +88,7 @@ fun UrlBlock(
                 Text(
                     text = stringUrl,
                     style = TextStyle(color = Color.Blue),
-                    modifier = Modifier.clickable {
+                    modifier = Modifier.clickable(enabled = isActiveGroup) {
                         showDialog = true
                     }
                 )

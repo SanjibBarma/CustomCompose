@@ -1,15 +1,13 @@
 package com.example.customcompose.helper
 
-import android.annotation.SuppressLint
 import android.app.*
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
 import android.media.MediaRecorder
 import android.os.Build
-import android.os.Environment
 import android.os.IBinder
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import com.example.customcompose.MainActivity
 import com.example.customcompose.R
 import java.io.File
@@ -21,23 +19,21 @@ class AudioRecorderService : Service() {
     private var recorder: MediaRecorder? = null
     private var outputFile: File? = null
 
-    @SuppressLint("NotificationId0")
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        val notification = createNotification()
+    }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                0,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-            )
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val notification = createNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
         } else {
-            startForeground(0, notification)
+            startForeground(1, notification)
         }
 
         startRecording()
+        return START_STICKY
     }
 
     private fun startRecording() {
@@ -62,6 +58,12 @@ class AudioRecorderService : Service() {
         }
     }
 
+    override fun onDestroy() {
+        stopRecording()
+        stopForeground(true)
+        super.onDestroy()
+    }
+
     private fun stopRecording() {
         recorder?.apply {
             try {
@@ -76,11 +78,6 @@ class AudioRecorderService : Service() {
         recorder = null
     }
 
-    override fun onDestroy() {
-        stopRecording()
-        super.onDestroy()
-    }
-
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotificationChannel() {
@@ -90,8 +87,9 @@ class AudioRecorderService : Service() {
                 "Audio Recorder",
                 NotificationManager.IMPORTANCE_LOW
             )
+
             val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+            manager?.createNotificationChannel(channel)
         }
     }
 
@@ -109,7 +107,13 @@ class AudioRecorderService : Service() {
                 .setContentIntent(pendingIntent)
                 .build()
         } else {
-            TODO("VERSION.SDK_INT < O")
+            NotificationCompat.Builder(this)
+                .setContentTitle("Audio Recording")
+                .setContentText("Recording in progress...")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentIntent(pendingIntent)
+                .build()
         }
     }
 }
+

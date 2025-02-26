@@ -1,21 +1,11 @@
-package com.example.customcompose.compose
+package com.example.customcompose.compose.group
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import com.example.customcompose.compose.group.NonReferringGroup
-import com.example.customcompose.compose.group.NumberValidationGroup
-import com.example.customcompose.compose.referring.AudioServiceBlock
 import com.example.customcompose.compose.referring.BrandBlock
 import com.example.customcompose.compose.referring.CheckListBlock
 import com.example.customcompose.compose.referring.CheckboxBlock
@@ -23,9 +13,12 @@ import com.example.customcompose.compose.referring.DatePickerBlock
 import com.example.customcompose.compose.referring.DropdownBlock
 import com.example.customcompose.compose.referring.EditTextBlock
 import com.example.customcompose.compose.referring.EmojiRatingBlock
+import com.example.customcompose.compose.referring.GameBlock
 import com.example.customcompose.compose.referring.ImageBlock
 import com.example.customcompose.compose.referring.ImageCaptureBlock
+import com.example.customcompose.compose.referring.InteractiveAvBlock
 import com.example.customcompose.compose.referring.InteractiveGalleryBlock
+import com.example.customcompose.compose.referring.LookupBlock
 import com.example.customcompose.compose.referring.MultipleChoiceBlock
 import com.example.customcompose.compose.referring.NumberInputBlock
 import com.example.customcompose.compose.referring.OTPBlock
@@ -68,6 +61,9 @@ fun CheckGroupOrBlock(
             "product" -> BrandBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "interactive_gallery" -> InteractiveGalleryBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "image" -> ImageBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
+            "lookup" -> LookupBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
+            "game" -> GameBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
+            "interactive_av" -> InteractiveAvBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "non-referring" -> NonReferringGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination)
             "numbervalidation" -> NumberValidationGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination)
 

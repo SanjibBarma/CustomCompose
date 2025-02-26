@@ -116,10 +116,10 @@ fun ImageCaptureBlock(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.LightGray.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                    .clickable { showCamera = true }
+                    .clickable (enabled = isActiveGroup){ showCamera = true }
                     .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                     .height(200.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 val bitmap = remember(capturedImageUri) {
                     capturedImageUri?.let { uri ->
@@ -164,7 +164,7 @@ fun ImageCaptureBlock(
                     Image(
                         bitmap = it.asImageBitmap(),
                         contentDescription = "Captured Image",
-                        modifier = Modifier.fillMaxSize().clickable { showCamera = true },
+                        modifier = Modifier.fillMaxSize().clickable(enabled = isActiveGroup) { showCamera = true },
                         contentScale = ContentScale.Crop
                     )
                 } ?: run {
@@ -280,10 +280,7 @@ fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable () -> Un
 }
 
 @Composable
-fun CustomCameraPreview(
-    onCaptureClick: (Uri) -> Unit,
-    photoFile: File?
-) {
+fun CustomCameraPreview(onCaptureClick: (Uri) -> Unit, photoFile: File?) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val activity = context as? Activity
@@ -476,20 +473,17 @@ fun ImagePreview(imageUri: Uri, onRetake: () -> Unit, onForward: () -> Unit) {
         }
     }
 }
-
 fun rotateImage(bitmap: Bitmap, angle: Float): Bitmap {
     val matrix = Matrix()
     matrix.postRotate(angle)
     return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
 }
-
 private fun createImageFile(context: Context): File? {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val fileName = "IMG_$timeStamp.jpg"
     val storageDir: File? = context.cacheDir
     return File(storageDir, fileName)
 }
-
 fun saveCapturedImageToCache(context: Context, uri: Uri) {
     val inputStream = context.contentResolver.openInputStream(uri)
     val bitmap = BitmapFactory.decodeStream(inputStream)

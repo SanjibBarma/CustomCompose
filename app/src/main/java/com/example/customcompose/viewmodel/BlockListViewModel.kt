@@ -2,7 +2,9 @@ package com.example.customcompose.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
+import androidx.core.content.ContextCompat.startForegroundService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.helper.AudioRecorderService
@@ -23,13 +25,14 @@ class BlockListViewModel(
 ) : ViewModel() {
 
     private val sharedPrefHelper =  SharedPrefHelper(context)
-
     private val _surveyBlockListItem = MutableStateFlow<List<Block>>(emptyList())
     val surveyBlockListItem = _surveyBlockListItem.asStateFlow()
 
     private val _isSubmitted = MutableStateFlow(false)
     val isSubmitted = _isSubmitted.asStateFlow()
     val gson = Gson()
+    var jumpMatchCount = 0;
+
 
     fun addBlockToTheSurveyFlow(blockId: String, groupId: String) {
         println("initial  blockId $blockId groupId: $groupId")
@@ -42,37 +45,66 @@ class BlockListViewModel(
             _isSubmitted.value = false
             if (curGroup?.type == "non-referring" || curGroup?.type == "numbervalidation") {
                 sharedPrefHelper.savePreviousGroupId(groupId)
-                loadCurrentGrouporBlock(blockId, groupId)
+                loadCurrentGroupOrBlock(blockId, groupId)
                 println("print_log: 1")
             }else{
                 if (sharedPrefHelper.getPreviousGroupId().equals("")){
                     sharedPrefHelper.savePreviousGroupId(groupId)
-                    loadCurrentGrouporBlock(blockId, groupId)
+                    loadCurrentGroupOrBlock(blockId, groupId)
                     println("print_log: 2")
                 }else{
                     if (sharedPrefHelper.getPreviousGroupId() != groupId){
                         println("print_log: 3 ${sharedPrefHelper.getPreviousGroupId()}")
-
                         val previousGroup = surveyDataModelList.find { it.group == sharedPrefHelper.getPreviousGroupId() }
-                        val comboJson = gson.toJson(previousGroup)
-                        Log.d("SURVEY_COMBO_DATA", comboJson)
 
+                        if (previousGroup != null) {
+                            for (jumpingLogic in previousGroup.jumping_logic){
+                                if (jumpingLogic.conditions != null && jumpingLogic.conditions.size > 0){
+                                    jumpMatchCount = 0
+                                    for (surveyModel in _surveyBlockListItem.value){
+                                        for (surveyHistory in surveyModel.surveyHistoryModel){
+                                            if (surveyHistory != null && !surveyHistory.id.isNullOrEmpty()){
+                                                for (jumpCondition in jumpingLogic.conditions){
+                                                    if (surveyHistory.id == jumpCondition.id && surveyHistory.answer == jumpCondition.answer){
+                                                        jumpMatchCount++
+                                                        break
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
 
-
-                        val jumpGroupId = previousGroup?.jumping_logic?.get(0)?.group_no
-                        val jumpBlockId = previousGroup?.jumping_logic?.get(0)?.id
-                        println("checkJumpingLogic    blockId $jumpBlockId groupId: $jumpGroupId")
-
-                        jumpBlockId?.let { blcId ->
-                            jumpGroupId?.let { grpId ->
-                                sharedPrefHelper.savePreviousGroupId(grpId)
-                                loadCurrentGrouporBlock(blcId, grpId)
+                                if (jumpingLogic.conditions.size == jumpMatchCount){
+                                    if (jumpingLogic.id == "submit"){
+                                        _isSubmitted.value = false
+                                        println("show_submit")
+                                        //match with conditions
+                                    }else{
+                                        _isSubmitted.value = false
+                                        sharedPrefHelper.savePreviousGroupId(jumpingLogic.group_no)
+                                        loadCurrentGroupOrBlock(jumpingLogic.id, jumpingLogic.group_no)
+                                    }
+                                    return
+                                }
                             }
                         }
+
+
+//                        val jumpGroupId = previousGroup?.jumping_logic?.get(0)?.group_no
+//                        val jumpBlockId = previousGroup?.jumping_logic?.get(0)?.id
+//                        println("checkJumpingLogic    blockId $jumpBlockId groupId: $jumpGroupId")
+//
+//                        jumpBlockId?.let { blcId ->
+//                            jumpGroupId?.let { grpId ->
+//                                sharedPrefHelper.savePreviousGroupId(grpId)
+//                                loadCurrentGroupOrBlock(blcId, grpId)
+//                            }
+//                        }
                     }else{
                         println("print_log: 4")
                         sharedPrefHelper.savePreviousGroupId(groupId)
-                        loadCurrentGrouporBlock(blockId, groupId)
+                        loadCurrentGroupOrBlock(blockId, groupId)
                     }
                 }
             }
@@ -80,7 +112,7 @@ class BlockListViewModel(
         //loadCurrentGrouporBlock(blockId, groupId)
     }
 
-    private fun loadCurrentGrouporBlock(blockId: String, groupId: String) {
+    private fun loadCurrentGroupOrBlock(blockId: String, groupId: String) {
         viewModelScope.launch {
             val group = surveyDataModelList.find { it.group == groupId }
             val block = group?.blocks?.find { it.id == blockId }
@@ -107,14 +139,15 @@ class BlockListViewModel(
                     startAudioService(block.referTo?.id, block.referTo?.group_no)
                 } else if (block.type == "audio_end") {
                     stopAudioService(block.referTo?.id, block.referTo?.group_no)
-                } else if (block.type == "lookup") {
+                } else if (block.type == "lookup" && block.validations?.invisible!!) {
                     lookupApiCall(block.referTo?.id, block.referTo?.group_no)
                 } else {
                     if (group != null && block != null) {
                         val existingBlock = _surveyBlockListItem.value.find { it.id == blockId}
-
+                        val comboJson = gson.toJson(existingBlock)
+                        Log.d("existingBlock_Data", comboJson)
                         if (existingBlock != null) {
-                            val updatedList = _surveyBlockListItem.value.takeWhile { it != existingBlock } /*+ existingBlock*/
+                            val updatedList = _surveyBlockListItem.value.takeWhile { it != existingBlock } + existingBlock
                             _surveyBlockListItem.value = updatedList
                             println("Block already exists. Cleared items after position of ${block.id}")
                         } else {
@@ -138,7 +171,12 @@ class BlockListViewModel(
 
     private fun startAudioService(blockId: String?, groupId: String?) {
         val intent = Intent(context, AudioRecorderService::class.java)
-        context.startService(intent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+
         if (blockId != null && groupId != null) {
             viewModelScope.launch {
                 addBlockToTheSurveyFlow(blockId, groupId)

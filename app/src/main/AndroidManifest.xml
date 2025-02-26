@@ -2,6 +2,28 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <queries>
+        <package android:name="com.unity3d.player.UnityPlayer" />
+    </queries>
+    <queries>
+        <package android:name="com.royals.royals_lepp_ar" />
+    </queries>
+    <queries>
+        <package android:name="ltd.v2.game1" />
+    </queries>
+    <queries>
+        <package android:name="ltd.v2.game2" />
+    </queries>
+    <queries>
+        <package android:name="ltd.v2.game3" />
+    </queries>
+    <queries>
+        <package android:name="com.NvisioSolutionsLtd.BATRoyalsPUG2024" />
+    </queries>
+    <queries>
+        <package android:name="com.NvisioSolutionsLimited.LSPassionPUG2025" />
+    </queries>
+
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -13,6 +35,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
 
     <application
         android:allowBackup="true"
@@ -50,7 +73,18 @@
             android:foregroundServiceType="microphone"
             android:exported="false"
             tools:targetApi="s"
-            tools:ignore="ForegroundServicePermission" />
+            android:stopWithTask="true"
+            tools:ignore="ForegroundServicePermission"
+            android:permission="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+
+        <receiver android:name=".helper.GameBroadcastReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.example.customcompose" />
+            </intent-filter>
+        </receiver>
+
+
     </application>
 
 </manifest>

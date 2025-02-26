@@ -1,0 +1,21 @@
+package com.example.customcompose.helper
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.util.Log
+import android.widget.Toast
+
+class GameBroadcastReceiver() : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val startTime = intent.getStringExtra("start_time")
+        val endTime = intent.getStringExtra("end_time")
+        val gameStatus = intent.getBooleanExtra("status", false)
+
+        Log.d("GameBroadcastReceiver", "Received Broadcast: Start Time: $startTime, End Time: $endTime, Status: $gameStatus")
+
+        if (!gameStatus){
+            Toast.makeText(context, "Received: Start Time: $startTime, End Time: $endTime, Status: $gameStatus", Toast.LENGTH_LONG).show()
+        }
+    }
+}

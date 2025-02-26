@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.customcompose.R
+import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.Option
 import com.example.customcompose.model.SurveyHistoryModel
@@ -40,13 +41,11 @@ fun NonRefProductList(
 ) {
     val isRequired = block.required
     val existingData = blockListViewModel.getDataFromIndex(position, index)
-
-    // If existing data is present, initialize selectedBrand and selectedItem with the saved answer.
+    val context = LocalContext.current
     var selectedBrand by remember { mutableStateOf(existingData?.answer ?: "") }
-
+    val sharedPrefHelper =  SharedPrefHelper(context)
     val question = block.question?.slug ?: ""
     val options = block.options ?: emptyList()
-    val context = LocalContext.current
     val blockId = block.id ?: ""
 
     var selectedItem by remember {
@@ -95,14 +94,16 @@ fun NonRefProductList(
                             selectedBrand = option.slug!!
                             selectedItem = option
 
-                            // Save the new selection
                             val surveyHistoryModel = SurveyHistoryModel(
                                 question = question,
                                 answer = selectedBrand,
                                 id = blockId
                             )
-
                             blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
+
+                            if (question == "Primary Brand"){
+                                sharedPrefHelper.setPrimaryBrandName(selectedBrand)
+                            }
                         }
                         .border(1.dp, color = Color.Gray, RoundedCornerShape(8.dp)),
                     horizontalAlignment = Alignment.CenterHorizontally

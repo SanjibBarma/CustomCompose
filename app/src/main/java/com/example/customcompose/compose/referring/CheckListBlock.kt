@@ -1,6 +1,5 @@
 package com.example.customcompose.compose.referring
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,22 +43,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.customcompose.R
-import com.example.customcompose.compose.CheckGroupOrBlock
+import com.example.customcompose.compose.group.CheckGroupOrBlock
 import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
-import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.launch
 
 @Composable
-fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiveGroup: Boolean, destination: String) {
+fun CheckListBlock(
+    block: Block,
+    blockListViewModel: BlockListViewModel,
+    isActiveGroup: Boolean,
+    destination: String
+) {
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
     val context = LocalContext.current
@@ -104,31 +108,41 @@ fun CheckListBlock(block: Block, blockListViewModel: BlockListViewModel, isActiv
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.background(if (isActiveGroup) Color.White else Color.LightGray)
-                            .clickable {
-                                selectedOptions.value = if (isSelected) {
-                                    selectedOptions.value + option.value
+                            .clickable (enabled = isActiveGroup){
+                                if (isSelectionLocked) {
+                                    Toasty.warning(context, "You have completed maximum number of checklist!", Toasty.LENGTH_SHORT).show()
                                 } else {
-                                    selectedOptions.value - option.value
-                                }
-
-                                if (isSelected) {
-                                    checkListBlockId = option.referTo?.id ?: ""
-                                    checkListGroupId = option.referTo?.group_no ?: ""
-                                    selectedSingleOption.value = option.value
-
-                                    if (!sharedPrefHelper.existsItem(option.value)){
-                                        showDialog.value = true
-                                        blockListViewModel.clearCheckList()
-                                        blockListViewModel.addBlockToTheCheckList(checkListBlockId, checkListGroupId)
+                                    val isChecked = !isSelected
+                                    selectedOptions.value = if (isChecked) {
+                                        selectedOptions.value + option.value
+                                    } else {
+                                        selectedOptions.value - option.value
                                     }
-                                }else{
-                                    sharedPrefHelper.removeItem(option.value)
+
+                                    if (isChecked) {
+                                        checkListBlockId = option.referTo?.id ?: ""
+                                        checkListGroupId = option.referTo?.group_no ?: ""
+                                        selectedSingleOption.value = option.value
+
+                                        if (!sharedPrefHelper.existsItem(option.value)) {
+                                            showDialog.value = true
+                                            blockListViewModel.clearCheckList()
+                                            blockListViewModel.addBlockToTheCheckList(checkListBlockId, checkListGroupId)
+                                        }
+                                    } else {
+                                        sharedPrefHelper.removeItem(option.value)
+
+                                        val index = block.options?.indexOf(option) ?: -1
+                                        if (index != -1) {
+                                            blockListViewModel.removeHistoryByIndex(index)
+                                        }
+                                    }
                                 }
                             }
                     ) {
                         Box(
                             modifier = Modifier
-                                .clickable {
+                                .clickable (enabled = isActiveGroup){
                                     if (isSelectionLocked) {
                                         Toasty.warning(context, "You have completed maximum number of checklist!", Toasty.LENGTH_SHORT).show()
                                     } else {
@@ -333,10 +347,12 @@ fun CheckListDialog(
     val isCheckList by blockListViewModel.isCheckList.collectAsState()
     val context = LocalContext.current
     val sharedPrefHelper = remember { SharedPrefHelper(context) }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Dialog(
         onDismissRequest = {
             onDismiss()
+            keyboardController?.hide()
         },
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
@@ -357,9 +373,8 @@ fun CheckListDialog(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(8.dp)
-                    .imePadding()
                     .padding(paddingValues)
+                    .imePadding()
             ) {
                 LaunchedEffect(surveyViewListItem.size) {
                     if (surveyViewListItem.isNotEmpty()) {
@@ -369,13 +384,19 @@ fun CheckListDialog(
                     }
                 }
 
-                LazyColumn(state = listState) {
+                LazyColumn(state = listState, modifier = Modifier.imePadding().fillMaxSize().padding(bottom = 64.dp)) {
                     items(surveyViewListItem) { childView ->
                         val isCurrentGroupActive = !isCheckList && surveyViewListItem.lastOrNull()?.group == childView.group
                         val position = childView.position
                         println("Type Name: ${childView.type}")
                         println("BlockData: $childView")
-                        CheckGroupOrBlock(blockListViewModel, childView, isCurrentGroupActive, position, "checkList")
+                        CheckGroupOrBlock(
+                            blockListViewModel,
+                            childView,
+                            isCurrentGroupActive,
+                            position,
+                            "checkList"
+                        )
                     }
 
                     if (isCheckList) {

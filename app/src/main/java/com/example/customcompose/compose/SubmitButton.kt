@@ -19,20 +19,23 @@ fun SubmitButton(blockListViewModel: BlockListViewModel) {
             val gson = Gson()
             val comboHistory = mutableListOf<SurveyHistoryModel>()
             for (surveyBlockHistory in blockListViewModel.surveyBlockListItem.value) {
-                for (surveyHistory in surveyBlockHistory.surveyHistoryModel) {
-                    if (surveyHistory != null) {
-                        comboHistory.add(
-                            SurveyHistoryModel(
-                                question = surveyHistory.question,
-                                answer = surveyHistory.answer,
-                                id = surveyHistory.id
+                if (surveyBlockHistory?.surveyHistoryModel != null){
+                    for (surveyHistory in surveyBlockHistory.surveyHistoryModel) {
+                        if (surveyHistory != null) {
+                            comboHistory.add(
+                                SurveyHistoryModel(
+                                    question = surveyHistory.question,
+                                    answer = surveyHistory.answer,
+                                    id = surveyHistory.id
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
             val comboJson = gson.toJson(comboHistory)
             Log.d("SURVEY_COMBO_DATA", comboJson)
+
         },
         modifier = Modifier
             .fillMaxWidth()

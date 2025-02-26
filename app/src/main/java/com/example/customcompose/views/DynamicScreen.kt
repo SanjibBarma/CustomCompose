@@ -3,7 +3,6 @@
 package com.example.customcompose.views
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -27,7 +26,7 @@ import kotlinx.coroutines.launch
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.remember
-import com.example.customcompose.compose.CheckGroupOrBlock
+import com.example.customcompose.compose.group.CheckGroupOrBlock
 import com.example.customcompose.compose.SubmitButton
 import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.model.SurveyDataModel
@@ -36,7 +35,8 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 @Composable
 fun DynamicScreen(
     blockListViewModel: BlockListViewModel,
-    surveyDataModelList: List<SurveyDataModel>
+    surveyDataModelList: List<SurveyDataModel>,
+//    materialViewModel: MaterialViewModel
 ) {
     val surveyViewListItem by blockListViewModel.surveyBlockListItem.collectAsState()
     val listState = rememberLazyListState()
@@ -44,6 +44,8 @@ fun DynamicScreen(
     val isSubmitted by blockListViewModel.isSubmitted.collectAsState()
     val context = LocalContext.current
     val sharedPrefHelper = remember { SharedPrefHelper(context) }
+
+//    materialViewModel.upsertMaterials(100, MATERIAL_STRING)
 
     Scaffold(
         topBar = {
@@ -82,7 +84,7 @@ fun DynamicScreen(
                 }
             }
 
-            LazyColumn(state = listState) {
+            LazyColumn(state = listState, modifier = Modifier.imePadding()) {
                 items(surveyViewListItem) { childView ->
                     val isCurrentGroupActive = !isSubmitted && surveyViewListItem.lastOrNull()?.group == childView.group
                     val position = childView.position

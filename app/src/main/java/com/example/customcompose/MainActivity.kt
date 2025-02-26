@@ -1,6 +1,8 @@
 package com.example.customcompose
 
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -8,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.example.customcompose.helper.AudioRecorderService
 import com.example.customcompose.model.JSON_STRING
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.ui.theme.CustomComposeTheme
@@ -16,24 +19,24 @@ import com.example.customcompose.views.DynamicScreen
 import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
-    val gson = Gson()
-    val surveyDataModelList: List<SurveyDataModel> = gson.fromJson(JSON_STRING, Array<SurveyDataModel>::class.java).toList()
+    private val gson = Gson()
+    private val surveyDataModelList: List<SurveyDataModel> = gson.fromJson(JSON_STRING, Array<SurveyDataModel>::class.java).toList()
 
-    private val requiredPermissions = arrayOf(
+    private val requiredPermissions = mutableListOf(
         android.Manifest.permission.RECORD_AUDIO,
-        android.Manifest.permission.POST_NOTIFICATIONS,
         android.Manifest.permission.CAMERA
-    )
+    ).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            add(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }.toTypedArray()
+
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val allGranted = permissions.all { it.value }
             if (!allGranted) {
-                Toast.makeText(
-                    this,
-                    "All permissions are required for full functionality",
-                    Toast.LENGTH_LONG
-                ).show()
+                Toast.makeText(this, "All permissions are required for full functionality", Toast.LENGTH_LONG).show()
             }
         }
 
@@ -49,11 +52,22 @@ class MainActivity : ComponentActivity() {
 
 
         val blockListViewModel = BlockListViewModel(applicationContext, surveyDataModelList)
+
         setContent {
             CustomComposeTheme {
-                DynamicScreen(blockListViewModel, surveyDataModelList)
+                DynamicScreen(blockListViewModel, surveyDataModelList/*, materialViewModel*/)
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopAudioService()
+    }
+
+    private fun stopAudioService() {
+        val intent = Intent(this, AudioRecorderService::class.java)
+        stopService(intent)
     }
 
     private fun hasRequiredPermissions(): Boolean {
