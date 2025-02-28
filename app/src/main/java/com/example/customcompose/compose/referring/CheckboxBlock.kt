@@ -55,7 +55,8 @@ fun CheckboxBlock(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ){
         Column (

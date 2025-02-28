@@ -66,7 +66,8 @@ fun BrandBlock(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ){
         Column (
@@ -123,7 +124,7 @@ fun BrandBlock(
                                 }
 
                             }
-                            .border(1.dp, color = Color.Gray, RoundedCornerShape(8.dp)),
+                            .border(1.dp, color = Color.Gray, RoundedCornerShape(4.dp)),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Spacer(modifier = Modifier.height(4.dp))

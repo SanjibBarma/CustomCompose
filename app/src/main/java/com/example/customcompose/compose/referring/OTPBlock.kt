@@ -1,6 +1,7 @@
 package com.example.customcompose.compose.referring
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,23 +13,40 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -37,6 +55,10 @@ import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.ui.theme.OtpVerify
 import com.example.customcompose.viewmodel.BlockListViewModel
 import es.dmoral.toasty.Toasty
+import java.util.Locale
+import java.util.Random
+import androidx.compose.ui.input.key.*
+import kotlinx.coroutines.delay
 
 @Composable
 fun OTPBlock(
@@ -48,11 +70,30 @@ fun OTPBlock(
     var otp by remember { mutableStateOf("") }
     val context = LocalContext.current
     val currentBlockId = block.id ?: ""
-
+    val isSkippable = block.skip?.id != "-1"
     var showPopup by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull() == null) }
-//    var showPopup by rememberSaveable { mutableStateOf(true) }
+    val isBypass = block.validations?.bypass
+//    val isBypass = false
 
-    val question = block.question?.slug ?: ""
+    var generatedOtp by remember { mutableStateOf(if (isBypass == true) "123456" else generateOtp()) }
+    var countdown by remember { mutableStateOf(10) }
+    var isResendVisible by remember { mutableStateOf(false) }
+    var toastShown by remember { mutableStateOf(false) }
+
+    LaunchedEffect(countdown) {
+        while (countdown > 0) {
+            delay(1000L)
+            countdown--
+        }
+        isResendVisible = true
+    }
+
+    LaunchedEffect(isBypass) {
+        if (isBypass == true && !toastShown && showPopup) {
+            Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
+            toastShown = true
+        }
+    }
 
     if (showPopup) {
         Dialog(onDismissRequest = { }) {
@@ -63,17 +104,17 @@ fun OTPBlock(
                     .padding(16.dp)
             ) {
                 Column {
-                    Text(text = block.question!!.slug)
+                    Text(
+                        text = "Number Verification",
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    TextField(
-                        value = otp,
-                        onValueChange = { otp = it },
-                        label = { Text("Enter OTP") },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    OtpInputField(otp = otp, onOtpChange = { otp = it })
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    println("Generated OTP: $generatedOtp")
+
                     Text(
                         text = "OTP sent to your number. Please enter the OTP.",
                         color = Color.Gray,
@@ -81,56 +122,105 @@ fun OTPBlock(
                         fontSize = 12.sp
                     )
 
+                    Text(
+                        text = if (countdown > 0) "Input OTP in $countdown seconds" else "Please send otp again",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+
                     Spacer(modifier = Modifier.height(16.dp))
+
                     Row(
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        TextButton(
-                            onClick = {
-//                                val surveyHistoryModel = listOf(
-//                                    SurveyHistoryModel(
-//                                        question = "",
-//                                        answer = "",
-//                                        id = blockId
-//                                    )
-//                                )
-//                                blockListViewModel.saveData(block.id, surveyHistoryModel)
-//                                blockListViewModel.addBlockToTheSurveyFlow(block.skip?.id!!, block.skip.group_no)
-                            },
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            Text("Resend")
+                        if (isSkippable) {
+                            Button(
+                                onClick = {
+                                    var surveyHistoryModel = SurveyHistoryModel(
+                                        question = "",
+                                        answer = "",
+                                        id = currentBlockId
+                                    )
+                                    block.surveyHistoryModel= listOf(surveyHistoryModel)
+
+                                    block.skip?.group_no?.let { groupId ->
+                                        block.skip.id.let { nextBlockId ->
+                                            if (destination == "mainSurvey"){
+                                                blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                            }else{
+                                                blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Blue,
+                                    contentColor = Color.White
+                                ),
+                                enabled = isActiveGroup
+                            ) {
+                                Text("Skip")
+                            }
                         }
 
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.weight(1f))
 
-                        Button(
-                            onClick = {
-                                val surveyHistoryModel =  SurveyHistoryModel(
-                                    question = question,
-                                    answer = "Yes",
-                                    id = currentBlockId
-                                )
-                                block.surveyHistoryModel = listOf(surveyHistoryModel)
+                        if (isResendVisible) {
+                            Button(
+                                onClick = {
+                                    generatedOtp = if (isBypass == true) "123456" else generateOtp()
+                                    countdown = 10
+                                    isResendVisible = false
+                                },
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                Text("Resend", fontSize = 12.sp)
+                            }
+                        } else {
+                            Button(
+                                onClick = {
+                                    if (otp == generatedOtp) {
+                                        val surveyHistoryModel = SurveyHistoryModel(
+                                            question = block.question?.slug ?: "",
+                                            answer = "Yes",
+                                            id = currentBlockId
+                                        )
+                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
 
-                                if (destination == "mainSurvey") {
-                                    blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!)
-                                }else{
-                                    blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
-                                }
+                                        if (destination == "mainSurvey") {
+                                            blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!)
+                                        } else {
+                                            blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
+                                        }
 
-//                                Toasty.success(context, "blockId ${block.referTo?.id!!} groupId: ${block.referTo.group_no!!}")
-
-                                showPopup = false // Dismiss dialog
-                            },
-                            enabled = otp.length == 6,
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            Text("Verify")
+                                        showPopup = false
+                                    } else {
+                                        Toasty.warning(context, "Invalid OTP", Toasty.LENGTH_SHORT).show()
+                                    }
+                                },
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                Text("Verify & Proceed", fontSize = 12.sp)
+                            }
                         }
                     }
                 }
+
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Close",
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .clickable { showPopup = false },
+                    tint = Color.Black
+                )
             }
         }
     }
@@ -140,7 +230,8 @@ fun OTPBlock(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp),
-            elevation = CardDefaults.cardElevation(4.dp),
+            elevation = CardDefaults.cardElevation(2.dp),
+            shape = RoundedCornerShape(4.dp),
             colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
         ) {
             Box(
@@ -159,4 +250,71 @@ fun OTPBlock(
             }
         }
     }
+}
+
+@Composable
+fun OtpInputField(otp: String, onOtpChange: (String) -> Unit) {
+    val textFields = remember { List(6) { mutableStateOf("") } }
+    val focusRequesters = remember { List(6) { FocusRequester() } }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        for (i in textFields.indices) {
+            OutlinedTextField(
+                value = textFields[i].value,
+                onValueChange = { newText ->
+                    val oldText = textFields[i].value
+                    if (newText.length <= 1) {
+                        textFields[i].value = newText
+                        val newOtp = textFields.joinToString("") { it.value }
+                        onOtpChange(newOtp)
+
+                        if (newText.isNotEmpty() && i < textFields.lastIndex) {
+                            focusRequesters[i + 1].requestFocus()
+                        }
+                    }
+
+                    if (oldText.isNotEmpty() && newText.isEmpty() && i > 0) {
+                        textFields[i - 1].value = ""
+                        focusRequesters[i - 1].requestFocus()
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp)
+                    .focusRequester(focusRequesters[i])
+                    .onKeyEvent { keyEvent ->
+                        if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Backspace) {
+                            if (textFields[i].value.isEmpty() && i > 0) {
+                                textFields[i - 1].value = ""
+                                focusRequesters[i - 1].requestFocus()
+                            }
+                        }
+                        false
+                    },
+                textStyle = TextStyle(textAlign = TextAlign.Center),
+                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+        }
+    }
+}
+
+fun generateOtp(): String {
+    val rnd = Random()
+    val arrayRefVar = arrayOf("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
+
+    // Generate 2 random letters
+    val randomLtr1 = arrayRefVar[rnd.nextInt(26)]
+    val randomLtr2 = arrayRefVar[rnd.nextInt(26)]
+
+    // Generate a 4-digit number
+    val number = rnd.nextInt(9999)
+    val formattedNumber = String.format(Locale.ENGLISH, "%04d", number)
+
+    // Concatenate the result
+    return randomLtr1 + randomLtr2 + formattedNumber
 }

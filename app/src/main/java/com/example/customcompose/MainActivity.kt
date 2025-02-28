@@ -11,7 +11,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.example.customcompose.helper.AudioRecorderService
-import com.example.customcompose.model.JSON_STRING
+import com.example.customcompose.model.SURVEY_FLOW_JSON
+import com.example.customcompose.model.LOCATION_STRING
+import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.ui.theme.CustomComposeTheme
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -20,7 +22,8 @@ import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
     private val gson = Gson()
-    private val surveyDataModelList: List<SurveyDataModel> = gson.fromJson(JSON_STRING, Array<SurveyDataModel>::class.java).toList()
+    private val surveyDataModelList: List<SurveyDataModel> = gson.fromJson(SURVEY_FLOW_JSON, Array<SurveyDataModel>::class.java).toList()
+    private val routePlanList: List<RoutePlanData> = gson.fromJson(LOCATION_STRING, Array<RoutePlanData>::class.java).toList()
 
     private val requiredPermissions = mutableListOf(
         android.Manifest.permission.RECORD_AUDIO,
@@ -55,7 +58,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CustomComposeTheme {
-                DynamicScreen(blockListViewModel, surveyDataModelList/*, materialViewModel*/)
+                DynamicScreen(blockListViewModel, surveyDataModelList, routePlanList)
             }
         }
     }

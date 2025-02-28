@@ -65,7 +65,8 @@ fun UrlBlock(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ) {
         Column(
@@ -77,7 +78,7 @@ fun UrlBlock(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                    .border(1.dp, Color.Black, RoundedCornerShape(4.dp))
                     .padding(16.dp)
                     .clickable(enabled = isActiveGroup) {
                         showDialog = true

@@ -20,15 +20,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 import androidx.compose.material3.*
-import androidx.compose.runtime.remember
+import com.example.customcompose.compose.RoutePlanView
 import com.example.customcompose.compose.group.CheckGroupOrBlock
 import com.example.customcompose.compose.SubmitButton
-import com.example.customcompose.helper.SharedPrefHelper
+import com.example.customcompose.compose.referring.LocationBlock
+import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 
@@ -36,16 +36,13 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 fun DynamicScreen(
     blockListViewModel: BlockListViewModel,
     surveyDataModelList: List<SurveyDataModel>,
-//    materialViewModel: MaterialViewModel
+    routePlanList: List<RoutePlanData>
 ) {
     val surveyViewListItem by blockListViewModel.surveyBlockListItem.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val isSubmitted by blockListViewModel.isSubmitted.collectAsState()
-    val context = LocalContext.current
-    val sharedPrefHelper = remember { SharedPrefHelper(context) }
-
-//    materialViewModel.upsertMaterials(100, MATERIAL_STRING)
+    val isRoutePlanShow by blockListViewModel.isRoutePlan.collectAsState()
 
     Scaffold(
         topBar = {
@@ -62,13 +59,15 @@ fun DynamicScreen(
             modifier = Modifier
                 .padding(paddingValues)
         ) {
-            if (surveyViewListItem.isEmpty()) {
+            if (surveyViewListItem.isEmpty() && !isRoutePlanShow) {
                 Button(
                     onClick = {
-                        sharedPrefHelper.savePreviousGroupId("")
-                        sharedPrefHelper.clearCheckList()
-                        blockListViewModel.addBlockToTheSurveyFlow(surveyDataModelList[0].blocks[0].id!!, surveyDataModelList[0].group)
-                        //sharedPrefHelper.savePreviousGroupId(surveyDataModelList[0].group)
+//                        sharedPrefHelper.savePreviousGroupId("")
+//                        sharedPrefHelper.clearCheckList()
+//                        blockListViewModel.addBlockToTheSurveyFlow(surveyDataModelList[0].blocks[0].id!!, surveyDataModelList[0].group)
+                        blockListViewModel.clearRouteList()
+                        blockListViewModel.addNextRoutePlanData(routePlanList[0].type_slug, routePlanList, routePlanList.size+1)
+                        blockListViewModel.showRoutePlanView()
                     },
                     modifier = Modifier.fillMaxWidth().padding(top = 100.dp)
                 ) {
@@ -85,6 +84,24 @@ fun DynamicScreen(
             }
 
             LazyColumn(state = listState, modifier = Modifier.imePadding()) {
+
+                item{
+                    if(isRoutePlanShow){
+                        RoutePlanView(
+                            blockListViewModel,
+                            surveyDataModelList,
+                            onDismiss = {
+                                blockListViewModel.hideRoutePlanView()
+                                //blockListViewModel.clearRouteList()
+                            }
+                        )
+                    }
+
+                    if (surveyViewListItem.isNotEmpty()){
+                        LocationBlock(blockListViewModel, false)
+                    }
+                }
+
                 items(surveyViewListItem) { childView ->
                     val isCurrentGroupActive = !isSubmitted && surveyViewListItem.lastOrNull()?.group == childView.group
                     val position = childView.position

@@ -26,6 +26,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,7 +56,8 @@ fun MultipleChoiceBlock(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ) {
         Column(
@@ -73,7 +75,7 @@ fun MultipleChoiceBlock(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                            .border(1.dp, if (selectedOption == option.value) Color.Black else Color.Gray, RoundedCornerShape(8.dp))
+                            .border(1.dp, if (selectedOption == option.value) Color.Black else Color.Gray, RoundedCornerShape(4.dp))
                             .clickable(enabled = isActiveGroup) {
                                 selectedOption = option.value
 
@@ -139,7 +141,7 @@ fun MultipleChoiceBlock(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 100.dp, max = 300.dp)
+                        .heightIn(min = 100.dp, max = 700.dp)
                 ) {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
@@ -150,7 +152,7 @@ fun MultipleChoiceBlock(
                                 modifier = Modifier
                                     .padding(4.dp)
                                     .size(80.dp)
-                                    .border(1.dp, if (selectedOption == option.value) Color.Black else Color.Gray, RoundedCornerShape(8.dp))
+                                    .border(1.dp, if (selectedOption == option.value) Color.Gray else Color.LightGray, RoundedCornerShape(4.dp))
                                     .clickable(enabled = isActiveGroup) {
                                         selectedOption = option.value
 
@@ -184,6 +186,8 @@ fun MultipleChoiceBlock(
             }
 
             if (isSkippable) {
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Button(
                     onClick = {
 

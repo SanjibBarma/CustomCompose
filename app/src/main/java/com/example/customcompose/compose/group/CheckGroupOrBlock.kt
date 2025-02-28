@@ -14,6 +14,7 @@ import com.example.customcompose.compose.referring.DropdownBlock
 import com.example.customcompose.compose.referring.EditTextBlock
 import com.example.customcompose.compose.referring.EmojiRatingBlock
 import com.example.customcompose.compose.referring.GameBlock
+import com.example.customcompose.compose.referring.GiveAbleBlock
 import com.example.customcompose.compose.referring.ImageBlock
 import com.example.customcompose.compose.referring.ImageCaptureBlock
 import com.example.customcompose.compose.referring.InteractiveAvBlock
@@ -63,6 +64,7 @@ fun CheckGroupOrBlock(
             "image" -> ImageBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "lookup" -> LookupBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "game" -> GameBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
+            "giveable" -> GiveAbleBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "interactive_av" -> InteractiveAvBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "non-referring" -> NonReferringGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination)
             "numbervalidation" -> NumberValidationGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination)

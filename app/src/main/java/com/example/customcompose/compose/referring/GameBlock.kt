@@ -76,7 +76,8 @@ fun GameBlock(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ) {
         Column(
@@ -89,7 +90,7 @@ fun GameBlock(
                 modifier = Modifier
                     .height(200.dp)
                     .fillMaxWidth()
-                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                    .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
                     .clickable(enabled = isActiveGroup) {
                         try {
                             val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName ?: "")

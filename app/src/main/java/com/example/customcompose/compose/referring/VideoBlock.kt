@@ -81,8 +81,8 @@ fun VideoBlock(
     val imageFile = File(context.cacheDir, videoFileName)
 
     val videoPath = getVideoPathFromCache(context, videoFileName)
-    var showDialog by remember { mutableStateOf(false) } // State for showing the dialog
-    var videoUri by remember { mutableStateOf<Uri?>(null) } // Store the video Uri
+    var showDialog by remember { mutableStateOf(false) }
+    var videoUri by remember { mutableStateOf<Uri?>(null) }
     val isSkippable = block.skip?.id != "-1"
 
     var videoName by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
@@ -114,7 +114,8 @@ fun VideoBlock(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ) {
         Column(
@@ -128,7 +129,7 @@ fun VideoBlock(
                     .height(200.dp)
                     .fillMaxWidth()
                     .border(1.dp, Color.Gray)
-                    .background(Color.LightGray.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                    .background(Color.LightGray.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
                     .clickable(enabled = isActiveGroup) {
                         if (videoThumbnail != null && videoPath != null) {
                             Log.d("Box Clicked", "Showing video dialog")

@@ -64,7 +64,7 @@ fun NonRefMultipleChoice(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
-                    .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                    .border(1.dp, Color.Black, RoundedCornerShape(4.dp))
                     .clickable (enabled = isActiveGroup){
                         selectedOption = option.value
 

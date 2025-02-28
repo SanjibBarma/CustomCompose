@@ -86,7 +86,8 @@ fun CheckListBlock(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ){
         Column(
@@ -132,7 +133,7 @@ fun CheckListBlock(
                                     } else {
                                         sharedPrefHelper.removeItem(option.value)
 
-                                        val index = block.options?.indexOf(option) ?: -1
+                                        val index = block.options.indexOf(option) ?: -1
                                         if (index != -1) {
                                             blockListViewModel.removeHistoryByIndex(index)
                                         }

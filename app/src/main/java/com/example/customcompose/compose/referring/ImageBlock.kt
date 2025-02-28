@@ -89,7 +89,8 @@ fun ImageBlock(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
     ) {
         Column(
@@ -146,7 +147,7 @@ fun ImageBlock(
                                 .border(
                                     1.dp,
                                     if (isSelected) Color.Black else Color.Transparent,
-                                    RoundedCornerShape(8.dp)
+                                    RoundedCornerShape(4.dp)
                                 )
                         ) {
                             Column(
@@ -170,7 +171,7 @@ fun ImageBlock(
                                         )
 
                                     }
-                                    .border(1.dp, color = Color.Gray, RoundedCornerShape(8.dp)),
+                                    .border(1.dp, color = Color.Gray, RoundedCornerShape(4.dp)),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -201,7 +202,7 @@ fun ImageBlock(
                                             modifier = Modifier
                                                 .matchParentSize()
                                                 .background(Color.Black.copy(alpha = 0.4f))
-                                                .clip(RoundedCornerShape(8.dp))
+                                                .clip(RoundedCornerShape(4.dp))
                                         ) {
 //                                            Image(
 //                                                imageVector = Icons.Default.CheckCircle,
