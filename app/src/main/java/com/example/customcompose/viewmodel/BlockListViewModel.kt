@@ -383,5 +383,15 @@ class BlockListViewModel(
         _routeListItem.value = emptyList()
     }
 
+    private val _isShowOtp = MutableStateFlow(false)
+    val isShowOtp = _isShowOtp.asStateFlow()
+
+    fun showOtpPopup() {
+        _isShowOtp.value = true
+    }
+
+    fun hideOtpPopup() {
+        _isShowOtp.value = false
+    }
 
 }

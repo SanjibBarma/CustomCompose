@@ -100,6 +100,8 @@ fun NonRefProductList(
                         .background(backgroundColor)
                         .clickable(enabled = isActiveGroup) {
 
+                            //flatMap hoilo higher-order function ja nested collection ke single collection e niye ase
+                            //flatMap protita elements er jonne ekta collection or list create kore ja ekat flat list e marge kore
                             val sourceLocation = blockListViewModel.routeListItem.value
                                 .flatMap { it.locationList.orEmpty() } // fetching all the data from locationList
                                 .flatMap { it.surveyHistoryModel.orEmpty() } // now fetching all from surveyHistoryModel which is under locationList
@@ -115,6 +117,7 @@ fun NonRefProductList(
                                 for(achievementModel in targetAchievementList){
                                     println("print_log 2")
                                     if (achievementModel.products.size != 0){
+                                        //achievementlist er product theklei shudhu location target achievement calculate kora hobe
                                         println("print_log 3")
                                         for (locationTarget in achievementModel.locations){
                                             println("print_log 4")
@@ -122,18 +125,22 @@ fun NonRefProductList(
 
                                             //current block er alias jodi product hoy
                                             //and target achievement list er product list size jodi 0 na hoy
-                                            //then selected route location id
+                                            //then selected route location id and target location id match kore achievement compare kora hobe
                                             if (sourceLocation?.toInt() == locationTarget.id){
                                                 println("print_log 5")
                                                 for (productTarget in achievementModel.products){
                                                     println("print_log 6")
                                                     if (option.alias == productTarget.id){
                                                         println("print_log 7")
+                                                        //if daily_achievement jodi daily_target er soman ba boro hoy
+                                                        //tahole oi location and product er kono target nai
                                                         if (achievementModel.daily_achievement >= achievementModel.daily_target && !achievementModel.over_achivement){
                                                             println("print_log 8")
                                                             Toasty.warning(context, "No more target for this location and products combination", Toasty.LENGTH_SHORT).show()
                                                             return@clickable
                                                         }
+                                                        //kintu jodi daily_achievement, daily_target er choto hoy
+                                                        //tahole samne agate parbe
                                                         matched = true
                                                     }
                                                 }
@@ -141,6 +148,7 @@ fun NonRefProductList(
                                         }
                                     }else{
                                         println("print_log else 2")
+                                        //ar achievementlist er product na thakle sorasori samne agay jabe
                                         matched = true
                                     }
                                 }

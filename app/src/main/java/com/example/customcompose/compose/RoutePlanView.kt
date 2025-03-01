@@ -162,7 +162,7 @@ fun RouteChildView(
                                         if (targetAchieve.products.isNullOrEmpty() && targetAchieve.products.size == 0){
                                             for (locationTarget in targetAchieve.locations){
                                                 //selected loc id and target locations er jekono id jodi match kore tahole
-                                                // daily target and achievement compare kore warning dekhabe and return korbe
+                                                // daily target and achievement compare kore daily_achievement over hoye gele warning dekhabe and return korbe
                                                 if (option.id == locationTarget.id){
                                                     if (targetAchieve.daily_achievement >= targetAchieve.daily_target && !targetAchieve.over_achivement){
                                                         Toasty.warning(context, "No more target for this location", Toasty.LENGTH_SHORT).show()

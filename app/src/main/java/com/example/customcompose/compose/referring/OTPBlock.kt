@@ -1,5 +1,6 @@
 package com.example.customcompose.compose.referring
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,17 +71,20 @@ fun OTPBlock(
     destination: String
 ) {
     var otp by remember { mutableStateOf("") }
+    var sentOtpTrack by remember { mutableStateOf(1) }
     val context = LocalContext.current
     val currentBlockId = block.id ?: ""
     val isSkippable = block.skip?.id != "-1"
-    var showPopup by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull() == null) }
     val isBypass = block.validations?.bypass
 //    val isBypass = false
+    val showPopup by blockListViewModel.isShowOtp.collectAsState()
+    var checkInitialOtp by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull() == null) }
 
     var generatedOtp by remember { mutableStateOf(if (isBypass == true) "123456" else generateOtp()) }
     var countdown by remember { mutableStateOf(10) }
     var isResendVisible by remember { mutableStateOf(false) }
     var toastShown by remember { mutableStateOf(false) }
+    var showSendButton by remember { mutableStateOf(false) }
 
     LaunchedEffect(countdown) {
         while (countdown > 0) {
@@ -88,14 +94,103 @@ fun OTPBlock(
         isResendVisible = true
     }
 
+
     LaunchedEffect(isBypass) {
-        if (isBypass == true && !toastShown && showPopup) {
+
+        if (isBypass == true && !toastShown && checkInitialOtp) {
             Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
+            generatedOtp = "123456"
             toastShown = true
+            blockListViewModel.showOtpPopup()
+            showSendButton = false
+            return@LaunchedEffect
+        }
+
+        if (block.validations?.server == true && block.validations.device == true) {
+            if (sentOtpTrack == 0) {
+                Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                sentOtpTrack = 1
+            } else if (sentOtpTrack == 1) {
+                Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                sentOtpTrack = 2
+            } else {
+                Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                sentOtpTrack = 1
+            }
+        } else if (!block.validations?.server!! && block.validations?.device!!) {
+            Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+        } else {
+            if (checkInitialOtp){
+                Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()
+                return@LaunchedEffect
+            }
         }
     }
 
-    if (showPopup) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(vertical = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (showSendButton) {
+                Button(
+                    onClick = {
+                        countdown = 10
+                        if (isBypass == true && !toastShown && checkInitialOtp) {
+                            Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
+                            generatedOtp = "123456"
+                            toastShown = true
+                            blockListViewModel.showOtpPopup()
+                            showSendButton = false
+                            return@Button
+                        }
+
+                        if (block.validations?.server == true && block.validations.device == true) {
+                            if (sentOtpTrack == 0) {
+                                Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                                sentOtpTrack = 1
+                            } else if (sentOtpTrack == 1) {
+                                Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                                sentOtpTrack = 2
+                            } else {
+                                Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                                sentOtpTrack = 1
+                            }
+                        } else if (!block.validations?.server!! && block.validations?.device!!) {
+                            Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                        } else {
+                            if (checkInitialOtp){
+                                Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                        }
+                    },
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Text("Send Otp", fontSize = 12.sp)
+                }
+            }else if (!showPopup){
+                Text(
+                    text = "Verified successfully.",
+                    color = OtpVerify,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+        }
+    }
+
+    if (showPopup){
         Dialog(onDismissRequest = { }) {
             Box(
                 modifier = Modifier
@@ -175,9 +270,37 @@ fun OTPBlock(
                         if (isResendVisible) {
                             Button(
                                 onClick = {
-                                    generatedOtp = if (isBypass == true) "123456" else generateOtp()
                                     countdown = 10
                                     isResendVisible = false
+
+                                    if (isBypass == true && !toastShown && checkInitialOtp) {
+                                        Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
+                                        generatedOtp = "123456"
+                                        toastShown = true
+                                        blockListViewModel.showOtpPopup()
+                                        showSendButton = false
+                                        return@Button
+                                    }
+
+                                    if (block.validations?.server == true && block.validations.device == true) {
+                                        if (sentOtpTrack == 0) {
+                                            Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                                            sentOtpTrack = 1
+                                        } else if (sentOtpTrack == 1) {
+                                            Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                                            sentOtpTrack = 2
+                                        } else {
+                                            Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                                            sentOtpTrack = 1
+                                        }
+                                    } else if (!block.validations?.server!! && block.validations?.device!!) {
+                                        Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                                    } else {
+                                        if (checkInitialOtp){
+                                            Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()
+                                            return@Button
+                                        }
+                                    }
                                 },
                                 modifier = Modifier.padding(8.dp)
                             ) {
@@ -200,7 +323,7 @@ fun OTPBlock(
                                             blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
                                         }
 
-                                        showPopup = false
+                                        blockListViewModel.hideOtpPopup()
                                     } else {
                                         Toasty.warning(context, "Invalid OTP", Toasty.LENGTH_SHORT).show()
                                     }
@@ -218,34 +341,13 @@ fun OTPBlock(
                     contentDescription = "Close",
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .clickable { showPopup = false },
+                        .clickable {
+                            blockListViewModel.hideOtpPopup()
+                            showSendButton = true
+                            checkInitialOtp = true
+                            toastShown = false
+                        },
                     tint = Color.Black
-                )
-            }
-        }
-    }
-
-    if (!showPopup) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            elevation = CardDefaults.cardElevation(2.dp),
-            shape = RoundedCornerShape(4.dp),
-            colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Verified successfully.",
-                    color = OtpVerify,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(8.dp)
                 )
             }
         }
