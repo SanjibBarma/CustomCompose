@@ -136,6 +136,7 @@ class BlockListViewModel(
                     validations = null,
                     group = group.group,
                     blocks = group.blocks,
+                    //try to make empty without mentioned it
                     surveyHistoryModel = emptyList(),
                     jumping_logic = group.jumping_logic,
                     position = _surveyBlockListItem.value.size
@@ -160,8 +161,9 @@ class BlockListViewModel(
                             _surveyBlockListItem.value = updatedList
                             println("Block already exists. Cleared items after position of ${block.id}")
                         } else {
-                            val newBlock = block.copy(surveyHistoryModel = emptyList())
-                            _surveyBlockListItem.value = _surveyBlockListItem.value.toMutableList().apply { add(newBlock) }
+                            //val newBlock = block.copy(surveyHistoryModel = emptyList())
+                            block.surveyHistoryModel= emptyList()
+                            _surveyBlockListItem.value = _surveyBlockListItem.value.toMutableList().apply { add(block) }
                             println("New Block Added: ${block.id}")
                         }
                     }
@@ -352,6 +354,12 @@ class BlockListViewModel(
         _routeListItem.update { currentList ->
             //indexOfLast last theke and indexOfFirst first theke index search kore
             val existingIndex = currentList.indexOfLast { it.listPosition == position }
+
+            for (i in currentList.size until 0){
+                if (currentList.get(i).listPosition == position){
+
+                }
+            }
 
             if (existingIndex != -1) {
                 currentList.toMutableList().apply {

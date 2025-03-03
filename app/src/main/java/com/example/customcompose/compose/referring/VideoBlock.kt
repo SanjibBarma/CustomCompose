@@ -4,9 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
-import android.media.ThumbnailUtils
 import android.net.Uri
-import android.provider.MediaStore
 import android.util.Log
 import android.view.Surface
 import android.view.TextureView
@@ -54,6 +52,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.example.customcompose.R
+import com.example.customcompose.common_utils.CommonUtils.createVideoThumbnail
+import com.example.customcompose.common_utils.CommonUtils.getVideoPathFromCache
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -336,18 +336,3 @@ fun VideoBlock(
     }
 }
 
-private fun getVideoPathFromCache(context: android.content.Context, fileName: String): String? {
-    val cacheDir = context.cacheDir
-    val videoFile = File(cacheDir, fileName)
-
-    return if (videoFile.exists()) videoFile.absolutePath else null
-}
-
-private fun createVideoThumbnail(videoPath: String): Bitmap? {
-    return try {
-        ThumbnailUtils.createVideoThumbnail(videoPath, MediaStore.Images.Thumbnails.MINI_KIND)
-    } catch (ex: Exception) {
-        Log.e("Thumbnail", "Error creating thumbnail for: $videoPath", ex)
-        null
-    }
-}

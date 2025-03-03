@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.customcompose"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 1000
+        versionName = "e-1.0.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,12 +61,23 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0")
     implementation("com.github.GrenderG:Toasty:1.5.2")
 
+    //camera
     implementation("androidx.camera:camera-core:1.4.1")
     implementation("androidx.camera:camera-camera2:1.4.1")
     implementation("androidx.camera:camera-lifecycle:1.4.1")
     implementation("androidx.camera:camera-view:1.4.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 
+    //date picker
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.8.1-rc")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+    //retrofit
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation ("androidx.compose.material:material-icons-extended:1.5.0")
+
+    //live data
+    implementation ("androidx.compose.runtime:runtime-livedata:1.4.0")
 }

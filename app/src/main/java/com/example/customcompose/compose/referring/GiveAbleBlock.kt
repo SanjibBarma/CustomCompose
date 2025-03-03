@@ -66,12 +66,14 @@ fun GiveAbleBlock(
     val gson = Gson()
     val storedMaterials: List<MaterialFinalModel> = gson.fromJson(MATERIAL_STRING, Array<MaterialFinalModel>::class.java).toList()
 
+    //check main app again for the giveable validation
+
     if (!storedMaterials.isNullOrEmpty()) {
-        for (strMaterials in storedMaterials) {
+        for (strMaterial in storedMaterials) {
             if (!block.options.isNullOrEmpty()) {
                 for (givable in block.options) {
-                    if (strMaterials.id.toString() == givable.value) {
-                        finalMaterialList.add(strMaterials)
+                    if (strMaterial.id.toString() == givable.value) {
+                        finalMaterialList.add(strMaterial)
                     }
                 }
             }

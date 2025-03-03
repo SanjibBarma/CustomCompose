@@ -1,6 +1,5 @@
-package com.example.customcompose.compose.referring
+package com.example.customcompose.compose.referring.otp
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,9 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -23,12 +20,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,31 +30,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.customcompose.common_utils.CommonUtils.generateOtp
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.ui.theme.OtpVerify
 import com.example.customcompose.viewmodel.BlockListViewModel
 import es.dmoral.toasty.Toasty
-import java.util.Locale
-import java.util.Random
-import androidx.compose.ui.input.key.*
 import kotlinx.coroutines.delay
 
 @Composable
@@ -352,71 +333,4 @@ fun OTPBlock(
             }
         }
     }
-}
-
-@Composable
-fun OtpInputField(otp: String, onOtpChange: (String) -> Unit) {
-    val textFields = remember { List(6) { mutableStateOf("") } }
-    val focusRequesters = remember { List(6) { FocusRequester() } }
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        for (i in textFields.indices) {
-            OutlinedTextField(
-                value = textFields[i].value,
-                onValueChange = { newText ->
-                    val oldText = textFields[i].value
-                    if (newText.length <= 1) {
-                        textFields[i].value = newText
-                        val newOtp = textFields.joinToString("") { it.value }
-                        onOtpChange(newOtp)
-
-                        if (newText.isNotEmpty() && i < textFields.lastIndex) {
-                            focusRequesters[i + 1].requestFocus()
-                        }
-                    }
-
-                    if (oldText.isNotEmpty() && newText.isEmpty() && i > 0) {
-                        textFields[i - 1].value = ""
-                        focusRequesters[i - 1].requestFocus()
-                    }
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp)
-                    .focusRequester(focusRequesters[i])
-                    .onKeyEvent { keyEvent ->
-                        if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Backspace) {
-                            if (textFields[i].value.isEmpty() && i > 0) {
-                                textFields[i - 1].value = ""
-                                focusRequesters[i - 1].requestFocus()
-                            }
-                        }
-                        false
-                    },
-                textStyle = TextStyle(textAlign = TextAlign.Center),
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                singleLine = true
-            )
-        }
-    }
-}
-
-fun generateOtp(): String {
-    val rnd = Random()
-    val arrayRefVar = arrayOf("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
-
-    // Generate 2 random letters
-    val randomLtr1 = arrayRefVar[rnd.nextInt(26)]
-    val randomLtr2 = arrayRefVar[rnd.nextInt(26)]
-
-    // Generate a 4-digit number
-    val number = rnd.nextInt(9999)
-    val formattedNumber = String.format(Locale.ENGLISH, "%04d", number)
-
-    // Concatenate the result
-    return randomLtr1 + randomLtr2 + formattedNumber
 }

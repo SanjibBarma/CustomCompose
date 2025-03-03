@@ -102,11 +102,11 @@ fun NonRefProductList(
 
                             //flatMap hoilo higher-order function ja nested collection ke single collection e niye ase
                             //flatMap protita elements er jonne ekta collection or list create kore ja ekat flat list e marge kore
-                            val sourceLocation = blockListViewModel.routeListItem.value
-                                .flatMap { it.locationList.orEmpty() } // fetching all the data from locationList
-                                .flatMap { it.surveyHistoryModel.orEmpty() } // now fetching all from surveyHistoryModel which is under locationList
-                                .mapNotNull { it?.id } // accepts null from surveyHistoryModel taking all the answer
-                                .firstOrNull()
+                            val sourceLocation = blockListViewModel.routeListItem.value[0].locationList?.get(0)?.id
+//                                .flatMap { it.locationList.orEmpty() } // fetching all the data from locationList
+//                                .flatMap { it.surveyHistoryModel.orEmpty() } // now fetching all from surveyHistoryModel which is under locationList
+//                                .mapNotNull { it?.id } // accepts null from surveyHistoryModel taking all the answer
+//                                .firstOrNull()
 
                             println("source_location: ${sourceLocation?.toInt()}")
 

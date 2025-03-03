@@ -7,9 +7,12 @@ import com.google.gson.reflect.TypeToken
 
 class SharedPrefHelper(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-    private val  PREVIOUS_GROUP = "PREVIOUS_GROUP";
-    private val  PRIMARY_BRAND = "PRIMARY_BRAND";
-    private val  CHECK_LIST = "CHECK_LIST";
+    private val PREVIOUS_GROUP = "PREVIOUS_GROUP";
+    private val PRIMARY_BRAND = "PRIMARY_BRAND";
+    private val CHECK_LIST = "CHECK_LIST";
+    private val USERNAME = "USERNAME"
+    private val PASSWORD = "PASSWORD"
+    private val REMEMBER_ME = "REMEMBER_ME"
 
     fun saveItem(newItem: String) {
         val existingSet = getSet().toMutableSet()
@@ -55,5 +58,25 @@ class SharedPrefHelper(context: Context) {
 
     fun getPrimaryBrandName(): String? {
         return prefs.getString(PRIMARY_BRAND, null)
+    }
+
+    fun saveLoginData(username: String, password: String) {
+        prefs.edit().putString(USERNAME, username).apply()
+        prefs.edit().putString(PASSWORD, password).apply()
+        prefs.edit().putBoolean(REMEMBER_ME, true).apply()
+    }
+
+    fun getUsername(): String? = prefs.getString(USERNAME, null)
+    fun getPassword(): String? = prefs.getString(PASSWORD, null)
+    fun isRemembered(): Boolean = prefs.getBoolean(REMEMBER_ME, false)
+
+    fun clearLoginData() {
+        prefs.edit().remove(USERNAME).apply()
+        prefs.edit().remove(PASSWORD).apply()
+        prefs.edit().putBoolean(REMEMBER_ME, false).apply()
+    }
+
+    fun setRemembered(value: Boolean) {
+        prefs.edit().putBoolean(REMEMBER_ME, value).apply()
     }
 }

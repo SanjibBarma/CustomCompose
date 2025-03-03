@@ -1,4 +1,4 @@
-package com.example.customcompose.compose.referring
+package com.example.customcompose.compose.referring.star_rating
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,13 +7,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
@@ -23,12 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.customcompose.R
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.ui.theme.StatRating
 import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
@@ -126,27 +120,5 @@ fun StarRatingBlock(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Star(isSelected: Boolean, onClick: () -> Unit, isActiveGroup: Boolean) {
-    val starIcon = if (isSelected) {
-        R.drawable.ic_star_on
-    } else {
-        R.drawable.ic_star_off
-    }
-    val starColor = if (isSelected) StatRating else Color.Gray
-
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(48.dp),
-        enabled = isActiveGroup
-    ) {
-        Icon(
-            painter = painterResource(id = starIcon),
-            contentDescription = "Star",
-            tint = starColor
-        )
     }
 }
