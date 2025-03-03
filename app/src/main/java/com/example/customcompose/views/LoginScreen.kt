@@ -198,11 +198,10 @@ fun LoginScreen(loginViewModel: LoginViewModel) {
                                 sharedPrefHelper.clearLoginData()
                             }
 
-                            val gson = Gson()
-                            val _signInInfoMap = gson.toJson(signInInfoMap)
-                            println("SignInInfoMap: $_signInInfoMap")
+                            //val gson = Gson()
+                            //val _signInInfoMap = gson.toJson(signInInfoMap)
+                            //println("SignInInfoMap: $_signInInfoMap")
 
-                            // API কল করুন
                             loginViewModel.getLoginInfo(signInInfoMap)
                         }
                     }
