@@ -1,9 +1,6 @@
 package com.example.customcompose.views
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,10 +38,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -53,8 +51,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.customcompose.R
-import com.example.customcompose.common_utils.CommonUtils.getAppVersionCode
-import com.example.customcompose.common_utils.CommonUtils.getDeviceInfo
+import com.example.customcompose.helper.CommonUtils.getAppVersionCode
+import com.example.customcompose.helper.CommonUtils.getDeviceInfo
 import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.viewmodel.LoginViewModel
@@ -81,6 +79,10 @@ fun LoginScreen(loginViewModel: LoginViewModel) {
 
     val time = SimpleDateFormat("yyyy", Locale.ENGLISH)
     val crrYear = time.format(Date())
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
 
     val signInInfoMap = HashMap<String, Any>().apply {
         put("password", password)
@@ -183,6 +185,8 @@ fun LoginScreen(loginViewModel: LoginViewModel) {
 
             Button(
                 onClick = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
                     isLoading = true
                     if (username.isEmpty() || password.isEmpty()) {
                         Toasty.warning(context, "Invalid username or password", Toasty.LENGTH_SHORT).show()
@@ -198,9 +202,9 @@ fun LoginScreen(loginViewModel: LoginViewModel) {
                                 sharedPrefHelper.clearLoginData()
                             }
 
-                            //val gson = Gson()
-                            //val _signInInfoMap = gson.toJson(signInInfoMap)
-                            //println("SignInInfoMap: $_signInInfoMap")
+                            val gson = Gson()
+                            val _signInInfoMap = gson.toJson(signInInfoMap)
+                            println("SignInInfoMap: $_signInInfoMap")
 
                             loginViewModel.getLoginInfo(signInInfoMap)
                         }
@@ -236,15 +240,17 @@ fun LoginScreen(loginViewModel: LoginViewModel) {
 
         when (val state = loginState.value) {
             is UIState.Error -> {
-                Toasty.warning(context, state.exception.message ?: "Login failed", Toasty.LENGTH_SHORT).show()
+                Toasty.error(context, state.exception.message ?: "Login failed", Toasty.LENGTH_SHORT).show()
                 isLoading = false
             }
             is UIState.Loading -> {
-                //
             }
             is UIState.Success -> {
                 isLoading = false
-
+                println("userSignInData: ${state.data.data.id}")
+                state.data.data.token?.let {token ->
+                    sharedPrefHelper.setSessionToken(token)
+                }
             }
         }
     }

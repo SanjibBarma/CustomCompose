@@ -52,8 +52,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.example.customcompose.R
-import com.example.customcompose.common_utils.CommonUtils.createVideoThumbnail
-import com.example.customcompose.common_utils.CommonUtils.getVideoPathFromCache
+import com.example.customcompose.helper.CommonUtils.createVideoThumbnail
+import com.example.customcompose.helper.CommonUtils.getVideoPathFromCache
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel

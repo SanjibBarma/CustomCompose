@@ -10,12 +10,12 @@ data class NumberCheckModel(
 )
 
 data class NumberCheckData(
-    val exist: Boolean?,
-    val eligible: Boolean?,
-    val information: List<DynamicInfoConModel>?,
-    val status: Int?,
-    val message: List<String>?,
-    val materials: List<MaterialFinalModel>?
+    val exist: Boolean,
+    val eligible: Boolean,
+    val information: List<DynamicInfoConModel>,
+    val status: Int,
+    val message: List<String>,
+    val materials: List<MaterialFinalModel>
 )
 
 data class DynamicInfoConModel(

@@ -49,12 +49,6 @@ fun DynamicScreen(
     val token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjUwNjIsInVzZXJuYW1lIjoiYnJ0ZXN0aW1zbEBlY3JtLWltc2wiLCJzY2hlbWEiOiJlY3JtIiwicGxhdGZvcm0iOjExNiwidXNlcl90eXBlIjoiZmYiLCJyb2xlIjoxLCJyb2xlX25hbWUiOiJSQSIsImVtYWlsIjoiYnJ0ZXN0aW1zbEBnbWFpbC5jb20iLCJyZXBvcnR0b19pZCI6MjUwNjAsImFnZW5jeSI6MSwib3JnX2luZm8iOnsiaWQiOjEsIm5hbWUiOiJCcml0aXNoIEFtZXJpY2FuIFRvYmFjY28gQmFuZ2xhZGVzaCIsInRhZyI6ImVjcm0iLCJkZXNjcmlwdGlvbiI6IkJyaXRpc2ggQW1lcmljYW4gVG9iYWNjbyBCYW5nbGFkZXNoIiwiYWRkcmVzcyI6IkRoYWthIiwicGhvbmVfbnVtYmVycyI6WyIxNzQ2MDk0MzQyIl0sImNvbnRhY3RfcGVyc29ucyI6W10sImlzX2RlbGV0ZWQiOmZhbHNlLCJjcmVhdGVkX2F0IjoiMjAyMS0wOC0zMVQwMzo1MjowOS42NTVaIiwidXBkYXRlZF9hdCI6IjIwMjEtMDgtMzFUMDM6NTI6MDkuNjU1WiIsInNpbmdsZV9kZXZpY2UiOnRydWUsInRoZW1lIjp7InByaWFtcnlfY29sb3IiOiIjMEQyQjYzIiwib3JnX2xvZ28iOiJEZXZlbG9wbWVudC91YmwvSW1hZ2VzL0xvZ28vOTY3MjIwOGYtODEzNS00MjdhLWEyZjItNTJkZWNmODkxMDY2LnBuZyJ9fSwiZGV2aWNlX2lkIjoiODQ0NDIzODAyNjE5NGE1YyIsImlhdCI6MTc0MDk4NDIzOCwiZXhwIjoxNzQxMDEzMDM4fQ.vKdHL6IBcsEX_yxA5dT6rUKcyqdCO0kw1NIWMV6ch_Q "
 
 
-    val requestBody = hashMapOf(
-        "key1" to "value1",
-        "key2" to 123,
-        "key3" to true
-    )
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -118,7 +112,7 @@ fun DynamicScreen(
                     println("Type Name: ${childView.type}")
                     println("BlockData: $childView")
 
-                    CheckGroupOrBlock(blockListViewModel, childView, isCurrentGroupActive, position, "mainSurvey")
+                    CheckGroupOrBlock(blockListViewModel, childView, isCurrentGroupActive, position, "mainSurvey", numberValidationViewModel)
                 }
 
                 if (isSubmitted) {

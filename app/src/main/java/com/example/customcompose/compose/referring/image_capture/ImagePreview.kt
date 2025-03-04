@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.customcompose.common_utils.CommonUtils.rotateImage
+import com.example.customcompose.helper.CommonUtils.rotateImage
 import java.io.File
 import java.io.IOException
 

@@ -38,6 +38,7 @@ import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.viewmodel.NumberValidationViewModel
 import es.dmoral.toasty.Toasty
 
 @Composable
@@ -45,7 +46,8 @@ fun CheckListBlock(
     block: Block,
     blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
-    destination: String
+    destination: String,
+    numberValidationViewModel: NumberValidationViewModel
 ) {
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
@@ -189,7 +191,8 @@ fun CheckListBlock(
                     onDismiss = {
                         showDialog.value = false
                         selectedOptions.value = selectedOptions.value - selectedSingleOption.value
-                    }
+                    },
+                    numberValidationViewModel
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))

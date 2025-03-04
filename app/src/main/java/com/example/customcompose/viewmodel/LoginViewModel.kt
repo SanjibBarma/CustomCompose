@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.customcompose.app_database.entity.SignInEntity
 import com.example.customcompose.helper.ConnectivityObserver
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.SignInModel
@@ -30,6 +31,18 @@ class LoginViewModel(
                         // API Call was successful
                         response.body()?.let { responseBody ->
                             _loginData.postValue(UIState.Success(responseBody))
+
+                            response.body()!!.data.id?.let {
+                                SignInEntity(
+                                    userId = it,
+                                    signInData = response.body()!!.data.toString()
+                                )
+                            }?.let {
+                                loginRepository.upsertSignInData(
+                                    it
+                                )
+                            }
+
                         } ?: run {
                             _loginData.postValue(UIState.Error(Exception("Empty response from server")))
                         }

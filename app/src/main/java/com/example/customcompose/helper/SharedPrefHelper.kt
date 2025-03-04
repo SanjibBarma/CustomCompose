@@ -13,6 +13,7 @@ class SharedPrefHelper(context: Context) {
     private val USERNAME = "USERNAME"
     private val PASSWORD = "PASSWORD"
     private val REMEMBER_ME = "REMEMBER_ME"
+    private val SESSION_TOKEN = "SESSION_TOKEN"
 
     fun saveItem(newItem: String) {
         val existingSet = getSet().toMutableSet()
@@ -78,5 +79,13 @@ class SharedPrefHelper(context: Context) {
 
     fun setRemembered(value: Boolean) {
         prefs.edit().putBoolean(REMEMBER_ME, value).apply()
+    }
+
+    fun setSessionToken(value: String) {
+        prefs.edit().putString(SESSION_TOKEN, value).apply()
+    }
+
+    fun getSessionToken(): String? {
+        return prefs.getString(SESSION_TOKEN, null)
     }
 }

@@ -23,6 +23,7 @@ class NumberValidationViewModel(
     private val _achievementData = MutableLiveData<UIState<GiveAbleAchievement>>(UIState.Loading)
     val achievementData: LiveData<UIState<GiveAbleAchievement>> = _achievementData
 
+    //check number validation api
     fun checkNumber(token: String, requestBody: HashMap<String, Any>) {
         viewModelScope.launch(Dispatchers.IO) {
             if (connectivityObserver.checkInternetConnection()) {
@@ -53,7 +54,8 @@ class NumberValidationViewModel(
         }
     }
 
-    fun getAchievementData(token: String, id: String/*, requestBody: HashMap<String, Any>*/) {
+    //get givable list api
+    fun getAchievementData(token: String, id: String, requestBody: HashMap<String, Any>) {
         viewModelScope.launch(Dispatchers.IO) {
             if (connectivityObserver.checkInternetConnection()) {
                 _achievementData.postValue(UIState.Loading)
@@ -65,7 +67,7 @@ class NumberValidationViewModel(
                         // API Call was successful
                         response.body()?.let { responseBody ->
                             _achievementData.postValue(UIState.Success(responseBody))
-//                            checkNumber(token, requestBody)
+                            checkNumber(token, requestBody)
                         } ?: run {
                             _achievementData.postValue(UIState.Error(Exception("Empty response from server")))
                         }

@@ -36,7 +36,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.customcompose.R
-import com.example.customcompose.common_utils.CommonUtils.rotateImageIfRequired
+import com.example.customcompose.helper.CommonUtils.rotateImageIfRequired
 import es.dmoral.toasty.Toasty
 import java.io.File
 

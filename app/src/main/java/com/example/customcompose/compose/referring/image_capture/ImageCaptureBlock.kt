@@ -36,9 +36,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.example.customcompose.R
-import com.example.customcompose.common_utils.CommonUtils.createImageFile
-import com.example.customcompose.common_utils.CommonUtils.rotateImage
-import com.example.customcompose.common_utils.CommonUtils.saveCapturedImageToCache
+import com.example.customcompose.helper.CommonUtils.createImageFile
+import com.example.customcompose.helper.CommonUtils.rotateImage
+import com.example.customcompose.helper.CommonUtils.saveCapturedImageToCache
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel

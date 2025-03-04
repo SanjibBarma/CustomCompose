@@ -15,6 +15,7 @@ import com.example.customcompose.compose.referring.star_rating.StarRatingBlock
 import com.example.customcompose.compose.referring.check_list.CheckListBlock
 import com.example.customcompose.model.Block
 import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.viewmodel.NumberValidationViewModel
 import es.dmoral.toasty.Toasty
 
 @Composable
@@ -23,7 +24,8 @@ fun CheckGroupOrBlock(
     surveyBlock: Block,
     isActiveGroup: Boolean,
     position: Int?,
-    destination: String
+    destination: String,
+    numberValidationViewModel: NumberValidationViewModel
 ) {
     val context = LocalContext.current
 
@@ -44,7 +46,7 @@ fun CheckGroupOrBlock(
             "video" -> VideoBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "star_rating" -> StarRatingBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "date" -> DatePickerBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "checklist" -> CheckListBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
+            "checklist" -> CheckListBlock(surveyBlock, blockListViewModel, isActiveGroup, destination, numberValidationViewModel)
             "product" -> BrandBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "interactive_gallery" -> InteractiveGalleryBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "image" -> ImageBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
@@ -53,7 +55,7 @@ fun CheckGroupOrBlock(
             "giveable" -> GiveAbleBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "interactive_av" -> InteractiveAvBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "non-referring" -> NonReferringGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination)
-            "numbervalidation" -> NumberValidationGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination)
+            "numbervalidation" -> NumberValidationGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination, numberValidationViewModel)
 
             else -> {
                 Text("Unsupported block type: ${surveyBlock.type}", color = Color.Red)

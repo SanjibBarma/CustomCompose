@@ -1,4 +1,4 @@
-package com.example.customcompose.common_utils
+package com.example.customcompose.helper
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -23,7 +23,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.provider.Settings
-import okhttp3.internal.Util.getSystemProperty
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.util.*
@@ -129,45 +128,51 @@ object CommonUtils {
     @SuppressLint("HardwareIds")
     fun getDeviceInfo(context: Context): HashMap<String, Any> {
         val deviceInfoMap = HashMap<String, Any>()
-        val deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-        val androidVersion = Build.VERSION.RELEASE
-        val apiVersion = Build.VERSION.SDK_INT
-        val brand = Build.BRAND
-        val model = Build.MODEL
-        val manufacturer = Build.MANUFACTURER
-        val uiVersion = getSystemProperty("ro.build.version.incremental") ?: "Unknown"
-        val userType = getSystemProperty("ro.build.type") ?: "Unknown"
-        val securityPatch = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Build.VERSION.SECURITY_PATCH
-        } else {
-            "Unknown"
-        }
-        val ipAddress = getIPAddress()
-        val networkType = getNetworkType(context)
-        val imei = "unknown"
-        val appVersion = "e-1.0.5.5"
-        val appVersionCode = 1055
-        val mobileNumber = ""
-        val currentYear = SimpleDateFormat("yyyy", Locale.ENGLISH).format(Date())
+//        val deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+//        val androidVersion = Build.VERSION.RELEASE
+//        val apiVersion = Build.VERSION.SDK_INT
+//        val brand = Build.BRAND
+//        val model = Build.MODEL
+//        val manufacturer = Build.MANUFACTURER
+//        val uiVersion = getSystemProperty("ro.build.version.incremental") ?: "Unknown"
+//        val userType = getSystemProperty("ro.build.type") ?: "Unknown"
+//        val securityPatch = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            Build.VERSION.SECURITY_PATCH
+//        } else {
+//            "Unknown"
+//        }
+//        val ipAddress = getIPAddress()
+//        val networkType = getNetworkType(context)
+//        val imei = "unknown"
+//        val appVersion = "e-1.0.5.5"
+//        val appVersionCode = 1055
+//        val mobileNumber = ""
+//        val currentYear = SimpleDateFormat("yyyy", Locale.ENGLISH).format(Date())
 
         deviceInfoMap.apply {
-            put("device_id", deviceId)
-            put("security_patch", securityPatch)
-            put("ui_version", uiVersion)
-            put("android_version", androidVersion)
-            put("ip_address", ipAddress)
-            put("api_version", apiVersion)
-            put("manufacture", manufacturer)
-            put("user_type", userType)
-            put("imei", imei)
-            put("model", model)
-            put("network_type", networkType)
-            put("mobile_number", mobileNumber)
-            put("brand", brand)
+            put("device_id", Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID))
+            put("security_patch", if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Build.VERSION.SECURITY_PATCH
+            } else {
+                "Unknown"
+            })
+            put("ui_version", getSystemProperty("ro.build.version.incremental") ?: "Unknown")
+            put("android_version", Build.VERSION.RELEASE)
+            put("ip_address", getIPAddress())
+            put("api_version", Build.VERSION.SDK_INT)
+            put("manufacture", Build.MANUFACTURER)
+            put("user_type", getSystemProperty("ro.build.type") ?: "Unknown")
+            put("imei", "")
+            put("model", Build.MODEL)
+            put("network_type", getNetworkType(context))
+            put("mobile_number", "")
+            put("brand", Build.BRAND)
 
             try {
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                packageInfo.versionName?.let { put("app_version", it) }
+                packageInfo.versionName?.let {
+                    put("app_version", it)
+                }
                 put("app_version_code", packageInfo.versionCode)
 
                 packageInfo.versionCode
