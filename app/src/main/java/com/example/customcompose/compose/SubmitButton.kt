@@ -18,7 +18,7 @@ fun SubmitButton(blockListViewModel: BlockListViewModel) {
         onClick = {
             val gson = Gson()
             val comboHistory = mutableListOf<SurveyHistoryModel>()
-            for (surveyBlockHistory in blockListViewModel.surveyBlockListItem.value) {
+            for (surveyBlockHistory in blockListViewModel.parentSurveyBlockList.value) {
                 if (surveyBlockHistory?.surveyHistoryModel != null){
                     for (surveyHistory in surveyBlockHistory.surveyHistoryModel) {
                         if (surveyHistory != null) {

@@ -24,7 +24,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 import androidx.compose.material3.*
-import com.example.customcompose.compose.RoutePlanView
+import androidx.navigation.NavHostController
+import com.example.customcompose.compose.route_plan.RoutePlanView
 import com.example.customcompose.compose.SubmitButton
 import com.example.customcompose.compose.group.CheckGroupOrBlock
 import com.example.customcompose.compose.referring.LocationBlock
@@ -38,16 +39,14 @@ fun DynamicScreen(
     blockListViewModel: BlockListViewModel,
     surveyDataModelList: List<SurveyDataModel>,
     routePlanList: List<RoutePlanData>,
-    numberValidationViewModel: NumberValidationViewModel
+    numberValidationViewModel: NumberValidationViewModel,
+    navController: NavHostController
 ) {
-    val surveyViewListItem by blockListViewModel.surveyBlockListItem.collectAsState()
+    val surveyViewListItem by blockListViewModel.parentSurveyBlockList.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val isSubmitted by blockListViewModel.isSubmitted.collectAsState()
     val isRoutePlanShow by blockListViewModel.isRoutePlan.collectAsState()
-
-    val token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjUwNjIsInVzZXJuYW1lIjoiYnJ0ZXN0aW1zbEBlY3JtLWltc2wiLCJzY2hlbWEiOiJlY3JtIiwicGxhdGZvcm0iOjExNiwidXNlcl90eXBlIjoiZmYiLCJyb2xlIjoxLCJyb2xlX25hbWUiOiJSQSIsImVtYWlsIjoiYnJ0ZXN0aW1zbEBnbWFpbC5jb20iLCJyZXBvcnR0b19pZCI6MjUwNjAsImFnZW5jeSI6MSwib3JnX2luZm8iOnsiaWQiOjEsIm5hbWUiOiJCcml0aXNoIEFtZXJpY2FuIFRvYmFjY28gQmFuZ2xhZGVzaCIsInRhZyI6ImVjcm0iLCJkZXNjcmlwdGlvbiI6IkJyaXRpc2ggQW1lcmljYW4gVG9iYWNjbyBCYW5nbGFkZXNoIiwiYWRkcmVzcyI6IkRoYWthIiwicGhvbmVfbnVtYmVycyI6WyIxNzQ2MDk0MzQyIl0sImNvbnRhY3RfcGVyc29ucyI6W10sImlzX2RlbGV0ZWQiOmZhbHNlLCJjcmVhdGVkX2F0IjoiMjAyMS0wOC0zMVQwMzo1MjowOS42NTVaIiwidXBkYXRlZF9hdCI6IjIwMjEtMDgtMzFUMDM6NTI6MDkuNjU1WiIsInNpbmdsZV9kZXZpY2UiOnRydWUsInRoZW1lIjp7InByaWFtcnlfY29sb3IiOiIjMEQyQjYzIiwib3JnX2xvZ28iOiJEZXZlbG9wbWVudC91YmwvSW1hZ2VzL0xvZ28vOTY3MjIwOGYtODEzNS00MjdhLWEyZjItNTJkZWNmODkxMDY2LnBuZyJ9fSwiZGV2aWNlX2lkIjoiODQ0NDIzODAyNjE5NGE1YyIsImlhdCI6MTc0MDk4NDIzOCwiZXhwIjoxNzQxMDEzMDM4fQ.vKdHL6IBcsEX_yxA5dT6rUKcyqdCO0kw1NIWMV6ch_Q "
-
 
     Scaffold(
         topBar = {
@@ -68,7 +67,7 @@ fun DynamicScreen(
                 Button(
                     onClick = {
                         blockListViewModel.clearRouteList()
-                        blockListViewModel.addNextRoutePlanData(routePlanList[0].type_slug, routePlanList, routePlanList.size+1)
+                        blockListViewModel.addNextRoutePlanData(routePlanList[0].type_slug, routePlanList, blockListViewModel.routeParentList.value.size)
                         blockListViewModel.showRoutePlanView()
 
 //                        numberValidationViewModel.getAchievementData("bearer $token", "127")

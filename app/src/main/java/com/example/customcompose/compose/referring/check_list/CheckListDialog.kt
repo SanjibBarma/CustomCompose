@@ -42,7 +42,7 @@ fun CheckListDialog(
     numberValidationViewModel: NumberValidationViewModel
 ) {
 
-    val surveyViewListItem by blockListViewModel.checkListBlockListItem.collectAsState()
+    val surveyViewListItem by blockListViewModel.checkListParentBlockList.collectAsState()
     val listState = remember { LazyListState() }
     val coroutineScope = rememberCoroutineScope()
     val isCheckList by blockListViewModel.isCheckList.collectAsState()
@@ -104,7 +104,7 @@ fun CheckListDialog(
                     if (isCheckList) {
 
                         val comboHistory = mutableListOf<SurveyHistoryModel>()
-                        for (surveyBlockHistory in blockListViewModel.checkListBlockListItem.value) {
+                        for (surveyBlockHistory in blockListViewModel.checkListParentBlockList.value) {
                             for (surveyHistory in surveyBlockHistory.surveyHistoryModel) {
                                 if (surveyHistory != null) {
                                     comboHistory.add(

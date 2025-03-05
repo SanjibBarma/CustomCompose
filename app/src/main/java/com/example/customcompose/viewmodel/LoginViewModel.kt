@@ -8,7 +8,9 @@ import com.example.customcompose.app_database.entity.SignInEntity
 import com.example.customcompose.helper.ConnectivityObserver
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.SignInModel
+import com.example.customcompose.model.number_validation.NumberCheckModel
 import com.example.customcompose.repository.LoginRepository
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -16,6 +18,7 @@ class LoginViewModel(
     private val loginRepository: LoginRepository,
     private val connectivityObserver: ConnectivityObserver
 ): ViewModel() {
+
     private val _loginData = MutableLiveData<UIState<SignInModel>>(UIState.Loading)
     val loginData: LiveData<UIState<SignInModel>> = _loginData
 
@@ -38,18 +41,19 @@ class LoginViewModel(
                                     signInData = response.body()!!.data.toString()
                                 )
                             }?.let {
-                                loginRepository.upsertSignInData(
-                                    it
-                                )
+                                loginRepository.upsertSignInData(it)
                             }
 
                         } ?: run {
                             _loginData.postValue(UIState.Error(Exception("Empty response from server")))
                         }
                     } else {
-                        // API Call was unsuccessful, handle error response
-                        val errorMessage = response.errorBody()?.string() ?: "Unknown error"
-                        _loginData.postValue(UIState.Error(Exception("Error ${response.code()}: $errorMessage")))
+                        val errorResponse = response.errorBody()?.let { errorBody ->
+                            val errorMessage = errorBody.string()
+                            val apiError = Gson().fromJson(errorMessage, SignInModel::class.java)
+                            apiError.status ?: "Unknown error"
+                        } ?: "Unknown error"
+                        _loginData.postValue(UIState.Error(Exception("Error ${response.code()}: $errorResponse")))
                     }
 
                 } catch (e: Exception) {

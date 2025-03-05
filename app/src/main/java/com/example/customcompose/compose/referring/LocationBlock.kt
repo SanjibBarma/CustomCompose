@@ -21,13 +21,13 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
 fun LocationBlock(blockListViewModel: BlockListViewModel, isActiveGroup: Boolean) {
-    val routeListItem by blockListViewModel.routeListItem.collectAsState()
+    val routeListItem by blockListViewModel.routeParentList.collectAsState()
 
-    val allAnswers = routeListItem
-        .flatMap { it.locationList.orEmpty() } // fetching all the data from locationList
-        .flatMap { it.surveyHistoryModel.orEmpty() } // now fetching all from surveyHistoryModel which is under locationList
-        .mapNotNull { it?.answer } // accepts null from surveyHistoryModel taking all the answer
-        .joinToString(", ") // seperating all the answer using ","
+//    val allAnswers = routeListItem
+//        .flatMap { it.locationList.orEmpty() } // fetching all the data from locationList
+//        .flatMap { it.routePlanHistory.orEmpty() } // now fetching all from surveyHistoryModel which is under locationList
+//        .mapNotNull { it?.answer } // accepts null from surveyHistoryModel taking all the answer
+//        .joinToString(", ") // seperating all the answer using ","
 
 //    println("All_location: $allAnswers")
 
@@ -47,7 +47,7 @@ fun LocationBlock(blockListViewModel: BlockListViewModel, isActiveGroup: Boolean
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Location: $allAnswers",
+                "Location: ",/*$allAnswers*/
                 modifier = Modifier
                     .padding(16.dp),
                 fontSize = 14.sp

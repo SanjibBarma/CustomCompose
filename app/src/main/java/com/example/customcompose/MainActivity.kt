@@ -18,6 +18,7 @@ import com.example.customcompose.model.SURVEY_FLOW_JSON
 import com.example.customcompose.model.LOCATION_STRING
 import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.model.SurveyDataModel
+import com.example.customcompose.navigation.Navigation
 import com.example.customcompose.network.RetrofitInstance
 import com.example.customcompose.repository.LoginRepository
 import com.example.customcompose.repository.NumberValidationRepository
@@ -75,8 +76,15 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CustomComposeTheme {
-                DynamicScreen(blockListViewModel, surveyDataModelList, routePlanList, numberValidationViewModel)
+//                DynamicScreen(blockListViewModel, surveyDataModelList, routePlanList, numberValidationViewModel)
 //                LoginScreen(loginViewModel)
+                Navigation(
+                    blockListViewModel,
+                    surveyDataModelList,
+                    routePlanList,
+                    numberValidationViewModel,
+                    loginViewModel
+                )
             }
         }
     }

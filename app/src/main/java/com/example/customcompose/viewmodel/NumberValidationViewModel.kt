@@ -6,9 +6,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.helper.ConnectivityObserver
 import com.example.customcompose.helper.UIState
+import com.example.customcompose.model.SignInModel
 import com.example.customcompose.model.number_validation.GiveAbleAchievement
 import com.example.customcompose.model.number_validation.NumberCheckModel
 import com.example.customcompose.repository.NumberValidationRepository
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -40,9 +42,12 @@ class NumberValidationViewModel(
                             _checkNumberData.postValue(UIState.Error(Exception("Empty response from server")))
                         }
                     } else {
-                        // API Call was unsuccessful, handle error response
-                        val errorMessage = response.errorBody()?.string() ?: "Unknown error"
-                        _checkNumberData.postValue(UIState.Error(Exception("Error ${response.code()}: $errorMessage")))
+                        val errorResponse = response.errorBody()?.let { errorBody ->
+                            val errorMessage = errorBody.string()
+                            val apiError = Gson().fromJson(errorMessage, NumberCheckModel::class.java)
+                            apiError.message ?: "Unknown error"
+                        } ?: "Unknown error"
+                        _checkNumberData.postValue(UIState.Error(Exception("Error ${response.code()}: $errorResponse")))
                     }
 
                 } catch (e: Exception) {
@@ -72,9 +77,12 @@ class NumberValidationViewModel(
                             _achievementData.postValue(UIState.Error(Exception("Empty response from server")))
                         }
                     } else {
-                        // API Call was unsuccessful, handle error response
-                        val errorMessage = response.errorBody()?.string() ?: "Unknown error"
-                        _achievementData.postValue(UIState.Error(Exception("Error ${response.code()}: $errorMessage")))
+                        val errorResponse = response.errorBody()?.let { errorBody ->
+                            val errorMessage = errorBody.string()
+                            val apiError = Gson().fromJson(errorMessage, GiveAbleAchievement::class.java)
+                            apiError.message ?: "Unknown error"
+                        } ?: "Unknown error"
+                        _achievementData.postValue(UIState.Error(Exception("Error ${response.code()}: $errorResponse")))
                     }
 
                 } catch (e: Exception) {

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,7 +19,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -72,6 +70,8 @@ fun NumberValidationGroup(
     val numberValidationState = numberValidationViewModel.checkNumberData.observeAsState(initial = UIState.Loading)
     val givableDataState = numberValidationViewModel.achievementData.observeAsState(initial = UIState.Loading)
     var isLoading by remember { mutableStateOf(false) }
+    var isFreshConsumer by remember { mutableStateOf(false) }
+    val gson = Gson()
 
     Box(
         modifier = Modifier
@@ -111,7 +111,7 @@ fun NumberValidationGroup(
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        isLoading = true
+                        //isLoading = true
                         if (currentBlock.surveyHistoryModel.isNotEmpty()){
                             println("history list size: ${currentBlock.surveyHistoryModel}")
                             for (nonRefBlocks in currentBlock.blocks){
@@ -147,8 +147,9 @@ fun NumberValidationGroup(
                         }
 
                         val surveyDataMap = mutableMapOf<String, HashMap<String, String>>()
-                        val sourceLocation = blockListViewModel.routeListItem.value[0].locationList?.get(0)?.id
-                        val locationId = blockListViewModel.routeListItem.value[0].locationList?.lastOrNull()?.id
+                        val sourceLocation = blockListViewModel.routeParentList.value[0].selectedId
+                        val locationId = blockListViewModel.routeParentList.value[blockListViewModel.routeParentList.value.size-1].selectedId
+
                         val numberValidationMap = HashMap<String, Any>()
 
                         if (currentBlock.surveyHistoryModel.isNotEmpty()) {
@@ -160,28 +161,25 @@ fun NumberValidationGroup(
                                     )
                                 }
                             }
+
+                            numberValidationMap.apply {
+                                put("numberValidation", surveyDataMap)
+                                if (sourceLocation != null) {
+                                    put("source_location", sourceLocation)
+                                }
+                                if (locationId != null) {
+                                    put("location_id", locationId)
+                                }
+                            }
                         }
 
-                        val gson = Gson()
-                        val jsonString = gson.toJson(surveyDataMap)
+
+                        val jsonString = gson.toJson(numberValidationMap)
                         println("number_validation_map $jsonString")
-
-                        numberValidationMap.apply {
-                            put("numberValidation", surveyDataMap)
-                            if (sourceLocation != null) {
-                                put("source_location", sourceLocation)
-                            }
-                            if (locationId != null) {
-                                put("location_id", locationId)
-                            }
-                        }
-
-
-
 
 //                        val extraService = true
 //                        if (extraService){
-//                            numberValidationViewModel.getAchievementData("bearer ${sharedPrefHelper.getSessionToken()}", "127", numberValidationMap)
+//                            numberValidationViewModel.getAchievementData("bearer ${sharedPrefHelper.getSessionToken()}", "125", numberValidationMap)
 //                        }else{
 //                            numberValidationViewModel.checkNumber("bearer ${sharedPrefHelper.getSessionToken()}", numberValidationMap)
 //                        }
@@ -199,9 +197,9 @@ fun NumberValidationGroup(
             }
         }
 
-//        if (isLoading){
-//            PopupFreshConsumer(onDismiss = {isLoading = false}  )
-//        }
+        if (isFreshConsumer){
+            PopupFreshConsumer(currentBlock, blockListViewModel, onDismiss = {isFreshConsumer = false})
+        }
 
         if (isLoading) {
             Box(
@@ -228,12 +226,20 @@ fun NumberValidationGroup(
 
                 if (!isExist && isEligible){
                     //fresh consumer
+//                    PopupFreshConsumer(currentBlock, blockListViewModel, onDismiss = {isLoading = false})
+                    isFreshConsumer = true
                 }else if (isExist && isEligible) {
                     //non fresh consumer
+//                    PopupFreshConsumer(currentBlock, blockListViewModel, onDismiss = {isLoading = false})
+                    isFreshConsumer = true
                 } else if (isExist && !isEligible) {
                     // non fresh consumer
+//                    PopupFreshConsumer(currentBlock, blockListViewModel, onDismiss = {isLoading = false})
+                    isFreshConsumer = true
                 }else if (!isExist && !isEligible){
                     //banned consumer
+//                    PopupFreshConsumer(currentBlock, blockListViewModel, onDismiss = {isLoading = false})
+                    isFreshConsumer = true
                 }
             }
         }
@@ -255,7 +261,11 @@ fun NumberValidationGroup(
 }
 
 @Composable
-fun PopupFreshConsumer(onDismiss: () -> Unit) {
+fun PopupFreshConsumer(
+    currentBlock: Block?,
+    blockListViewModel: BlockListViewModel,
+    onDismiss: () -> Unit
+) {
     Dialog(
         onDismissRequest = { onDismiss() },
         properties = DialogProperties(
@@ -269,7 +279,6 @@ fun PopupFreshConsumer(onDismiss: () -> Unit) {
                 .wrapContentHeight()
                 .background(Color.Transparent)
         ) {
-            // Add spacer inside Box to push the Card down
 
             Column {
                 Spacer(modifier = Modifier.height(35.dp))
@@ -305,7 +314,9 @@ fun PopupFreshConsumer(onDismiss: () -> Unit) {
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Button(
-                                onClick = { },
+                                onClick = {
+                                    blockListViewModel.addBlockToTheSurveyFlow(currentBlock?.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no)
+                                },
                                 modifier = Modifier
                                     .width(120.dp),
                                 colors = ButtonDefaults.buttonColors(Color(0xFF6200EE))

@@ -120,7 +120,7 @@ fun CheckListBlock(
 
                                         val index = block.options.indexOf(option) ?: -1
                                         if (index != -1) {
-                                            blockListViewModel.removeHistoryByIndex(index)
+                                            blockListViewModel.removeChkListHistoryByIndex(index)
                                         }
                                     }
                                 }
@@ -154,7 +154,7 @@ fun CheckListBlock(
 
                                             val index = block.options?.indexOf(option) ?: -1
                                             if (index != -1) {
-                                                blockListViewModel.removeHistoryByIndex(index)
+                                                blockListViewModel.removeChkListHistoryByIndex(index)
                                             }
                                         }
                                     }
