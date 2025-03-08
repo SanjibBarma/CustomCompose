@@ -1,9 +1,14 @@
 package com.example.customcompose.network
 
+import com.example.customcompose.model.CampaignsModel
 import com.example.customcompose.model.SignInModel
+import com.example.customcompose.model.SurveyData
+import com.example.customcompose.model.SurveyModel
+import com.example.customcompose.model.UserInfoModel
 import com.example.customcompose.model.number_validation.GiveAbleAchievement
 import com.example.customcompose.model.number_validation.NumberCheckModel
-import retrofit2.Call
+import com.google.gson.JsonObject
+
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -28,8 +33,31 @@ interface ApiService {
         @Path("id") id: String
     ): Response<GiveAbleAchievement>
 
+    //get login info
     @POST("/login-manager/api/v1/auth/signin")
     suspend fun getSignInInfo(
         @Body signInMap: HashMap<String, Any>?
     ): Response<SignInModel>
+
+    //get userinfo
+    @Headers("Content-Type: application/json;charset=UTF-8")
+    @GET("/campaign-manager/api/v1/survey/get-user")
+    suspend fun getUserInfo(
+        @Header("Authorization") token: String?
+    ): Response<UserInfoModel>
+
+    // Get campaign list
+    @Headers("Content-Type: application/json;charset=UTF-8")
+    @GET("/campaign-manager/api/v1/survey/get-campaigns")
+    suspend fun getBrCampList(
+        @Header("Authorization") authToken: String?
+    ): Response<CampaignsModel>
+
+    // Get Survey Data
+    @Headers("Content-Type: application/json;charset=UTF-8")
+    @GET("/campaign-manager/api/v1/survey/get-config/{id}")
+    suspend fun getSurveyData(
+        @Header("Authorization") authToken: String?,
+        @Path("id") id: String?
+    ): Response<SurveyData>
 }

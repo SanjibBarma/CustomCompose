@@ -16,7 +16,7 @@ import com.example.customcompose.views.LoginScreen
 fun Navigation (
     blockListViewModel: BlockListViewModel,
     surveyDataModelList: List<SurveyDataModel>,
-    routePlanList: List<RoutePlanData>,
+   /* routePlanList: List<RoutePlanData>,*/
     numberValidationViewModel: NumberValidationViewModel,
     loginViewModel: LoginViewModel
 ){
@@ -32,7 +32,7 @@ fun Navigation (
             DynamicScreen(
                 blockListViewModel,
                 surveyDataModelList,
-                routePlanList,
+                loginViewModel,
                 numberValidationViewModel,
                 navController)
         }

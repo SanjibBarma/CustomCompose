@@ -2,7 +2,6 @@ package com.example.customcompose.views
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -56,18 +55,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.customcompose.R
+import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.CommonUtils.getAppVersionCode
 import com.example.customcompose.helper.CommonUtils.getDeviceInfo
-import com.example.customcompose.helper.SharedPrefHelper
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.navigation.Screen
 import com.example.customcompose.ui.theme.DimBackground
 import com.example.customcompose.viewmodel.LoginViewModel
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -77,15 +73,18 @@ import java.util.Locale
 fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController) {
 
     val context = LocalContext.current
-    val sharedPrefHelper = remember { SharedPrefHelper(context) }
+    val appSessionManager = remember { AppSessionManager(context) }
 
-    var username by remember { mutableStateOf(sharedPrefHelper.getUsername() ?: "") }
-    var password by remember { mutableStateOf(sharedPrefHelper.getPassword() ?: "") }
+    var username by remember { mutableStateOf(appSessionManager.getUsername() ?: "") }
+    var password by remember { mutableStateOf(appSessionManager.getPassword() ?: "") }
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(sharedPrefHelper.isRemembered()) }
+    var rememberMe by remember { mutableStateOf(appSessionManager.isRemembered()) }
 
     val loginState = loginViewModel.loginData.observeAsState(initial = UIState.Loading)
+    val userInfoDataState = loginViewModel.userData.observeAsState(initial = UIState.Loading)
+    val campaignListDataState = loginViewModel.campaignListData.observeAsState(initial = UIState.Loading)
+    val surveyDataState = loginViewModel.surveyData.observeAsState(initial = UIState.Loading)
 
     val time = SimpleDateFormat("yyyy", Locale.ENGLISH)
     val crrYear = time.format(Date())
@@ -135,10 +134,12 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                 value = username,
                 onValueChange = { username = it },
                 placeholder = { Text("Username", fontSize = 16.sp) },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
                 singleLine = true,
                 shape = RoundedCornerShape(30.dp),
-                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp),
+                textStyle = TextStyle(fontSize = 16.sp),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     containerColor = Color.White,
                     focusedBorderColor = Color.Gray,
@@ -154,10 +155,12 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                 value = password,
                 onValueChange = { password = it },
                 placeholder = { Text("Password", fontSize = 16.sp) },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
                 singleLine = true,
                 shape = RoundedCornerShape(30.dp),
-                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp),
+                textStyle = TextStyle(fontSize = 16.sp),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     containerColor = Color.White,
                     focusedBorderColor = Color.Gray,
@@ -184,7 +187,7 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                     checked = rememberMe,
                     onCheckedChange = {
                         rememberMe = it
-                        sharedPrefHelper.setRemembered(it)
+                        appSessionManager.setRemembered(it)
                     },
                     modifier = Modifier.scale(.8f)
                 )
@@ -207,9 +210,9 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                             isLoading = false
                         } else {
                             if (rememberMe) {
-                                sharedPrefHelper.saveLoginData(username, password)
+                                appSessionManager.saveLoginData(username, password)
                             } else {
-                                sharedPrefHelper.clearLoginData()
+                                appSessionManager.clearLoginData()
                             }
 
                             val gson = Gson()
@@ -255,6 +258,7 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
             }
         }
 
+        //login response state
         when (val state = loginState.value) {
             is UIState.Error -> {
                 Toasty.error(context, state.exception.message ?: "Login failed", Toasty.LENGTH_SHORT).show()
@@ -266,11 +270,66 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                 isLoading = false
                 println("userSignInData: ${state.data.data.id}")
                 state.data.data.token?.let {token ->
-                    sharedPrefHelper.setSessionToken(token)
+                    appSessionManager.setSessionToken(token)
                 }
 
+                appSessionManager.setBrId(state.data.data.id.toString())
+            }
+        }
+
+        //userinfo response state
+        when(val state = userInfoDataState.value){
+            is UIState.Error ->{
+                Toasty.error(context, state.exception.message ?: "Failed to get userinfo!", Toasty.LENGTH_SHORT).show()
+                isLoading = false
+            }
+            UIState.Loading -> {}
+            is UIState.Success -> {
+
+                val time = SimpleDateFormat("yyyy:MM:dd:HH:mm:ss")
+                val crrTime = time.format(Date())
+
+                state.data.data?.let { userData ->
+                    appSessionManager.createMerchantLoginSession(
+                        agencyName = userData[0].agency_name,
+                        orgName = userData[0].org_name,
+                        designation = userData[0].desigantion,
+                        Location = userData[0].locations,
+                        user_image = userData[0].user_image,
+                        crrTime = crrTime
+                    )
+                }
+            }
+        }
+
+        //campaign list response state
+        when(val state = campaignListDataState.value){
+            is UIState.Error -> {
+                Toasty.error(context, state.exception.message ?: "Failed to get campaign list!", Toasty.LENGTH_SHORT).show()
+                isLoading = false
+            }
+            UIState.Loading -> {}
+            is UIState.Success -> {
+                if (state.data.data[0].id != null){
+                    appSessionManager.setCampaignId(state.data.data[0].id.toString())
+                }
+            }
+        }
+
+        //survey data response state
+        when(val state = surveyDataState.value){
+            is UIState.Error -> {
+                Toasty.error(context, state.exception.message ?: "Failed to get survey data!", Toasty.LENGTH_SHORT).show()
+                isLoading = false
+            }
+            UIState.Loading -> {}
+            is UIState.Success -> {
                 //if login result is success then navigate to next screen
                 navController.navigate(Screen.DynamicScreen.route)
+                isLoading = false
+                appSessionManager.getCampaignId()?.let { camId ->
+                    loginViewModel.fetchSurveyDataByIds(appSessionManager.getBrId().toString(), camId)
+                }
             }
         }
     }

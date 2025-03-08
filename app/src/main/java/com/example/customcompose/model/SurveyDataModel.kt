@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class SurveyDataModel(
     val type: String,
     val group: String,
+    val group_name: String?,
     val blocks: List<Block>,
     val jumping_logic: List<JumpingLogic>
 )
@@ -31,7 +32,7 @@ data class Block(
 data class Skip(val id: String, val group_no: String)
 
 @Serializable
-data class Option(val alias: Int, val slug: String?, val value: String, val referTo: ReferTo?)
+data class Option(val alias: Int, val slug: String?, val value: String, val referTo: ReferTo?, val name: String?, val isChecked: Boolean = false)
 
 @Serializable
 data class ReferTo(val id: String?, val group_no: String?)

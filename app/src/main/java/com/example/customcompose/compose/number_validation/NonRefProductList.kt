@@ -23,7 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.customcompose.R
-import com.example.customcompose.helper.SharedPrefHelper
+import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.Option
 import com.example.customcompose.model.SurveyHistoryModel
@@ -47,7 +47,7 @@ fun NonRefProductList(
     val existingData = blockListViewModel.getDataFromIndex(position, index)
     val context = LocalContext.current
     var selectedBrand by remember { mutableStateOf(existingData?.answer ?: "") }
-    val sharedPrefHelper =  SharedPrefHelper(context)
+    val sharedPrefHelper =  AppSessionManager(context)
     val question = block.question?.slug ?: ""
     val options = block.options ?: emptyList()
     val blockId = block.id ?: ""
@@ -100,15 +100,7 @@ fun NonRefProductList(
                         .background(backgroundColor)
                         .clickable(enabled = isActiveGroup) {
 
-                            //flatMap hoilo higher-order function ja nested collection ke single collection e niye ase
-                            //flatMap protita elements er jonne ekta collection or list create kore ja ekat flat list e marge kore
-                            val sourceLocation = blockListViewModel.routeParentList.value[0].locationList?.get(0)?.id
-//                            val sourceLocation = blockListViewModel.routeListItem.value
-//                                .flatMap { it.locationList.orEmpty() } // fetching all the data from locationList
-//                                .flatMap { it.routePlanHistory.orEmpty() } // now fetching all from surveyHistoryModel which is under locationList
-//                                .mapNotNull { it?.source_location } // accepts null from surveyHistoryModel taking all the answer
-//                                .lastOrNull()
-
+                            val sourceLocation = blockListViewModel.routeParentList.value[0].selectedId
 
                             println("source_location: $sourceLocation")
 

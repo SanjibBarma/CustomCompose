@@ -48,7 +48,7 @@ import com.example.customcompose.compose.number_validation.NonRefMultipleChoice
 import com.example.customcompose.compose.number_validation.NonRefNumberInput
 import com.example.customcompose.compose.number_validation.NonRefProductList
 import com.example.customcompose.compose.number_validation.NonRefTextInput
-import com.example.customcompose.helper.SharedPrefHelper
+import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.Block
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -66,7 +66,7 @@ fun NumberValidationGroup(
     numberValidationViewModel: NumberValidationViewModel
 ) {
     val context = LocalContext.current
-    val sharedPrefHelper = remember { SharedPrefHelper(context) }
+    val sharedPrefHelper = remember { AppSessionManager(context) }
     val numberValidationState = numberValidationViewModel.checkNumberData.observeAsState(initial = UIState.Loading)
     val givableDataState = numberValidationViewModel.achievementData.observeAsState(initial = UIState.Loading)
     var isLoading by remember { mutableStateOf(false) }

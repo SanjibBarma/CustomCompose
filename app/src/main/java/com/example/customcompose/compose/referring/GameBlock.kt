@@ -1,8 +1,5 @@
 package com.example.customcompose.compose.referring
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
 import android.content.IntentFilter
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -23,7 +20,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.customcompose.helper.GameBroadcastReceiver
-import com.example.customcompose.helper.SharedPrefHelper
+import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -54,7 +50,7 @@ fun GameBlock(
     val context = LocalContext.current
 //    val packageName = block.options?.get(0)?.value
     val packageName = "ltd.v2.game1"
-    val sharedPrefHelper = remember { SharedPrefHelper(context) }
+    val sharedPrefHelper = remember { AppSessionManager(context) }
 
     DisposableEffect(context) {
         val filter = IntentFilter("com.example.customcompose")

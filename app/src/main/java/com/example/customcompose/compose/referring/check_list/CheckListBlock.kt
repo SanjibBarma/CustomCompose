@@ -34,7 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.R
-import com.example.customcompose.helper.SharedPrefHelper
+import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -52,7 +52,7 @@ fun CheckListBlock(
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
     val context = LocalContext.current
-    val sharedPrefHelper = remember { SharedPrefHelper(context) }
+    val sharedPrefHelper = remember { AppSessionManager(context) }
 //    val selectedOptions = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
     val selectedOptions = remember { mutableStateOf(sharedPrefHelper.getSet() ?: emptySet()) }
 

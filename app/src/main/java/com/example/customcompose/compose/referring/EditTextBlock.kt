@@ -151,7 +151,7 @@ fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, isActive
                                         answer = text,
                                         id = currentBlockId
                                     )
-                                    block.surveyHistoryModel= listOf(surveyHistoryModel)
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                                     block.referTo?.group_no?.let { groupId ->
                                         block.referTo.id?.let { nextBlockId ->

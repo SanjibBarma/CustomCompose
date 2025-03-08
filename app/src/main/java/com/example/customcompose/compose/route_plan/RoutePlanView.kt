@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun RoutePlanView(
     blockListViewModel: BlockListViewModel,
-    surveyDataModelList: List<SurveyDataModel>,
+    surveyDataModel: List<SurveyDataModel>,
     onDismiss: () -> Unit
 ) {
 
@@ -85,7 +85,7 @@ fun RoutePlanView(
                         )
                         println("ListPosition: ${routeItem.typeTitle} and ${routeItem.listPosition}")
                     }
-                    RouteChildView(routeItem, blockListViewModel, surveyDataModelList, routeItem.listPosition)
+                    RouteChildView(routeItem, blockListViewModel, surveyDataModel, routeItem.listPosition)
                 }
             }
 

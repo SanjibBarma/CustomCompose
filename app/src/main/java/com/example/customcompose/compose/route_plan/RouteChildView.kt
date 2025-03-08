@@ -18,10 +18,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -31,7 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.customcompose.helper.SharedPrefHelper
+import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.RoutePlanParentModel
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.model.TARGET_ACHIEVEMENT_LIST
@@ -48,7 +46,7 @@ fun RouteChildView(
     listPosition: Int
 ) {
     val context = LocalContext.current
-    val sharedPrefHelper = remember { SharedPrefHelper(context) }
+    val sharedPrefHelper = remember { AppSessionManager(context) }
 //    val selectedItemId = remember { mutableStateOf<Int?>(null) }
     val selectedItemId = remember { mutableStateOf(locations.selectedId ?: 0) }
     val routeListItem by blockListViewModel.routeParentList.collectAsState()

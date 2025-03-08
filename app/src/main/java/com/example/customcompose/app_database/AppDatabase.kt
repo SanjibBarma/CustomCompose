@@ -4,12 +4,13 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.customcompose.app_database.dao.SignInDao
+import com.example.customcompose.app_database.dao.LocalDbDao
 import com.example.customcompose.app_database.entity.SignInEntity
+import com.example.customcompose.app_database.entity.SurveyDataEntity
 
-@Database(entities = [SignInEntity::class], version = 1, exportSchema = false)
+@Database(entities = [SignInEntity::class, SurveyDataEntity::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase(){
-    abstract fun signInDao(): SignInDao
+    abstract fun dbDao(): LocalDbDao
 
     companion object {
         @Volatile

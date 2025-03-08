@@ -2,6 +2,7 @@
 
 package com.example.customcompose.views
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -24,29 +25,48 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 import androidx.compose.material3.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import com.example.customcompose.compose.route_plan.RoutePlanView
 import com.example.customcompose.compose.SubmitButton
 import com.example.customcompose.compose.group.CheckGroupOrBlock
 import com.example.customcompose.compose.referring.LocationBlock
-import com.example.customcompose.model.RoutePlanData
+import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.SurveyDataModel
+import com.example.customcompose.model.SurveyModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.viewmodel.LoginViewModel
 import com.example.customcompose.viewmodel.NumberValidationViewModel
+import com.example.customcompose.views.SurveyDataManager.surveyDataModel
+import com.google.gson.Gson
 
 @Composable
 fun DynamicScreen(
     blockListViewModel: BlockListViewModel,
     surveyDataModelList: List<SurveyDataModel>,
-    routePlanList: List<RoutePlanData>,
+    loginViewModel: LoginViewModel,
     numberValidationViewModel: NumberValidationViewModel,
     navController: NavHostController
 ) {
+    val context = LocalContext.current
+    val appSessionManager = remember { AppSessionManager(context) }
     val surveyViewListItem by blockListViewModel.parentSurveyBlockList.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val isSubmitted by blockListViewModel.isSubmitted.collectAsState()
     val isRoutePlanShow by blockListViewModel.isRoutePlan.collectAsState()
+
+    val gson = Gson()
+    val surveyDataState = loginViewModel.localSurveyData.observeAsState()
+    val surveyData: SurveyModel = gson.fromJson(surveyDataState.value?.campData, SurveyModel::class.java)
+
+    val routePlanLocal = surveyData.route_plan
+//    val surveyDataModel = surveyData.survey_flow
+    SurveyDataManager.surveyDataModel = surveyData.survey_flow
+
+    Log.d("routePlanFromLocal", routePlanLocal.toString())
 
     Scaffold(
         topBar = {
@@ -67,7 +87,8 @@ fun DynamicScreen(
                 Button(
                     onClick = {
                         blockListViewModel.clearRouteList()
-                        blockListViewModel.addNextRoutePlanData(routePlanList[0].type_slug, routePlanList, blockListViewModel.routeParentList.value.size)
+//                        blockListViewModel.addNextRoutePlanData(routePlanList[0].type_slug, routePlanList, blockListViewModel.routeParentList.value.size)
+                        routePlanLocal?.get(0)?.let { blockListViewModel.addNextRoutePlanData(it.type_slug, routePlanLocal, blockListViewModel.routeParentList.value.size) }
                         blockListViewModel.showRoutePlanView()
 
 //                        numberValidationViewModel.getAchievementData("bearer $token", "127")
@@ -92,7 +113,7 @@ fun DynamicScreen(
                     if(isRoutePlanShow){
                         RoutePlanView(
                             blockListViewModel,
-                            surveyDataModelList,
+                            surveyDataModel!!,
                             onDismiss = {
                                 blockListViewModel.hideRoutePlanView()
                                 //blockListViewModel.clearRouteList()
@@ -122,5 +143,9 @@ fun DynamicScreen(
             }
         }
     }
+}
+
+object SurveyDataManager {
+    var surveyDataModel: List<SurveyDataModel>? = null
 }
 

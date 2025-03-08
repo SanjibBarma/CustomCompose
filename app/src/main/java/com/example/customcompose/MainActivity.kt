@@ -11,7 +11,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.example.customcompose.app_database.AppDatabase
-import com.example.customcompose.compose.group.PopupFreshConsumer
 import com.example.customcompose.helper.AudioRecorderService
 import com.example.customcompose.helper.ConnectivityObserver
 import com.example.customcompose.model.SURVEY_FLOW_JSON
@@ -26,14 +25,12 @@ import com.example.customcompose.ui.theme.CustomComposeTheme
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.LoginViewModel
 import com.example.customcompose.viewmodel.NumberValidationViewModel
-import com.example.customcompose.views.DynamicScreen
-import com.example.customcompose.views.LoginScreen
 import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
     private val gson = Gson()
     private val surveyDataModelList: List<SurveyDataModel> = gson.fromJson(SURVEY_FLOW_JSON, Array<SurveyDataModel>::class.java).toList()
-    private val routePlanList: List<RoutePlanData> = gson.fromJson(LOCATION_STRING, Array<RoutePlanData>::class.java).toList()
+//    private val routePlanList: List<RoutePlanData> = gson.fromJson(LOCATION_STRING, Array<RoutePlanData>::class.java).toList()
 
     private val requiredPermissions = mutableListOf(
         android.Manifest.permission.RECORD_AUDIO,
@@ -67,7 +64,7 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(requiredPermissions)
         }
         val appDatabase = AppDatabase.getDatabase(applicationContext)
-        val loginRepository = LoginRepository(apiService, appDatabase.signInDao())
+        val loginRepository = LoginRepository(apiService, appDatabase.dbDao())
         val loginViewModel = LoginViewModel(loginRepository, connectivityObserver)
 
 
@@ -81,7 +78,7 @@ class MainActivity : ComponentActivity() {
                 Navigation(
                     blockListViewModel,
                     surveyDataModelList,
-                    routePlanList,
+                    /*routePlanList,*/
                     numberValidationViewModel,
                     loginViewModel
                 )
