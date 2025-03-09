@@ -52,7 +52,7 @@ import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.Block
 import com.example.customcompose.viewmodel.BlockListViewModel
-import com.example.customcompose.viewmodel.NumberValidationViewModel
+import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 
@@ -63,7 +63,7 @@ fun NumberValidationGroup(
     position: Int?,
     isActiveGroup: Boolean,
     destination: String,
-    numberValidationViewModel: NumberValidationViewModel
+    numberValidationViewModel: SurveyFlowViewModel
 ) {
     val context = LocalContext.current
     val sharedPrefHelper = remember { AppSessionManager(context) }
@@ -186,7 +186,9 @@ fun NumberValidationGroup(
 
 
                         //this will add in popup
-                        blockListViewModel.addBlockToTheSurveyFlow(currentBlock.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no)
+                        currentBlock.position?.let {position ->
+                            blockListViewModel.addBlockToTheSurveyFlow(currentBlock.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no, position)
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -315,7 +317,9 @@ fun PopupFreshConsumer(
                         ) {
                             Button(
                                 onClick = {
-                                    blockListViewModel.addBlockToTheSurveyFlow(currentBlock?.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no)
+                                    currentBlock?.position?.let { position ->
+                                        blockListViewModel.addBlockToTheSurveyFlow(currentBlock?.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no, position)
+                                    }
                                 },
                                 modifier = Modifier
                                     .width(120.dp),

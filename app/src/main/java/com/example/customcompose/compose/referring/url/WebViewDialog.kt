@@ -56,7 +56,7 @@ fun WebViewDialog(
             block.options?.get(0)?.referTo?.id?.let { blockId ->
                 block.options[0].referTo?.group_no?.let { groupId ->
                     if (destination == "mainSurvey") {
-                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                     }else{
                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                     }
@@ -102,7 +102,7 @@ fun WebViewDialog(
                     block.options?.get(0)?.referTo?.id?.let { blockId ->
                         block.options[0].referTo?.group_no?.let { groupId ->
                             if (destination == "mainSurvey") {
-                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                             }else{
                                 blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                             }

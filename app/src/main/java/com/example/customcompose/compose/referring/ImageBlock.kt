@@ -269,7 +269,7 @@ fun ImageBlock(
                         block.skip?.id?.let { blockId ->
                             block.skip.group_no.let { groupId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                                 } else {
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }
@@ -313,7 +313,7 @@ fun ImageBlock(
                         selectedItem?.referTo?.group_no?.let { groupId ->
                             selectedItem!!.referTo!!.id?.let { nextBlockId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                                 } else {
                                     blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                 }

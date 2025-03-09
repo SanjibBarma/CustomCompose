@@ -13,10 +13,8 @@ import androidx.core.content.ContextCompat
 import com.example.customcompose.app_database.AppDatabase
 import com.example.customcompose.helper.AudioRecorderService
 import com.example.customcompose.helper.ConnectivityObserver
-import com.example.customcompose.model.SURVEY_FLOW_JSON
 import com.example.customcompose.model.LOCATION_STRING
 import com.example.customcompose.model.RoutePlanData
-import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.navigation.Navigation
 import com.example.customcompose.network.RetrofitInstance
 import com.example.customcompose.repository.LoginRepository
@@ -24,13 +22,13 @@ import com.example.customcompose.repository.NumberValidationRepository
 import com.example.customcompose.ui.theme.CustomComposeTheme
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.LoginViewModel
-import com.example.customcompose.viewmodel.NumberValidationViewModel
+import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
     private val gson = Gson()
-    private val surveyDataModelList: List<SurveyDataModel> = gson.fromJson(SURVEY_FLOW_JSON, Array<SurveyDataModel>::class.java).toList()
-//    private val routePlanList: List<RoutePlanData> = gson.fromJson(LOCATION_STRING, Array<RoutePlanData>::class.java).toList()
+//    private val surveyDataModelList: List<SurveyDataModel> = gson.fromJson(SURVEY_FLOW_JSON, Array<SurveyDataModel>::class.java).toList()
+    private val routePlanList: List<RoutePlanData> = gson.fromJson(LOCATION_STRING, Array<RoutePlanData>::class.java).toList()
 
     private val requiredPermissions = mutableListOf(
         android.Manifest.permission.RECORD_AUDIO,
@@ -58,7 +56,7 @@ class MainActivity : ComponentActivity() {
         val apiService = RetrofitInstance.apiService
         val numberValidationRepository = NumberValidationRepository(apiService)
         val connectivityObserver = ConnectivityObserver(applicationContext)
-        val numberValidationViewModel = NumberValidationViewModel(numberValidationRepository, connectivityObserver)
+        val numberValidationViewModel = SurveyFlowViewModel(numberValidationRepository, connectivityObserver)
 
         if (!hasRequiredPermissions()) {
             requestPermissionLauncher.launch(requiredPermissions)
@@ -69,7 +67,7 @@ class MainActivity : ComponentActivity() {
 
 
         //surveyFlow
-        val blockListViewModel = BlockListViewModel(applicationContext, surveyDataModelList)
+        val blockListViewModel = BlockListViewModel(applicationContext)
 
         setContent {
             CustomComposeTheme {
@@ -77,10 +75,9 @@ class MainActivity : ComponentActivity() {
 //                LoginScreen(loginViewModel)
                 Navigation(
                     blockListViewModel,
-                    surveyDataModelList,
-                    /*routePlanList,*/
                     numberValidationViewModel,
-                    loginViewModel
+                    loginViewModel,
+                    routePlanList
                 )
             }
         }

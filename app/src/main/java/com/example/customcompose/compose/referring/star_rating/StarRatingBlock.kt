@@ -77,7 +77,7 @@ fun StarRatingBlock(
                             block.referTo?.group_no?.let { groupId ->
                                 block.referTo.id?.let { blockId ->
                                     if (destination == "mainSurvey") {
-                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                                     } else {
                                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                     }
@@ -106,7 +106,7 @@ fun StarRatingBlock(
                         block.skip?.id?.let { blockId ->
                             block.skip.group_no.let { groupId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                                 } else {
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }

@@ -80,6 +80,9 @@ dependencies {
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation ("androidx.compose.material:material-icons-extended:1.5.0")
 
+    //logger
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
+
     //live data
     implementation ("androidx.compose.runtime:runtime-livedata:1.4.0")
 
@@ -92,4 +95,8 @@ dependencies {
 
     //navigation
     implementation("androidx.navigation:navigation-compose:2.6.0")
+
+    //Lottie Animation
+    implementation ("com.airbnb.android:lottie-compose:6.1.0")
+
 }

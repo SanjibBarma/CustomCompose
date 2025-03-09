@@ -58,6 +58,7 @@ import com.example.customcompose.R
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.CommonUtils.getAppVersionCode
 import com.example.customcompose.helper.CommonUtils.getDeviceInfo
+import com.example.customcompose.helper.LoadingAnimation
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.navigation.Screen
 import com.example.customcompose.ui.theme.DimBackground
@@ -246,15 +247,16 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(DimBackground),
+                    .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .height(100.dp)
-                        .width(100.dp),
-                    strokeWidth = 8.dp
-                )
+//                CircularProgressIndicator(
+//                    modifier = Modifier
+//                        .height(100.dp)
+//                        .width(100.dp),
+//                    strokeWidth = 8.dp
+//                )
+                LoadingAnimation()
             }
         }
 
@@ -310,8 +312,13 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
             }
             UIState.Loading -> {}
             is UIState.Success -> {
-                if (state.data.data[0].id != null){
-                    appSessionManager.setCampaignId(state.data.data[0].id.toString())
+
+                if (!state.data.data.isNullOrEmpty()){
+                    if (state.data.data[0].id != null){
+                        appSessionManager.setCampaignId(state.data.data[0].id.toString())
+                    }
+                }else{
+                    Toasty.error(context, "No campaign assign!", Toasty.LENGTH_SHORT).show()
                 }
             }
         }
@@ -325,11 +332,12 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
             UIState.Loading -> {}
             is UIState.Success -> {
                 //if login result is success then navigate to next screen
-                navController.navigate(Screen.DynamicScreen.route)
                 isLoading = false
                 appSessionManager.getCampaignId()?.let { camId ->
                     loginViewModel.fetchSurveyDataByIds(appSessionManager.getBrId().toString(), camId)
                 }
+
+                navController.navigate(Screen.DynamicScreen.route)
             }
         }
     }

@@ -34,21 +34,23 @@ import com.example.customcompose.compose.SubmitButton
 import com.example.customcompose.compose.group.CheckGroupOrBlock
 import com.example.customcompose.compose.referring.LocationBlock
 import com.example.customcompose.helper.AppSessionManager
+import com.example.customcompose.model.RoutePlanData
+import com.example.customcompose.model.SURVEY_FLOW_JSON
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.model.SurveyModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.LoginViewModel
-import com.example.customcompose.viewmodel.NumberValidationViewModel
+import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import com.example.customcompose.views.SurveyDataManager.surveyDataModel
 import com.google.gson.Gson
 
 @Composable
 fun DynamicScreen(
     blockListViewModel: BlockListViewModel,
-    surveyDataModelList: List<SurveyDataModel>,
     loginViewModel: LoginViewModel,
-    numberValidationViewModel: NumberValidationViewModel,
-    navController: NavHostController
+    numberValidationViewModel: SurveyFlowViewModel,
+    navController: NavHostController,
+    routePlanList: List<RoutePlanData>
 ) {
     val context = LocalContext.current
     val appSessionManager = remember { AppSessionManager(context) }
@@ -60,11 +62,11 @@ fun DynamicScreen(
 
     val gson = Gson()
     val surveyDataState = loginViewModel.localSurveyData.observeAsState()
-    val surveyData: SurveyModel = gson.fromJson(surveyDataState.value?.campData, SurveyModel::class.java)
+    val surveyData: SurveyModel = gson.fromJson(/*surveyDataState.value?.campData ?:*/ SURVEY_FLOW_JSON, SurveyModel::class.java)
 
     val routePlanLocal = surveyData.route_plan
 //    val surveyDataModel = surveyData.survey_flow
-    SurveyDataManager.surveyDataModel = surveyData.survey_flow
+    surveyDataModel = surveyData.survey_flow
 
     Log.d("routePlanFromLocal", routePlanLocal.toString())
 

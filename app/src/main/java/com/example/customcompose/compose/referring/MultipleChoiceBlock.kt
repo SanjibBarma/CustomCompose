@@ -89,7 +89,7 @@ fun MultipleChoiceBlock(
                                 option.referTo?.id?.let { referToId ->
                                     if (selectedOption.isNotEmpty()) {
                                         if (destination == "mainSurvey") {
-                                            blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
+                                            blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!, block.position)
                                         } else {
                                             blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
                                         }
@@ -121,7 +121,7 @@ fun MultipleChoiceBlock(
                                     option.referTo?.id?.let { referToId ->
                                         if (selectedOption.isNotEmpty()) {
                                             if (destination == "mainSurvey") {
-                                                blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
+                                                blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!, block.position)
                                             } else {
                                                 blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
                                             }
@@ -166,7 +166,7 @@ fun MultipleChoiceBlock(
                                         option.referTo?.id?.let { referToId ->
                                             if (selectedOption.isNotEmpty()) {
                                                 if (destination == "mainSurvey") {
-                                                    blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!)
+                                                    blockListViewModel.addBlockToTheSurveyFlow(referToId, option.referTo.group_no!!, block.position)
                                                 } else {
                                                     blockListViewModel.addBlockToTheCheckList(referToId, option.referTo.group_no!!)
                                                 }
@@ -201,7 +201,7 @@ fun MultipleChoiceBlock(
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                                 } else {
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }

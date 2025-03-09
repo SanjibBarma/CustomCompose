@@ -5,20 +5,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.customcompose.model.RoutePlanData
-import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.LoginViewModel
-import com.example.customcompose.viewmodel.NumberValidationViewModel
+import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import com.example.customcompose.views.DynamicScreen
 import com.example.customcompose.views.LoginScreen
 
 @Composable
 fun Navigation (
     blockListViewModel: BlockListViewModel,
-    surveyDataModelList: List<SurveyDataModel>,
-   /* routePlanList: List<RoutePlanData>,*/
-    numberValidationViewModel: NumberValidationViewModel,
-    loginViewModel: LoginViewModel
+    numberValidationViewModel: SurveyFlowViewModel,
+    loginViewModel: LoginViewModel,
+    routePlanList: List<RoutePlanData>
 ){
 
     val navController = rememberNavController()
@@ -31,10 +29,11 @@ fun Navigation (
         composable(route = Screen.DynamicScreen.route){
             DynamicScreen(
                 blockListViewModel,
-                surveyDataModelList,
                 loginViewModel,
                 numberValidationViewModel,
-                navController)
+                navController,
+                routePlanList
+            )
         }
     }
 }

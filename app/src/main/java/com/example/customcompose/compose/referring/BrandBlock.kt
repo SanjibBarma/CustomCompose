@@ -116,7 +116,9 @@ fun BrandBlock(
                                 option.referTo?.group_no?.let { groupId ->
                                     option.referTo.id?.let { nextBlockId ->
                                         if (destination == "mainSurvey") {
-                                            blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                            block.position?.let { position ->
+                                                blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, position)
+                                            }
                                         }else{
                                             blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                         }
@@ -174,7 +176,11 @@ fun BrandBlock(
                         block.skip?.id?.let { blockId ->
                             block.skip.group_no.let { groupId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    block.position?.let {
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId,
+                                            it
+                                        )
+                                    }
                                 }else{
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }

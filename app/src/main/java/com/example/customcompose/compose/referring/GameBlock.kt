@@ -133,7 +133,7 @@ fun GameBlock(
                         block.skip?.id?.let { blockId ->
                             block.skip.group_no.let { groupId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                                 } else {
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }

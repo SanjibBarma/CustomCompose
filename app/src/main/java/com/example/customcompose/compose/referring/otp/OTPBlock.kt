@@ -226,7 +226,7 @@ fun OTPBlock(
                                     block.skip?.group_no?.let { groupId ->
                                         block.skip.id.let { nextBlockId ->
                                             if (destination == "mainSurvey"){
-                                                blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                                blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                                             }else{
                                                 blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                             }
@@ -299,7 +299,7 @@ fun OTPBlock(
                                         block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                                         if (destination == "mainSurvey") {
-                                            blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!)
+                                            blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!, block.position)
                                         } else {
                                             blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
                                         }

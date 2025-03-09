@@ -93,7 +93,7 @@ fun EmojiRatingBlock(
                             block.referTo?.id?.let { blockId ->
                                 block.referTo.group_no?.let { groupId ->
                                     if (destination == "mainSurvey") {
-                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                                     } else {
                                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                     }
@@ -121,7 +121,7 @@ fun EmojiRatingBlock(
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                                 } else {
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }

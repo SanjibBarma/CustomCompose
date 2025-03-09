@@ -121,7 +121,7 @@ fun CheckboxBlock(
                             block.skip?.group_no?.let { groupId ->
                                 block.skip.id.let { blockId ->
                                     if (destination == "mainSurvey") {
-                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                                     }else{
                                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                     }
@@ -157,7 +157,7 @@ fun CheckboxBlock(
                             block.referTo?.group_no?.let { groupId ->
                                 block.referTo.id?.let { nextBlockId ->
                                     if (destination == "mainSurvey") {
-                                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                                     }else{
                                         blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                     }

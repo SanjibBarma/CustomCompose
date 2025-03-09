@@ -29,7 +29,7 @@ import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.compose.group.CheckGroupOrBlock
-import com.example.customcompose.viewmodel.NumberValidationViewModel
+import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,7 +39,7 @@ fun CheckListDialog(
     blockListViewModel: BlockListViewModel,
     onClose: () -> Unit,
     onDismiss: () -> Unit,
-    numberValidationViewModel: NumberValidationViewModel
+    numberValidationViewModel: SurveyFlowViewModel
 ) {
 
     val surveyViewListItem by blockListViewModel.checkListParentBlockList.collectAsState()

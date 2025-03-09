@@ -41,7 +41,9 @@ fun NonReferringGroup(
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = {
-                    blockListViewModel.addBlockToTheSurveyFlow(currentBlock.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no)
+                    currentBlock.position?.let {position ->
+                        blockListViewModel.addBlockToTheSurveyFlow(currentBlock.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no, position)
+                    }
                 }
             ) {
                 Text("Next")

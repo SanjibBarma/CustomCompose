@@ -3,6 +3,7 @@ package com.example.customcompose.compose.referring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -79,24 +80,30 @@ fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, isActive
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = {
-                        text = it
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp).border(1.dp, color = Color.Gray),
-                    singleLine = true,
-                    shape = RoundedCornerShape(4.dp),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        containerColor = if (isActiveGroup) Color.White else Color.LightGray,
-                        focusedBorderColor = Color.Gray,
-                        unfocusedBorderColor = Color.Gray
-                    ),
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        keyboardType = KeyboardType.Text
-                    ),
-                    enabled = isActiveGroup
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
+                ) {
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = {
+                            text = it
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        singleLine = true,
+                        shape = RoundedCornerShape(4.dp),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            containerColor = if (isActiveGroup) Color.White else Color.LightGray,
+                            focusedBorderColor = Color.Gray,
+                            unfocusedBorderColor = Color.Gray
+                        ),
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Text
+                        ),
+                        enabled = isActiveGroup
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -119,7 +126,7 @@ fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, isActive
                                 block.skip?.group_no?.let { groupId ->
                                     block.skip.id.let { nextBlockId ->
                                         if (destination == "mainSurvey"){
-                                            blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                            blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                                         }else{
                                             blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                         }
@@ -156,7 +163,7 @@ fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, isActive
                                     block.referTo?.group_no?.let { groupId ->
                                         block.referTo.id?.let { nextBlockId ->
                                             if (destination == "mainSurvey"){
-                                                blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                                blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                                             }else{
                                                 blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                             }

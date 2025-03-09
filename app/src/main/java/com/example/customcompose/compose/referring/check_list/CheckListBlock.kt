@@ -38,7 +38,7 @@ import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
-import com.example.customcompose.viewmodel.NumberValidationViewModel
+import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import es.dmoral.toasty.Toasty
 
 @Composable
@@ -47,7 +47,7 @@ fun CheckListBlock(
     blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String,
-    numberValidationViewModel: NumberValidationViewModel
+    numberValidationViewModel: SurveyFlowViewModel
 ) {
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
@@ -213,7 +213,7 @@ fun CheckListBlock(
                             block.skip?.group_no?.let { groupId ->
                                 block.skip.id.let { blockId ->
                                     if (destination == "mainSurvey") {
-                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                                     }else{
                                         blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                     }
@@ -263,7 +263,7 @@ fun CheckListBlock(
                                 block.referTo?.group_no?.let { groupId ->
                                     block.referTo.id?.let { nextBlockId ->
                                         if (destination == "mainSurvey") {
-                                            blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                            blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                                         }else{
                                             blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                         }
@@ -294,7 +294,7 @@ fun CheckListBlock(
                                     }
 
                                     if (destination == "mainSurvey") {
-                                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                                     }else{
                                         blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                     }

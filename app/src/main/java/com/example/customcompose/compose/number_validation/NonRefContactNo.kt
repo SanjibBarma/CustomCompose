@@ -1,6 +1,8 @@
 package com.example.customcompose.compose.number_validation
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -64,47 +67,52 @@ fun NonRefContactNo(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = phoneNumber,
-            onValueChange = {
-                if (it.all { char -> char.isDigit() } && it.length <= 10) {
-                    phoneNumber = it
-                }
-            },
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .border(1.dp, color = Color.Gray),
-            singleLine = true,
-            leadingIcon = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "+880",
-                        modifier = Modifier.padding(start = 8.dp, end = 4.dp),
-                        color = if (isActiveGroup) Color.Black else Color.Black
-                    )
+                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
+        ) {
+            OutlinedTextField(
+                value = phoneNumber,
+                onValueChange = {
+                    if (it.all { char -> char.isDigit() } && it.length <= 10) {
+                        phoneNumber = it
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                singleLine = true,
+                leadingIcon = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "+880",
+                            modifier = Modifier.padding(start = 8.dp, end = 4.dp),
+                            color = if (isActiveGroup) Color.Black else Color.Black
+                        )
 
-                    Divider(
-                        color = Color.Gray,
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .width(1.dp)
-                    )
-                }
-            },
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = if (isActiveGroup) Color.White else Color.LightGray,
-                focusedBorderColor = Color.Gray,
-                unfocusedBorderColor = Color.Gray,
-                disabledTextColor = Color.Black
-            ),
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Number
-            ),
-            enabled = isActiveGroup
-        )
+                        Divider(
+                            color = Color.Gray,
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(1.dp)
+                        )
+                    }
+                },
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    containerColor = if (isActiveGroup) Color.White else Color.LightGray,
+                    focusedBorderColor = Color.LightGray,
+                    unfocusedBorderColor = Color.LightGray,
+                    disabledTextColor = Color.Black
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number
+                ),
+                enabled = isActiveGroup
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
     }

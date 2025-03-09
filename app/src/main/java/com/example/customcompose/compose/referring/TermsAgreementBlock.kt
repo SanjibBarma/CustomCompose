@@ -113,7 +113,7 @@ fun TermsAgreementBlock(
                         block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                         if (destination == "mainSurvey") {
-                            blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!)
+                            blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!, block.position)
                         } else {
                             blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
                         }

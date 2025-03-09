@@ -50,7 +50,7 @@ fun LookupBlock (
         block.referTo?.group_no?.let { groupId ->
             block.referTo.id?.let { nextBlockId ->
                 if (destination == "mainSurvey"){
-                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                 }else{
                     blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                 }
@@ -99,7 +99,7 @@ fun LookupBlock (
                         block.referTo?.group_no?.let { groupId ->
                             block.referTo.id?.let { nextBlockId ->
                                 if (destination == "mainSurvey"){
-                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                                 }else{
                                     blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                 }

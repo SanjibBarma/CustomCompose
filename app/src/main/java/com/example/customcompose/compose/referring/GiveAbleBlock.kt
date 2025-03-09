@@ -137,7 +137,7 @@ fun GiveAbleBlock(
                                         block.referTo?.group_no?.let { groupId ->
                                             block.referTo.id?.let { nextBlockId ->
                                                 if (destination == "mainSurvey"){
-                                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                                    blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                                                 }else{
                                                     blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                                 }
@@ -150,7 +150,7 @@ fun GiveAbleBlock(
                                                     currentPos.referTo?.group_no?.let { groupId ->
                                                         currentPos.referTo.id?.let { nextBlockId ->
                                                             if (destination == "mainSurvey"){
-                                                                blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId)
+                                                                blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
                                                             }else{
                                                                 blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                                             }
@@ -214,7 +214,7 @@ fun GiveAbleBlock(
                         block.skip?.group_no?.let { groupId ->
                             block.skip.id.let { blockId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId)
+                                    blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
                                 } else {
                                     blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                 }

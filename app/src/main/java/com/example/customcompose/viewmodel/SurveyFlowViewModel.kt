@@ -14,7 +14,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class NumberValidationViewModel(
+class SurveyFlowViewModel(
     private val numberValidationRepository: NumberValidationRepository,
     private val connectivityObserver: ConnectivityObserver
 ): ViewModel() {

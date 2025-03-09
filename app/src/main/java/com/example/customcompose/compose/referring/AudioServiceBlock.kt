@@ -33,7 +33,7 @@ fun AudioServiceBlock(
             println("audio_type: Start")
             coroutineScope.async {
                 if (currentBlockId != null && currentGroupId != null) {
-                    blockListViewModel.addBlockToTheSurveyFlow(currentBlockId, currentGroupId)
+                    blockListViewModel.addBlockToTheSurveyFlow(currentBlockId, currentGroupId, block.position)
                 }
             }
         }
@@ -45,7 +45,7 @@ fun AudioServiceBlock(
             println("audio_type: Stop")
             context.stopService(intent)
             if (currentBlockId != null && currentGroupId != null) {
-                blockListViewModel.addBlockToTheSurveyFlow(currentBlockId, currentGroupId)
+                blockListViewModel.addBlockToTheSurveyFlow(currentBlockId, currentGroupId, block.position)
             }
         }
     }

@@ -15,7 +15,7 @@ import com.example.customcompose.compose.referring.star_rating.StarRatingBlock
 import com.example.customcompose.compose.referring.check_list.CheckListBlock
 import com.example.customcompose.model.Block
 import com.example.customcompose.viewmodel.BlockListViewModel
-import com.example.customcompose.viewmodel.NumberValidationViewModel
+import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import es.dmoral.toasty.Toasty
 
 @Composable
@@ -25,7 +25,7 @@ fun CheckGroupOrBlock(
     isActiveGroup: Boolean,
     position: Int?,
     destination: String,
-    numberValidationViewModel: NumberValidationViewModel
+    numberValidationViewModel: SurveyFlowViewModel
 ) {
     val context = LocalContext.current
 

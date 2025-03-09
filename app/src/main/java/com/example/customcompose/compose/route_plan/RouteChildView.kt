@@ -111,7 +111,7 @@ fun RouteChildView(
                                     blockListViewModel.hideRoutePlanView()
                                     sharedPrefHelper.savePreviousGroupId("")
                                     sharedPrefHelper.clearCheckList()
-                                    blockListViewModel.addBlockToTheSurveyFlow(surveyDataModelList[0].blocks[0].id!!, surveyDataModelList[0].group)
+                                    blockListViewModel.addBlockToTheSurveyFlow(surveyDataModelList[0].blocks[0].id!!, surveyDataModelList[0].group, surveyDataModelList[0].blocks[0].position)
                                 }
                             },
                         contentAlignment = Alignment.Center

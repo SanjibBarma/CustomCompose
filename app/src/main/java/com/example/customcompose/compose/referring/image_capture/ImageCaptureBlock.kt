@@ -181,7 +181,7 @@ fun ImageCaptureBlock(
                             block.referTo?.id?.let { refBlockId ->
                                 block.referTo.group_no?.let { groupId ->
                                     if (destination == "mainSurvey") {
-                                        blockListViewModel.addBlockToTheSurveyFlow(refBlockId, groupId)
+                                        blockListViewModel.addBlockToTheSurveyFlow(refBlockId, groupId, block.position)
                                     } else {
                                         blockListViewModel.addBlockToTheCheckList(refBlockId, groupId)
                                     }
@@ -207,7 +207,7 @@ fun ImageCaptureBlock(
                         block.skip?.id?.let { skipBlockId ->
                             block.skip.group_no?.let { groupId ->
                                 if (destination == "mainSurvey") {
-                                    blockListViewModel.addBlockToTheSurveyFlow(skipBlockId, groupId)
+                                    blockListViewModel.addBlockToTheSurveyFlow(skipBlockId, groupId, block.position)
                                 } else {
                                     blockListViewModel.addBlockToTheCheckList(skipBlockId, groupId)
                                 }

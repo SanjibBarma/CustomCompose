@@ -1,6 +1,7 @@
 package com.example.customcompose.compose.number_validation
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,24 +62,32 @@ fun NonRefNumberInput(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = text,
-            onValueChange = {
-                text = it
-            },
-            modifier = Modifier.fillMaxWidth().height(56.dp).border(1.dp, color = Color.Gray),
-            singleLine = true,
-            shape = RoundedCornerShape(4.dp),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = if (isActiveGroup) Color.White else Color.LightGray,
-                focusedBorderColor = Color.Gray,
-                unfocusedBorderColor = Color.Gray
-            ),
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Number
-            ),
-            enabled = isActiveGroup
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
+        ) {
+            OutlinedTextField(
+                value = text,
+                onValueChange = {input ->
+                    if (input.all { it.isDigit() }) {
+                        text = input
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                singleLine = true,
+                shape = RoundedCornerShape(4.dp),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    containerColor = if (isActiveGroup) Color.White else Color.LightGray,
+                    focusedBorderColor = Color.Gray,
+                    unfocusedBorderColor = Color.Gray
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number
+                ),
+                enabled = isActiveGroup
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
     }

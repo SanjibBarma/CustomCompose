@@ -3,7 +3,6 @@ package com.example.customcompose.viewmodel
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.helper.AudioRecorderService
@@ -11,7 +10,6 @@ import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.model.RoutePlanParentModel
-import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.views.SurveyDataManager.surveyDataModel
 import com.google.gson.Gson
@@ -23,8 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class BlockListViewModel(
-    private val context: Context,
-    private val rawSurveyData: List<SurveyDataModel>
+    private val context: Context
 ) : ViewModel() {
 
     private val sharedPrefHelper =  AppSessionManager(context)
@@ -38,8 +35,9 @@ class BlockListViewModel(
 
 
     //survey block filtering with referred-to, skip or jumping logic
-    fun addBlockToTheSurveyFlow(blockId: String, groupId: String) {
+    fun addBlockToTheSurveyFlow(blockId: String, groupId: String, position: Int) {
         println("initial  blockId $blockId groupId: $groupId")
+        println("initial_Position $position")
         val curGroup = surveyDataModel!!.find { it.group == groupId }
 
         if (blockId == "submit" && groupId == "submit") {
@@ -49,12 +47,12 @@ class BlockListViewModel(
             _isSubmitted.value = false
             if (curGroup?.type == "non-referring" || curGroup?.type == "numbervalidation") {
                 sharedPrefHelper.savePreviousGroupId(groupId)
-                loadCurrentGroupOrBlock(blockId, groupId)
+                loadCurrentGroupOrBlock(blockId, groupId, position)
                 println("print_log: 1")
             }else{
                 if (sharedPrefHelper.getPreviousGroupId().equals("")){
                     sharedPrefHelper.savePreviousGroupId(groupId)
-                    loadCurrentGroupOrBlock(blockId, groupId)
+                    loadCurrentGroupOrBlock(blockId, groupId, position)
                     println("print_log: 2")
                 }else{
                     if (sharedPrefHelper.getPreviousGroupId() != groupId){
@@ -91,7 +89,7 @@ class BlockListViewModel(
                                     }else{
                                         _isSubmitted.value = false
                                         sharedPrefHelper.savePreviousGroupId(jumpingLogic.group_no)
-                                        loadCurrentGroupOrBlock(jumpingLogic.id, jumpingLogic.group_no)
+                                        loadCurrentGroupOrBlock(jumpingLogic.id, jumpingLogic.group_no, position)
                                     }
                                     return
                                 }
@@ -112,7 +110,7 @@ class BlockListViewModel(
                     }else{
                         println("print_log: 4")
                         sharedPrefHelper.savePreviousGroupId(groupId)
-                        loadCurrentGroupOrBlock(blockId, groupId)
+                        loadCurrentGroupOrBlock(blockId, groupId, position)
                     }
                 }
             }
@@ -121,7 +119,7 @@ class BlockListViewModel(
     }
 
     //after filtering the block and group update the list for view
-    private fun loadCurrentGroupOrBlock(blockId: String, groupId: String) {
+    private fun loadCurrentGroupOrBlock(blockId: String, groupId: String, position: Int) {
         viewModelScope.launch {
             val group = surveyDataModel!!.find { it.group == groupId }
             val block = group?.blocks?.find { it.id == blockId }
@@ -146,44 +144,67 @@ class BlockListViewModel(
                 _parentSurveyBlockList.value = _parentSurveyBlockList.value.toMutableList().apply { add(newBlock) }
             } else {
                 if (block!!.type == "audio_start") {
-                    startAudioService(block.referTo?.id, block.referTo?.group_no)
+                    startAudioService(block.referTo?.id, block.referTo?.group_no, block.position)
                 } else if (block.type == "audio_end") {
-                    stopAudioService(block.referTo?.id, block.referTo?.group_no)
+                    stopAudioService(block.referTo?.id, block.referTo?.group_no, block.position)
                 } else if (block.type == "lookup" && block.validations?.invisible!!) {
-                    lookupApiCall(block.referTo?.id, block.referTo?.group_no)
+                    lookupApiCall(block.referTo?.id, block.referTo?.group_no, block.position)
                 } else {
-                    if (group != null && block != null) {
-                        val existingBlock = _parentSurveyBlockList.value.find { it.id == blockId}
-                        val comboJson = gson.toJson(existingBlock)
-                        Log.d("existingBlock_Data", comboJson)
-                        if (existingBlock != null) {
-                            val blockPosition = _parentSurveyBlockList.value.indexOf(existingBlock)
-                            existingBlock.surveyHistoryModel = emptyList()
-                            val updatedList = _parentSurveyBlockList.value.takeWhile { it != existingBlock } + existingBlock
-                            _parentSurveyBlockList.value = updatedList
-                            println("Block already exists. Cleared items after position of ${block.id}")
-                        } else {
-                            //val newBlock = block.copy(surveyHistoryModel = emptyList())
-                            block.surveyHistoryModel= emptyList()
-                            _parentSurveyBlockList.value = _parentSurveyBlockList.value.toMutableList().apply { add(block) }
-                            println("New Block Added: ${block.id}")
+
+                    viewModelScope.launch(Dispatchers.Main) {
+                        val mutableParentBlockList = _parentSurveyBlockList.value.toMutableList()
+
+                        if (position+1 in mutableParentBlockList.indices) {
+                            mutableParentBlockList.subList(position+1, mutableParentBlockList.size).clear()
+
+                            _parentSurveyBlockList.value = mutableParentBlockList.toList()
+                            println("cleared_data: ${mutableParentBlockList.size}")
+
+                            delay(10)
                         }
+
+                        block.surveyHistoryModel = emptyList()
+                        block.position = _parentSurveyBlockList.value.size
+                        mutableParentBlockList.add(block)
+
+                        _parentSurveyBlockList.value = mutableParentBlockList.toList()
                     }
+//                    if (group != null && block != null) {
+//                        val existingBlock = _parentSurveyBlockList.value.find { it.id == blockId}
+//                        val comboJson = gson.toJson(existingBlock)
+//                        Log.d("existingBlock_Data", comboJson)
+//                        if (existingBlock != null) {
+//                            val blockPosition = _parentSurveyBlockList.value.indexOf(existingBlock)
+//                            existingBlock.surveyHistoryModel = emptyList()
+//                            block.position = _parentSurveyBlockList.value.size
+//                            val updatedList = _parentSurveyBlockList.value.takeWhile { it != existingBlock } + existingBlock
+//                            _parentSurveyBlockList.value = updatedList
+//                            println("Block already exists. Cleared items after position of ${block.id}")
+//                        } else {
+//                            //val newBlock = block.copy(surveyHistoryModel = emptyList())
+//                            block.surveyHistoryModel= emptyList()
+//                            block.position = _parentSurveyBlockList.value.size
+//                            _parentSurveyBlockList.value = _parentSurveyBlockList.value.toMutableList().apply { add(block) }
+//                            println("New Block Added: ${block.id}")
+//                        }
+//                    }
                 }
             }
         }
     }
 
-    private fun lookupApiCall(blockId: String?, groupId: String?) {
+    private fun lookupApiCall(blockId: String?, groupId: String?, position: Int?) {
         Toasty.success(context, "Lookup called", Toasty.LENGTH_SHORT).show()
         if (blockId != null && groupId != null) {
             viewModelScope.launch {
-                addBlockToTheSurveyFlow(blockId, groupId)
+                if (position != null) {
+                    addBlockToTheSurveyFlow(blockId, groupId, position)
+                }
             }
         }
     }
 
-    private fun startAudioService(blockId: String?, groupId: String?) {
+    private fun startAudioService(blockId: String?, groupId: String?, position: Int?) {
         val intent = Intent(context, AudioRecorderService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent)
@@ -193,12 +214,14 @@ class BlockListViewModel(
 
         if (blockId != null && groupId != null) {
             viewModelScope.launch {
-                addBlockToTheSurveyFlow(blockId, groupId)
+                if (position != null) {
+                    addBlockToTheSurveyFlow(blockId, groupId, position)
+                }
             }
         }
     }
 
-    private fun stopAudioService(blockId: String?, groupId: String?) {
+    private fun stopAudioService(blockId: String?, groupId: String?, position: Int?) {
         val group = surveyDataModel!!.find { it.group == groupId }
         val block = group?.blocks?.find { it.id == blockId }
 
@@ -206,7 +229,9 @@ class BlockListViewModel(
         context.stopService(intent)
         if (blockId != null && groupId != null) {
             viewModelScope.launch {
-                addBlockToTheSurveyFlow(blockId, groupId)
+                if (position != null) {
+                    addBlockToTheSurveyFlow(blockId, groupId, position)
+                }
             }
         }
     }
@@ -358,7 +383,7 @@ class BlockListViewModel(
                 _routeParentList.value = mutableParentList.toList()
                 println("cleared_data: ${mutableParentList.size}")
 
-                delay(15)
+                delay(5)
             }
 
             //render problem
