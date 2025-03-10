@@ -41,7 +41,7 @@ fun NonRefMultipleChoice(
 
     val existingData = blockListViewModel.getDataFromIndex(position, index)
     var selectedOption by remember { mutableStateOf(existingData?.answer ?: "") }
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val blockId = block.id ?: ""
 
     LaunchedEffect (selectedOption){

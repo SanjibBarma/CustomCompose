@@ -57,7 +57,7 @@ fun NonRefDate(
     val existingData = blockListViewModel.getDataFromIndex(position, index)
 
     var answer by remember { mutableStateOf(existingData?.answer ?: "") }
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val blockId = block.id ?: ""
 
     val maxAge = block.validations?.max ?: 50
@@ -73,14 +73,15 @@ fun NonRefDate(
 
 
     var pickedDate by remember {
-        mutableStateOf<LocalDate?>(existingData?.answer?.let {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        mutableStateOf<LocalDate?>(existingData?.answer?.takeIf { it.isNotBlank() }?.let {
+            try {
                 LocalDate.parse(it, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-            } else {
-                null
+            } catch (e: Exception) {
+                null // If parsing fails, set it to null
             }
         })
     }
+
 
     val formattedDate by remember {
         derivedStateOf {

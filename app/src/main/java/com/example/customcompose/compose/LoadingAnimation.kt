@@ -1,4 +1,4 @@
-package com.example.customcompose.helper
+package com.example.customcompose.compose
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*

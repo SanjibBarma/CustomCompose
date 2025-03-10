@@ -38,7 +38,7 @@ fun NonRefCheckBox(
     val selectedOptions = remember { mutableStateOf(existingData?.answer?.split(",")?.toSet() ?: emptySet()) }
 //    val selectedOptions = remember { mutableStateOf<Set<Any>>(emptySet()) }
 
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val blockId = block.id ?: ""
 
     LaunchedEffect (selectedOptions){

@@ -2,6 +2,7 @@ package com.example.customcompose.helper
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.customcompose.model.number_validation.NumberCheckModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
@@ -29,6 +30,7 @@ class AppSessionManager(context: Context) {
     private val USER_TYPE = "USER_TYPE"
     private val RESET_STATUS = "RESET_STATUS"
     private val CAMPAIGN_ID = "CAMPAIGN_ID"
+    private val MOBILE_VERIFICATION_DATA = "MOBILE_VERIFICATION_DATA"
 
     fun saveItem(newItem: String) {
         val existingSet = getSet().toMutableSet()
@@ -144,4 +146,13 @@ class AppSessionManager(context: Context) {
     fun getCampaignId(): String? {
         return prefs.getString(CAMPAIGN_ID, null)
     }
+
+    fun setMobileVerificationData(value: String) {
+        prefs.edit().putString(MOBILE_VERIFICATION_DATA, value).apply()
+    }
+
+    fun getMobileVerificationData(): String? {
+        return prefs.getString(MOBILE_VERIFICATION_DATA, null)
+    }
+
 }

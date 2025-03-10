@@ -20,6 +20,7 @@ import com.example.customcompose.repository.LoginRepository
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -239,17 +240,17 @@ class LoginViewModel(
     //*********************** get local data **********************************//
     //========================************************=========================//
 
-    private val _localSurveyData = MutableLiveData<SurveyDataEntity>()
-    val localSurveyData: LiveData<SurveyDataEntity> = _localSurveyData
+    private val _localSurveyData = MutableLiveData<SurveyDataEntity?>()
+    val localSurveyData: LiveData<SurveyDataEntity?> = _localSurveyData
 
     fun fetchSurveyDataByIds(brId: String, campId: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = loginRepository.getSurveyDataDataByIds(brId, campId)
-
-            withContext(Dispatchers.Main) {
-                _localSurveyData.value = result
-                println("surveyDataState_repo: ${_localSurveyData.value}")
-            }
+        viewModelScope.launch {
+            loginRepository.getSurveyDataDataByIds(brId, campId)
+                .flowOn(Dispatchers.IO)  // Ensure it's on IO thread
+                .collect { result ->
+                    _localSurveyData.postValue(result)  // Post value to LiveData (safe for background threads)
+                    println("surveyDataState_repo: $result")
+                }
         }
     }
 

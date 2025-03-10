@@ -10,19 +10,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import com.example.customcompose.app_database.AppDatabase
 import com.example.customcompose.helper.AudioRecorderService
-import com.example.customcompose.helper.ConnectivityObserver
 import com.example.customcompose.model.LOCATION_STRING
 import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.navigation.Navigation
-import com.example.customcompose.network.RetrofitInstance
-import com.example.customcompose.repository.LoginRepository
-import com.example.customcompose.repository.NumberValidationRepository
 import com.example.customcompose.ui.theme.CustomComposeTheme
-import com.example.customcompose.viewmodel.BlockListViewModel
-import com.example.customcompose.viewmodel.LoginViewModel
-import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
@@ -53,21 +45,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val apiService = RetrofitInstance.apiService
-        val numberValidationRepository = NumberValidationRepository(apiService)
-        val connectivityObserver = ConnectivityObserver(applicationContext)
-        val numberValidationViewModel = SurveyFlowViewModel(numberValidationRepository, connectivityObserver)
-
         if (!hasRequiredPermissions()) {
             requestPermissionLauncher.launch(requiredPermissions)
         }
-        val appDatabase = AppDatabase.getDatabase(applicationContext)
-        val loginRepository = LoginRepository(apiService, appDatabase.dbDao())
-        val loginViewModel = LoginViewModel(loginRepository, connectivityObserver)
 
-
-        //surveyFlow
-        val blockListViewModel = BlockListViewModel(applicationContext)
+        val numberValidationViewModel = MyApplication.surveyFlowViewModel
+        val loginViewModel = MyApplication.loginViewModel
+        val blockListViewModel = MyApplication.blockListViewModel
 
         setContent {
             CustomComposeTheme {

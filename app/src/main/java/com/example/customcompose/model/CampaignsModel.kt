@@ -3,7 +3,8 @@ package com.example.customcompose.model
 data class CampaignsModel(
     val status: String,
     val message: String,
-    val data: List<CampaignListModel>
+    val data: List<CampaignListModel>,
+    var selectedCamp: Int = 0
 )
 
 data class CampaignListModel(

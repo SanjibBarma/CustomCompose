@@ -22,9 +22,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.MyApplication
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.LOCATION_STRING
+import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.model.number_validation.NumberCheckModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import com.google.gson.Gson
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,14 +40,26 @@ fun NonRefNumberInput(
     position: Int,
     isActiveGroup: Boolean
 ) {
-
+    val gson = Gson()
     val isRequired = block.required
     val existingData = blockListViewModel.getDataFromIndex(position, index)
     var text by remember { mutableStateOf(existingData?.answer ?: "")  }
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val blockId = block.id ?: ""
+    val appSessionManager = MyApplication.appSessionManager
 
     LaunchedEffect(text) {
+//        if (!appSessionManager.getMobileVerificationData().isNullOrEmpty()){
+//            val dynamicInfoModel: NumberCheckModel = gson.fromJson(appSessionManager.getMobileVerificationData(), NumberCheckModel::class.java)
+//
+//            for (dynamicInfo in dynamicInfoModel.data[0].information){
+//                if (dynamicInfo.key == question){
+//                    text = dynamicInfo.value
+//                }
+//            }
+//        }
+
+
         val surveyHistoryModel = SurveyHistoryModel(
             question = question,
             answer = text,

@@ -35,7 +35,7 @@ fun NonRefEmailInput(
     isActiveGroup: Boolean
 ) {
     val isRequired = block.required
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val blockId = block.id ?: ""
     val existingData = blockListViewModel.getDataFromIndex(position, index)
     var text by remember { mutableStateOf(existingData?.answer ?: "")  }

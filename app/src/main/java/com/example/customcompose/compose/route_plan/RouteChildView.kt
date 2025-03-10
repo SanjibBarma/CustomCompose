@@ -1,5 +1,8 @@
 package com.example.customcompose.compose.route_plan
 
+import android.util.Log
+import androidx.activity.addCallback
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.RoutePlanParentModel
 import com.example.customcompose.model.SurveyDataModel
@@ -43,8 +47,19 @@ fun RouteChildView(
     locations: RoutePlanParentModel,
     blockListViewModel: BlockListViewModel,
     surveyDataModelList: List<SurveyDataModel>,
+    navController: NavHostController,
     listPosition: Int
 ) {
+
+    val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+
+    onBackPressedDispatcher?.addCallback {
+        navController.popBackStack()
+        blockListViewModel.clearRouteList()
+        blockListViewModel.clearParentBlockList()
+        Log.d("MyScreen", "Back button pressed on MyScreen")
+    }
+
     val context = LocalContext.current
     val sharedPrefHelper = remember { AppSessionManager(context) }
 //    val selectedItemId = remember { mutableStateOf<Int?>(null) }

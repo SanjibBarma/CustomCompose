@@ -6,16 +6,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.helper.ConnectivityObserver
 import com.example.customcompose.helper.UIState
-import com.example.customcompose.model.SignInModel
 import com.example.customcompose.model.number_validation.GiveAbleAchievement
 import com.example.customcompose.model.number_validation.NumberCheckModel
-import com.example.customcompose.repository.NumberValidationRepository
+import com.example.customcompose.repository.SurveyFlowRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SurveyFlowViewModel(
-    private val numberValidationRepository: NumberValidationRepository,
+    private val numberValidationRepository: SurveyFlowRepository,
     private val connectivityObserver: ConnectivityObserver
 ): ViewModel() {
 

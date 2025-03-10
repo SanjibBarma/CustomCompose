@@ -8,6 +8,7 @@ import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.LoginViewModel
 import com.example.customcompose.viewmodel.SurveyFlowViewModel
+import com.example.customcompose.views.DashboardScreen
 import com.example.customcompose.views.DynamicScreen
 import com.example.customcompose.views.LoginScreen
 
@@ -33,6 +34,13 @@ fun Navigation (
                 numberValidationViewModel,
                 navController,
                 routePlanList
+            )
+        }
+
+        composable(route = Screen.DashboardScreen.route){
+            DashboardScreen(
+                loginViewModel,
+                navController
             )
         }
     }

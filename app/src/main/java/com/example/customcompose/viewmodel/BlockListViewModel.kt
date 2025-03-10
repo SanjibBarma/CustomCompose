@@ -30,6 +30,10 @@ class BlockListViewModel(
 
     private val _isSubmitted = MutableStateFlow(false)
     val isSubmitted = _isSubmitted.asStateFlow()
+
+    private val _isProgressLoading = MutableStateFlow(false)
+    val isProgressLoading = _isProgressLoading.asStateFlow()
+
     private val gson = Gson()
     private var jumpMatchCount = 0;
 
@@ -410,6 +414,10 @@ class BlockListViewModel(
         _routeParentList.value = emptyList()
     }
 
+    fun clearParentBlockList(){
+        _parentSurveyBlockList.value = emptyList()
+    }
+
     private val _isShowOtp = MutableStateFlow(false)
     val isShowOtp = _isShowOtp.asStateFlow()
 
@@ -419,6 +427,14 @@ class BlockListViewModel(
 
     fun hideOtpPopup() {
         _isShowOtp.value = false
+    }
+
+    fun showProgressLoading() {
+        _isProgressLoading.value = true
+    }
+
+    fun hideProgressLoading() {
+        _isProgressLoading.value = false
     }
 
 }

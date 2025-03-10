@@ -10,6 +10,7 @@ import com.example.customcompose.model.SurveyModel
 import com.example.customcompose.model.UserInfoModel
 import com.example.customcompose.network.ApiService
 import com.google.gson.JsonObject
+import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
 
 class LoginRepository(private val apiService: ApiService, private val localDbDao: LocalDbDao) {
@@ -57,8 +58,8 @@ class LoginRepository(private val apiService: ApiService, private val localDbDao
         localDbDao.upsertSurveyData(surveyDataEntity);
     }
 
-    suspend fun getSurveyDataDataByIds(brId: String, campId: String): SurveyDataEntity{
-        return localDbDao.getSurveyDataDataByIds(brId, campId);
+    fun getSurveyDataDataByIds(brId: String, campId: String): Flow<SurveyDataEntity?> {
+        return localDbDao.getSurveyDataDataByIds(brId, campId)
     }
 
 

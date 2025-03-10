@@ -48,7 +48,7 @@ fun NonRefProductList(
     val context = LocalContext.current
     var selectedBrand by remember { mutableStateOf(existingData?.answer ?: "") }
     val sharedPrefHelper =  AppSessionManager(context)
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val options = block.options ?: emptyList()
     val blockId = block.id ?: ""
 

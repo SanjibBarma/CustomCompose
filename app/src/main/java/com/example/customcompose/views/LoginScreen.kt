@@ -24,11 +24,11 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -54,14 +54,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.customcompose.MyApplication
 import com.example.customcompose.R
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.CommonUtils.getAppVersionCode
 import com.example.customcompose.helper.CommonUtils.getDeviceInfo
-import com.example.customcompose.helper.LoadingAnimation
+import com.example.customcompose.compose.LoadingAnimation
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.navigation.Screen
-import com.example.customcompose.ui.theme.DimBackground
 import com.example.customcompose.viewmodel.LoginViewModel
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
@@ -74,7 +74,8 @@ import java.util.Locale
 fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController) {
 
     val context = LocalContext.current
-    val appSessionManager = remember { AppSessionManager(context) }
+//    val appSessionManager = remember { AppSessionManager(context) }
+    val appSessionManager = MyApplication.appSessionManager
 
     var username by remember { mutableStateOf(appSessionManager.getUsername() ?: "") }
     var password by remember { mutableStateOf(appSessionManager.getPassword() ?: "") }
@@ -101,243 +102,235 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
         put("deviceInfo", getDeviceInfo(context))
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
-                .imePadding(),
-            verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_ecrm_logo),
-                contentDescription = "App Logo",
+    Scaffold { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Column(
                 modifier = Modifier
-                    .height(150.dp)
-                    .width(200.dp)
-                    .padding(bottom = 16.dp)
-            )
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+                    .imePadding(),
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_ecrm_logo),
+                    contentDescription = "App Logo",
+                    modifier = Modifier
+                        .height(150.dp)
+                        .width(200.dp)
+                        .padding(bottom = 16.dp)
+                )
 
-            Spacer(modifier = Modifier.height(50.dp))
+                Spacer(modifier = Modifier.height(50.dp))
 
-            Text(
-                "Login",
-                modifier = Modifier,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold
-            )
+                Text(
+                    "Login",
+                    modifier = Modifier,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                placeholder = { Text("Username", fontSize = 16.sp) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                singleLine = true,
-                shape = RoundedCornerShape(30.dp),
-                textStyle = TextStyle(fontSize = 16.sp),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    containerColor = Color.White,
-                    focusedBorderColor = Color.Gray,
-                    unfocusedBorderColor = Color.Gray
-                ),
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
-                leadingIcon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Username Icon") }
-            )
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    placeholder = { Text("Username", fontSize = 16.sp) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    singleLine = true,
+                    shape = RoundedCornerShape(30.dp),
+                    textStyle = TextStyle(fontSize = 16.sp),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        containerColor = Color.White,
+                        focusedBorderColor = Color.Gray,
+                        unfocusedBorderColor = Color.Gray
+                    ),
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
+                    leadingIcon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Username Icon") }
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                placeholder = { Text("Password", fontSize = 16.sp) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                singleLine = true,
-                shape = RoundedCornerShape(30.dp),
-                textStyle = TextStyle(fontSize = 16.sp),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    containerColor = Color.White,
-                    focusedBorderColor = Color.Gray,
-                    unfocusedBorderColor = Color.Gray
-                ),
-                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
-                leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "Password Icon") },
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                            contentDescription = "Toggle Password Visibility"
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    placeholder = { Text("Password", fontSize = 16.sp) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    singleLine = true,
+                    shape = RoundedCornerShape(30.dp),
+                    textStyle = TextStyle(fontSize = 16.sp),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        containerColor = Color.White,
+                        focusedBorderColor = Color.Gray,
+                        unfocusedBorderColor = Color.Gray
+                    ),
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
+                    leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = "Password Icon") },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = "Toggle Password Visibility"
+                            )
+                        }
+                    }
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = rememberMe,
+                        onCheckedChange = {
+                            rememberMe = it
+                            appSessionManager.setRemembered(it)
+                        },
+                        modifier = Modifier.scale(.8f)
+                    )
+                    Text(text = "Remember password", fontSize = 14.sp)
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                        isLoading = true
+
+                        appSessionManager.setMobileVerificationData("")
+
+                        if (username.isEmpty() || password.isEmpty()) {
+                            Toasty.warning(context, "Invalid username or password", Toasty.LENGTH_SHORT).show()
+                            isLoading = false
+                        } else {
+                            if (!username.contains("@ecrm-")) {
+                                Toasty.warning(context, "Username must contain '@ecrm-'", Toasty.LENGTH_SHORT).show()
+                                isLoading = false
+                            } else {
+                                if (rememberMe) {
+                                    appSessionManager.saveLoginData(username, password)
+                                } else {
+                                    appSessionManager.clearLoginData()
+                                }
+
+                                val gson = Gson()
+                                val _signInInfoMap = gson.toJson(signInInfoMap)
+                                println("SignInInfoMap: $_signInInfoMap")
+
+                                loginViewModel.getLoginInfo(signInInfoMap)
+                            }
+                        }
+                    }
+                ) {
+                    Text(
+                        text = "Log In",
+                        modifier = Modifier.padding(start = 32.dp, end = 32.dp),
+                        fontSize = 18.sp
+                    )
+                }
+
+
+                Column(
+                    modifier = Modifier.padding(top = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "Prism Ecrm app v.${getAppVersionCode(context)}", fontSize = 12.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "© V2 Technologies Ltd-$crrYear", fontSize = 12.sp)
+                }
+            }
+
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LoadingAnimation()
+                }
+            }
+
+            //login response state
+            when (val state = loginState.value) {
+                is UIState.Error -> {
+                    Toasty.error(context, state.exception.message ?: "Login failed", Toasty.LENGTH_SHORT).show()
+                    isLoading = false
+                }
+                is UIState.Loading -> {
+                }
+                is UIState.Success -> {
+                    isLoading = false
+                    println("userSignInData: ${state.data.data.id}")
+                    state.data.data.token?.let {token ->
+                        appSessionManager.setSessionToken(token)
+                    }
+
+                    appSessionManager.setBrId(state.data.data.id.toString())
+                }
+            }
+
+            //userinfo response state
+            when(val state = userInfoDataState.value){
+                is UIState.Error ->{
+                    Toasty.error(context, state.exception.message ?: "Failed to get userinfo!", Toasty.LENGTH_SHORT).show()
+                    isLoading = false
+                }
+                is UIState.Loading -> {}
+                is UIState.Success -> {
+
+                    val time = SimpleDateFormat("yyyy:MM:dd:HH:mm:ss")
+                    val crrTime = time.format(Date())
+
+                    state.data.data?.let { userData ->
+                        appSessionManager.createMerchantLoginSession(
+                            agencyName = userData[0].agency_name,
+                            orgName = userData[0].org_name,
+                            designation = userData[0].desigantion,
+                            Location = userData[0].locations,
+                            user_image = userData[0].user_image,
+                            crrTime = crrTime
                         )
                     }
                 }
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Checkbox(
-                    checked = rememberMe,
-                    onCheckedChange = {
-                        rememberMe = it
-                        appSessionManager.setRemembered(it)
-                    },
-                    modifier = Modifier.scale(.8f)
-                )
-                Text(text = "Remember password", fontSize = 14.sp)
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            //campaign list response state
+            when(val state = campaignListDataState.value){
+                is UIState.Error -> {
+                    Toasty.error(context, state.exception.message ?: "Failed to get campaign list!", Toasty.LENGTH_SHORT).show()
+                    isLoading = false
+                }
+                is UIState.Loading -> {}
+                is UIState.Success -> {
 
-            Button(
-                onClick = {
-                    keyboardController?.hide()
-                    focusManager.clearFocus()
-                    isLoading = true
-                    if (username.isEmpty() || password.isEmpty()) {
-                        Toasty.warning(context, "Invalid username or password", Toasty.LENGTH_SHORT).show()
-                        isLoading = false
-                    } else {
-                        if (!username.contains("@ecrm-")) {
-                            Toasty.warning(context, "Username must contain '@ecrm-'", Toasty.LENGTH_SHORT).show()
-                            isLoading = false
-                        } else {
-                            if (rememberMe) {
-                                appSessionManager.saveLoginData(username, password)
-                            } else {
-                                appSessionManager.clearLoginData()
-                            }
-
-                            val gson = Gson()
-                            val _signInInfoMap = gson.toJson(signInInfoMap)
-                            println("SignInInfoMap: $_signInInfoMap")
-
-                            loginViewModel.getLoginInfo(signInInfoMap)
-                        }
+                    if (state.data.data.isNullOrEmpty()){
+                        Toasty.error(context, "No campaign assign!", Toasty.LENGTH_SHORT).show()
                     }
                 }
-            ) {
-                Text(
-                    text = "Log In",
-                    modifier = Modifier.padding(start = 32.dp, end = 32.dp),
-                    fontSize = 18.sp
-                )
             }
 
-
-            Column(
-                modifier = Modifier.padding(top = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(text = "Prism Ecrm app v.${getAppVersionCode(context)}", fontSize = 12.sp)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "© V2 Technologies Ltd-$crrYear", fontSize = 12.sp)
-            }
-        }
-
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White),
-                contentAlignment = Alignment.Center
-            ) {
-//                CircularProgressIndicator(
-//                    modifier = Modifier
-//                        .height(100.dp)
-//                        .width(100.dp),
-//                    strokeWidth = 8.dp
-//                )
-                LoadingAnimation()
-            }
-        }
-
-        //login response state
-        when (val state = loginState.value) {
-            is UIState.Error -> {
-                Toasty.error(context, state.exception.message ?: "Login failed", Toasty.LENGTH_SHORT).show()
-                isLoading = false
-            }
-            is UIState.Loading -> {
-            }
-            is UIState.Success -> {
-                isLoading = false
-                println("userSignInData: ${state.data.data.id}")
-                state.data.data.token?.let {token ->
-                    appSessionManager.setSessionToken(token)
+            //survey data response state
+            when(val state = surveyDataState.value){
+                is UIState.Error -> {
+                    Toasty.error(context, state.exception.message ?: "Failed to get survey data!", Toasty.LENGTH_SHORT).show()
+                    isLoading = false
                 }
+                is UIState.Loading -> {}
+                is UIState.Success -> {
+                    //if login result is success then navigate to next screen
+                    isLoading = false
 
-                appSessionManager.setBrId(state.data.data.id.toString())
-            }
-        }
-
-        //userinfo response state
-        when(val state = userInfoDataState.value){
-            is UIState.Error ->{
-                Toasty.error(context, state.exception.message ?: "Failed to get userinfo!", Toasty.LENGTH_SHORT).show()
-                isLoading = false
-            }
-            UIState.Loading -> {}
-            is UIState.Success -> {
-
-                val time = SimpleDateFormat("yyyy:MM:dd:HH:mm:ss")
-                val crrTime = time.format(Date())
-
-                state.data.data?.let { userData ->
-                    appSessionManager.createMerchantLoginSession(
-                        agencyName = userData[0].agency_name,
-                        orgName = userData[0].org_name,
-                        designation = userData[0].desigantion,
-                        Location = userData[0].locations,
-                        user_image = userData[0].user_image,
-                        crrTime = crrTime
-                    )
+                    navController.navigate(Screen.DashboardScreen.route)
                 }
-            }
-        }
-
-        //campaign list response state
-        when(val state = campaignListDataState.value){
-            is UIState.Error -> {
-                Toasty.error(context, state.exception.message ?: "Failed to get campaign list!", Toasty.LENGTH_SHORT).show()
-                isLoading = false
-            }
-            UIState.Loading -> {}
-            is UIState.Success -> {
-
-                if (!state.data.data.isNullOrEmpty()){
-                    if (state.data.data[0].id != null){
-                        appSessionManager.setCampaignId(state.data.data[0].id.toString())
-                    }
-                }else{
-                    Toasty.error(context, "No campaign assign!", Toasty.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        //survey data response state
-        when(val state = surveyDataState.value){
-            is UIState.Error -> {
-                Toasty.error(context, state.exception.message ?: "Failed to get survey data!", Toasty.LENGTH_SHORT).show()
-                isLoading = false
-            }
-            UIState.Loading -> {}
-            is UIState.Success -> {
-                //if login result is success then navigate to next screen
-                isLoading = false
-                appSessionManager.getCampaignId()?.let { camId ->
-                    loginViewModel.fetchSurveyDataByIds(appSessionManager.getBrId().toString(), camId)
-                }
-
-                navController.navigate(Screen.DynamicScreen.route)
             }
         }
     }

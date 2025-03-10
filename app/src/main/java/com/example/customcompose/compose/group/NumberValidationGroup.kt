@@ -1,25 +1,18 @@
 package com.example.customcompose.compose.group
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,14 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import com.example.customcompose.R
+import com.example.customcompose.compose.group.dialog.PopupFreshConsumer
+import com.example.customcompose.compose.group.dialog.PopupNonFreshConsumer
 import com.example.customcompose.compose.number_validation.NonRefCheckBox
 import com.example.customcompose.compose.number_validation.NonRefContactNo
 import com.example.customcompose.compose.number_validation.NonRefDate
@@ -51,6 +39,7 @@ import com.example.customcompose.compose.number_validation.NonRefTextInput
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.number_validation.DynamicInfoConModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import com.google.gson.Gson
@@ -69,8 +58,10 @@ fun NumberValidationGroup(
     val sharedPrefHelper = remember { AppSessionManager(context) }
     val numberValidationState = numberValidationViewModel.checkNumberData.observeAsState(initial = UIState.Loading)
     val givableDataState = numberValidationViewModel.achievementData.observeAsState(initial = UIState.Loading)
-    var isLoading by remember { mutableStateOf(false) }
     var isFreshConsumer by remember { mutableStateOf(false) }
+    var isNonFreshConsumer by remember { mutableStateOf(false) }
+    var dynmcInfoConModelList by remember { mutableStateOf(emptyList<DynamicInfoConModel>()) }
+    var messages by remember { mutableStateOf(emptyList<String>()) }
     val gson = Gson()
 
     Box(
@@ -111,7 +102,8 @@ fun NumberValidationGroup(
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        //isLoading = true
+                        blockListViewModel.showProgressLoading()
+
                         if (currentBlock.surveyHistoryModel.isNotEmpty()){
                             println("history list size: ${currentBlock.surveyHistoryModel}")
                             for (nonRefBlocks in currentBlock.blocks){
@@ -119,11 +111,13 @@ fun NumberValidationGroup(
 //                                println("history Id is: ${surveyHistory?.id}")
                                     if (nonRefBlocks.id == surveyHistory?.id){
                                         if (surveyHistory?.answer.isNullOrEmpty()){
+                                            blockListViewModel.hideProgressLoading()
                                             Toasty.warning(context, "Provide a valid ${surveyHistory?.question}", Toasty.LENGTH_SHORT).show()
                                             return@Button
                                         }
                                         if (nonRefBlocks.type == "contactNo"){
                                             if (surveyHistory?.answer.isNullOrEmpty()){
+                                                blockListViewModel.hideProgressLoading()
                                                 Toasty.warning(context, "Provide a valid ${surveyHistory?.question}", Toasty.LENGTH_SHORT).show()
                                                 return@Button
                                             }
@@ -132,10 +126,12 @@ fun NumberValidationGroup(
                                                 val phoneRegex = "^(13|14|15|16|17|18|19)\\d{8}$".toRegex()
 
                                                 if (phoneNumber?.length != 10) {
+                                                    blockListViewModel.hideProgressLoading()
                                                     Toasty.warning(context, "Contact number must be 10 digits.", Toasty.LENGTH_SHORT).show()
                                                     return@Button
                                                 }
                                                 if (!phoneNumber.matches(phoneRegex)!!) {
+                                                    blockListViewModel.hideProgressLoading()
                                                     Toasty.warning(context, "Contact number in not valid.", Toasty.LENGTH_SHORT).show()
                                                     return@Button
                                                 }
@@ -164,11 +160,13 @@ fun NumberValidationGroup(
 
                             numberValidationMap.apply {
                                 put("numberValidation", surveyDataMap)
+                                sharedPrefHelper.getCampaignId()?.toInt()
+                                    ?.let { put("campaign_id", it) }
                                 if (sourceLocation != null) {
-                                    put("source_location", sourceLocation)
+                                    put("source_location", sourceLocation.toString())
                                 }
                                 if (locationId != null) {
-                                    put("location_id", locationId)
+                                    put("location_id", locationId.toString())
                                 }
                             }
                         }
@@ -177,17 +175,17 @@ fun NumberValidationGroup(
                         val jsonString = gson.toJson(numberValidationMap)
                         println("number_validation_map $jsonString")
 
-//                        val extraService = true
-//                        if (extraService){
-//                            numberValidationViewModel.getAchievementData("bearer ${sharedPrefHelper.getSessionToken()}", "125", numberValidationMap)
-//                        }else{
-//                            numberValidationViewModel.checkNumber("bearer ${sharedPrefHelper.getSessionToken()}", numberValidationMap)
-//                        }
-
-
-                        //this will add in popup
-                        currentBlock.position?.let {position ->
-                            blockListViewModel.addBlockToTheSurveyFlow(currentBlock.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no, position)
+                        if (currentBlock.type == "numbervalidation"){
+                            val extraService = false
+                            if (extraService){
+                                numberValidationViewModel.getAchievementData("bearer ${sharedPrefHelper.getSessionToken()}", sharedPrefHelper.getCampaignId().toString(), numberValidationMap)
+                            }else{
+                                numberValidationViewModel.checkNumber("bearer ${sharedPrefHelper.getSessionToken()}", numberValidationMap)
+                            }
+                        }else{
+                            currentBlock.position?.let {position ->
+                                blockListViewModel.addBlockToTheSurveyFlow(currentBlock.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no, position)
+                            }
                         }
                     },
                     modifier = Modifier
@@ -199,154 +197,67 @@ fun NumberValidationGroup(
             }
         }
 
-        if (isFreshConsumer){
-            PopupFreshConsumer(currentBlock, blockListViewModel, onDismiss = {isFreshConsumer = false})
-        }
-
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
 
         when (val state = numberValidationState.value) {
             is UIState.Error -> {
+                blockListViewModel.hideProgressLoading()
                 Toasty.error(context, state.exception.message ?: "Number validation failed!", Toasty.LENGTH_SHORT).show()
-                isLoading = false
             }
-            is UIState.Loading -> {
-            }
+            is UIState.Loading -> {}
             is UIState.Success -> {
-                isLoading = false
-
+                blockListViewModel.hideProgressLoading()
                 val isExist = state.data.data[0].exist
                 val isEligible = state.data.data[0].eligible
-                val dynmcInfoConModelList = state.data.data[0].information
+
+                dynmcInfoConModelList = state.data.data[0].information
+                messages = state.data.data[0].message
+
+                sharedPrefHelper.setMobileVerificationData(state.data.data.toString())
 
                 if (!isExist && isEligible){
-                    //fresh consumer
-//                    PopupFreshConsumer(currentBlock, blockListViewModel, onDismiss = {isLoading = false})
                     isFreshConsumer = true
+
                 }else if (isExist && isEligible) {
-                    //non fresh consumer
-//                    PopupFreshConsumer(currentBlock, blockListViewModel, onDismiss = {isLoading = false})
-                    isFreshConsumer = true
+                    isNonFreshConsumer = true
                 } else if (isExist && !isEligible) {
-                    // non fresh consumer
-//                    PopupFreshConsumer(currentBlock, blockListViewModel, onDismiss = {isLoading = false})
-                    isFreshConsumer = true
+                    //banned consumer
                 }else if (!isExist && !isEligible){
                     //banned consumer
-//                    PopupFreshConsumer(currentBlock, blockListViewModel, onDismiss = {isLoading = false})
-                    isFreshConsumer = true
                 }
             }
         }
 
         when (val state = givableDataState.value) {
             is UIState.Error -> {
+                blockListViewModel.hideProgressLoading()
                 Toasty.error(context, state.exception.message ?: "Something went wrong!", Toasty.LENGTH_SHORT).show()
-                isLoading = false
             }
-            is UIState.Loading -> {
-            }
+            is UIState.Loading -> {}
             is UIState.Success -> {
-                isLoading = false
+                blockListViewModel.hideProgressLoading()
             }
         }
 
 
-    }
-}
-
-@Composable
-fun PopupFreshConsumer(
-    currentBlock: Block?,
-    blockListViewModel: BlockListViewModel,
-    onDismiss: () -> Unit
-) {
-    Dialog(
-        onDismissRequest = { onDismiss() },
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .background(Color.Transparent)
-        ) {
-
-            Column {
-                Spacer(modifier = Modifier.height(35.dp))
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(4.dp),
-                    shape = RoundedCornerShape(4.dp),
-                    colors = CardDefaults.cardColors(Color.White)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(vertical = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Consumer is eligible for this contact",
-                            modifier = Modifier
-                                .padding(start = 16.dp, end = 16.dp, top = 40.dp),
-                            fontFamily = FontFamily.SansSerif,
-                            color = Color.Black,
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center,
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 16.dp, end = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Button(
-                                onClick = {
-                                    currentBlock?.position?.let { position ->
-                                        blockListViewModel.addBlockToTheSurveyFlow(currentBlock?.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no, position)
-                                    }
-                                },
-                                modifier = Modifier
-                                    .width(120.dp),
-                                colors = ButtonDefaults.buttonColors(Color(0xFF6200EE))
-                            ) {
-                                Text(text = "Yes", color = Color.White)
-                            }
-
-                            OutlinedButton (
-                                onClick = { onDismiss() },
-                                modifier = Modifier
-                                    .width(120.dp)
-                            ) {
-                                Text(text = "Cancel", color = Color.Red)
-                            }
-                        }
-                    }
+        if (isFreshConsumer) {
+            PopupFreshConsumer(
+                currentBlock,
+                blockListViewModel,
+                onDismiss = {
+                    isFreshConsumer = false
                 }
-            }
+            )
+        }
 
-            Image(
-                painter = painterResource(id = R.drawable.popup_icon_new_contact),
-                contentDescription = "Popup Icon",
-                modifier = Modifier
-                    .height(90.dp)
-                    .width(90.dp)
-                    .align(Alignment.TopCenter)
+        if (isNonFreshConsumer) {
+            PopupNonFreshConsumer(
+                dynmcInfoConModelList,
+                messages,
+                currentBlock,
+                blockListViewModel,
+                onDismiss = {
+                    isNonFreshConsumer = false
+                }
             )
         }
     }

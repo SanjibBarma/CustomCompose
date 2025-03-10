@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.customcompose.app_database.entity.SignInEntity
 import com.example.customcompose.app_database.entity.SurveyDataEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LocalDbDao {
@@ -19,6 +20,6 @@ interface LocalDbDao {
     suspend fun upsertSurveyData(surveyData: SurveyDataEntity)
 
     @Query("SELECT * FROM CAMPAIGN_Table WHERE brId = :brId AND campId = :campId LIMIT 1")
-    suspend fun getSurveyDataDataByIds(brId: String, campId: String): SurveyDataEntity
+    fun getSurveyDataDataByIds(brId: String, campId: String): Flow<SurveyDataEntity?>
 
 }
