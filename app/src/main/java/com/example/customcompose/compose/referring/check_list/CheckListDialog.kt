@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -47,7 +48,6 @@ fun CheckListDialog(
     val coroutineScope = rememberCoroutineScope()
     val isCheckList by blockListViewModel.isCheckList.collectAsState()
     val context = LocalContext.current
-    val sharedPrefHelper = remember { AppSessionManager(context) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     Dialog(
@@ -122,7 +122,7 @@ fun CheckListDialog(
                         onClose()
                         blockListViewModel.clearCheckList()
                         blockListViewModel.updateCheckList(false)
-                        sharedPrefHelper.saveItem(selectedOption)
+                        appSessionManager.saveItem(selectedOption)
                     }
                 }
             }

@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.R
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
@@ -29,6 +30,7 @@ import com.example.customcompose.model.Option
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.model.TARGET_ACHIEVEMENT_LIST
 import com.example.customcompose.model.TargetAchievement
+import com.example.customcompose.model.number_validation.DynamicInfoConModel
 import com.example.customcompose.ui.theme.ProductSelected
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
@@ -47,7 +49,6 @@ fun NonRefProductList(
     val existingData = blockListViewModel.getDataFromIndex(position, index)
     val context = LocalContext.current
     var selectedBrand by remember { mutableStateOf(existingData?.answer ?: "") }
-    val sharedPrefHelper =  AppSessionManager(context)
     val question = block.question?.alias ?: ""
     val options = block.options ?: emptyList()
     val blockId = block.id ?: ""
@@ -60,6 +61,18 @@ fun NonRefProductList(
     }
 
     LaunchedEffect (selectedBrand){
+        val nonRefData = appSessionManager.getMobileVerificationData()
+        if (!nonRefData.isNullOrEmpty()) {
+            println("NonRefTextInput: $nonRefData")
+            val dynamicInfoModel: List<DynamicInfoConModel> = gson.fromJson(nonRefData, Array<DynamicInfoConModel>::class.java)?.toList() ?: emptyList()
+
+            for (dynamicInfo in dynamicInfoModel) {
+                if (dynamicInfo.key == question) {
+                    selectedBrand = dynamicInfo.value
+                }
+            }
+        }
+
         val surveyHistoryModel = SurveyHistoryModel(
             question = question,
             answer = selectedBrand,
@@ -162,7 +175,7 @@ fun NonRefProductList(
                             blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
 
                             if (question == "Primary Brand") {
-                                sharedPrefHelper.setPrimaryBrandName(selectedBrand)
+                                appSessionManager.setPrimaryBrandName(selectedBrand)
                             }
                         }
                         .border(1.dp, color = Color.Gray, RoundedCornerShape(4.dp)),

@@ -70,10 +70,6 @@ dependencies {
     implementation("androidx.camera:camera-view:1.4.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 
-    //date picker
-    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.8.1-rc")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-
     //retrofit
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")

@@ -33,8 +33,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.R
-import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -52,9 +52,8 @@ fun CheckListBlock(
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
     val context = LocalContext.current
-    val sharedPrefHelper = remember { AppSessionManager(context) }
 //    val selectedOptions = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
-    val selectedOptions = remember { mutableStateOf(sharedPrefHelper.getSet() ?: emptySet()) }
+    val selectedOptions = remember { mutableStateOf(appSessionManager.getCheckListSet() ?: emptySet()) }
 
     val showDialog = remember { mutableStateOf(false) }
 
@@ -110,13 +109,13 @@ fun CheckListBlock(
                                         checkListGroupId = option.referTo?.group_no ?: ""
                                         selectedSingleOption.value = option.value
 
-                                        if (!sharedPrefHelper.existsItem(option.value)) {
+                                        if (!appSessionManager.existsItem(option.value)) {
                                             showDialog.value = true
                                             blockListViewModel.clearCheckList()
                                             blockListViewModel.addBlockToTheCheckList(checkListBlockId, checkListGroupId)
                                         }
                                     } else {
-                                        sharedPrefHelper.removeItem(option.value)
+                                        appSessionManager.removeItem(option.value)
 
                                         val index = block.options.indexOf(option) ?: -1
                                         if (index != -1) {
@@ -144,13 +143,13 @@ fun CheckListBlock(
                                             checkListGroupId = option.referTo?.group_no ?: ""
                                             selectedSingleOption.value = option.value
 
-                                            if (!sharedPrefHelper.existsItem(option.value)) {
+                                            if (!appSessionManager.existsItem(option.value)) {
                                                 showDialog.value = true
                                                 blockListViewModel.clearCheckList()
                                                 blockListViewModel.addBlockToTheCheckList(checkListBlockId, checkListGroupId)
                                             }
                                         } else {
-                                            sharedPrefHelper.removeItem(option.value)
+                                            appSessionManager.removeItem(option.value)
 
                                             val index = block.options?.indexOf(option) ?: -1
                                             if (index != -1) {

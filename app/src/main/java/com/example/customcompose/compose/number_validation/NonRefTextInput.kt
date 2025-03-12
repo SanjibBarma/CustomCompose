@@ -22,9 +22,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.model.number_validation.NumberCheckModel
+import com.example.customcompose.model.number_validation.DynamicInfoConModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
 
@@ -43,18 +44,22 @@ fun NonRefTextInput(
     var text by remember { mutableStateOf(existingData?.answer ?: "")  }
     val question = block.question?.alias ?: ""
     val blockId = block.id ?: ""
-    val appSessionManager = MyApplication.appSessionManager
 
     LaunchedEffect(text) {
-//        if (!appSessionManager.getMobileVerificationData().isNullOrEmpty()){
-//            val dynamicInfoModel: NumberCheckModel = gson.fromJson(appSessionManager.getMobileVerificationData(), NumberCheckModel::class.java)
-//
-//            for (dynamicInfo in dynamicInfoModel.data[0].information){
-//                if (dynamicInfo.key == question){
-//                    text = dynamicInfo.value
-//                }
-//            }
-//        }
+        val nonRefData = appSessionManager.getMobileVerificationData()
+
+        if (!nonRefData.isNullOrEmpty()) {
+            println("NonRefTextInput: $nonRefData")
+
+            val dynamicInfoModel: List<DynamicInfoConModel> =
+                gson.fromJson(nonRefData, Array<DynamicInfoConModel>::class.java)?.toList() ?: emptyList()
+
+            for (dynamicInfo in dynamicInfoModel) {
+                if (dynamicInfo.key == question) {
+                    text = dynamicInfo.value
+                }
+            }
+        }
 
 
         val surveyHistoryModel = SurveyHistoryModel(
@@ -80,16 +85,20 @@ fun NonRefTextInput(
             onValueChange = {
                 text = it
             },
-            modifier = Modifier.fillMaxWidth().height(56.dp).border(1.dp, color = Color.Gray),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .border(1.dp, color = Color.Gray),
             singleLine = true,
             shape = RoundedCornerShape(4.dp),
             colors = TextFieldDefaults.outlinedTextFieldColors(
                 containerColor = if (isActiveGroup) Color.White else Color.LightGray,
-                focusedBorderColor = Color.Gray,
-                unfocusedBorderColor = Color.Gray
+                focusedBorderColor = Color.LightGray,
+                unfocusedBorderColor = Color.LightGray,
+                disabledTextColor = Color.Black
             ),
             keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Number
+                keyboardType = KeyboardType.Text
             ),
             enabled = isActiveGroup
         )

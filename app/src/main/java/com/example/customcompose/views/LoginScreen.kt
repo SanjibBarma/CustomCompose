@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.customcompose.MyApplication
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.R
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.CommonUtils.getAppVersionCode
@@ -74,8 +75,6 @@ import java.util.Locale
 fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController) {
 
     val context = LocalContext.current
-//    val appSessionManager = remember { AppSessionManager(context) }
-    val appSessionManager = MyApplication.appSessionManager
 
     var username by remember { mutableStateOf(appSessionManager.getUsername() ?: "") }
     var password by remember { mutableStateOf(appSessionManager.getPassword() ?: "") }
@@ -204,8 +203,6 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                         keyboardController?.hide()
                         focusManager.clearFocus()
                         isLoading = true
-
-                        appSessionManager.setMobileVerificationData("")
 
                         if (username.isEmpty() || password.isEmpty()) {
                             Toasty.warning(context, "Invalid username or password", Toasty.LENGTH_SHORT).show()

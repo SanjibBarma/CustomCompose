@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Test Ecrm</string>
+    <string name="srvy_ext">You are about to cancel the contact. This contact will not be saved. Do you want to exit?</string>
 </resources>

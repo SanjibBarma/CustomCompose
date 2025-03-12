@@ -19,7 +19,6 @@ import com.google.gson.Gson
 
 class MainActivity : ComponentActivity() {
     private val gson = Gson()
-//    private val surveyDataModelList: List<SurveyDataModel> = gson.fromJson(SURVEY_FLOW_JSON, Array<SurveyDataModel>::class.java).toList()
     private val routePlanList: List<RoutePlanData> = gson.fromJson(LOCATION_STRING, Array<RoutePlanData>::class.java).toList()
 
     private val requiredPermissions = mutableListOf(

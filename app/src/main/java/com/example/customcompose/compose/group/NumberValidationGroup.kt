@@ -3,7 +3,6 @@ package com.example.customcompose.compose.group
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -12,21 +11,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.customcompose.compose.group.dialog.PopupFreshConsumer
-import com.example.customcompose.compose.group.dialog.PopupNonFreshConsumer
+import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.compose.dialog.PopupBannedConsumer
+import com.example.customcompose.compose.dialog.PopupFreshConsumer
+import com.example.customcompose.compose.dialog.PopupNonFreshConsumer
 import com.example.customcompose.compose.number_validation.NonRefCheckBox
 import com.example.customcompose.compose.number_validation.NonRefContactNo
 import com.example.customcompose.compose.number_validation.NonRefDate
@@ -36,12 +37,12 @@ import com.example.customcompose.compose.number_validation.NonRefMultipleChoice
 import com.example.customcompose.compose.number_validation.NonRefNumberInput
 import com.example.customcompose.compose.number_validation.NonRefProductList
 import com.example.customcompose.compose.number_validation.NonRefTextInput
-import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.number_validation.DynamicInfoConModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.SurveyFlowViewModel
+import com.example.customcompose.views.SurveyDataManager.surveyData
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 
@@ -52,17 +53,24 @@ fun NumberValidationGroup(
     position: Int?,
     isActiveGroup: Boolean,
     destination: String,
-    numberValidationViewModel: SurveyFlowViewModel
+    surveyFlowViewModel: SurveyFlowViewModel
 ) {
     val context = LocalContext.current
-    val sharedPrefHelper = remember { AppSessionManager(context) }
-    val numberValidationState = numberValidationViewModel.checkNumberData.observeAsState(initial = UIState.Loading)
-    val givableDataState = numberValidationViewModel.achievementData.observeAsState(initial = UIState.Loading)
+    val numberValidationState = surveyFlowViewModel.checkNumberData.observeAsState(initial = UIState.Loading)
+    val givableDataState = surveyFlowViewModel.achievementData.observeAsState(initial = UIState.Loading)
     var isFreshConsumer by remember { mutableStateOf(false) }
     var isNonFreshConsumer by remember { mutableStateOf(false) }
+    var isBannedConsumer by remember { mutableStateOf(false) }
+    var status by remember { mutableIntStateOf(100) }
+    var isLoaded by remember { mutableStateOf(false) }
     var dynmcInfoConModelList by remember { mutableStateOf(emptyList<DynamicInfoConModel>()) }
     var messages by remember { mutableStateOf(emptyList<String>()) }
     val gson = Gson()
+
+    LaunchedEffect(Unit) {
+        //isLoaded = true
+        println("isNonFreshConsumer changed: $isNonFreshConsumer")
+    }
 
     Box(
         modifier = Modifier
@@ -160,7 +168,7 @@ fun NumberValidationGroup(
 
                             numberValidationMap.apply {
                                 put("numberValidation", surveyDataMap)
-                                sharedPrefHelper.getCampaignId()?.toInt()
+                                appSessionManager.getCampaignId()?.toInt()
                                     ?.let { put("campaign_id", it) }
                                 if (sourceLocation != null) {
                                     put("source_location", sourceLocation.toString())
@@ -178,9 +186,10 @@ fun NumberValidationGroup(
                         if (currentBlock.type == "numbervalidation"){
                             val extraService = false
                             if (extraService){
-                                numberValidationViewModel.getAchievementData("bearer ${sharedPrefHelper.getSessionToken()}", sharedPrefHelper.getCampaignId().toString(), numberValidationMap)
+                                surveyFlowViewModel.getAchievementData("bearer ${appSessionManager.getSessionToken()}", appSessionManager.getCampaignId().toString(), numberValidationMap)
                             }else{
-                                numberValidationViewModel.checkNumber("bearer ${sharedPrefHelper.getSessionToken()}", numberValidationMap)
+                                isLoaded = true
+                                surveyFlowViewModel.checkNumber("bearer ${appSessionManager.getSessionToken()}", numberValidationMap)
                             }
                         }else{
                             currentBlock.position?.let {position ->
@@ -197,34 +206,35 @@ fun NumberValidationGroup(
             }
         }
 
+        if (isLoaded){
+            when (val state = numberValidationState.value) {
+                is UIState.Error -> {
+                    blockListViewModel.hideProgressLoading()
+                    Toasty.error(context, state.exception.message ?: "Number validation failed!", Toasty.LENGTH_SHORT).show()
+                }
+                is UIState.Loading -> {}
+                is UIState.Success -> {
+                    blockListViewModel.hideProgressLoading()
+                    val isExist = state.data.data[0].exist
+                    val isEligible = state.data.data[0].eligible
 
-        when (val state = numberValidationState.value) {
-            is UIState.Error -> {
-                blockListViewModel.hideProgressLoading()
-                Toasty.error(context, state.exception.message ?: "Number validation failed!", Toasty.LENGTH_SHORT).show()
-            }
-            is UIState.Loading -> {}
-            is UIState.Success -> {
-                blockListViewModel.hideProgressLoading()
-                val isExist = state.data.data[0].exist
-                val isEligible = state.data.data[0].eligible
+                    dynmcInfoConModelList = state.data.data[0].information
+                    messages = state.data.data[0].message
 
-                dynmcInfoConModelList = state.data.data[0].information
-                messages = state.data.data[0].message
+                    println("numberValidationState: recompose")
 
-                sharedPrefHelper.setMobileVerificationData(state.data.data.toString())
-
-                if (!isExist && isEligible){
-                    isFreshConsumer = true
-
-                }else if (isExist && isEligible) {
-                    isNonFreshConsumer = true
-                } else if (isExist && !isEligible) {
-                    //banned consumer
-                }else if (!isExist && !isEligible){
-                    //banned consumer
+                    if (!isExist && isEligible){
+                        isFreshConsumer = true
+                    }else if (isExist && isEligible) {
+                        isNonFreshConsumer = true
+                    } else if (isExist && !isEligible) {
+                        isBannedConsumer = true
+                    }else if (!isExist && !isEligible){
+                        isBannedConsumer = true
+                    }
                 }
             }
+
         }
 
         when (val state = givableDataState.value) {
@@ -239,27 +249,80 @@ fun NumberValidationGroup(
         }
 
 
-        if (isFreshConsumer) {
+        if (isFreshConsumer && isLoaded) {
             PopupFreshConsumer(
-                currentBlock,
-                blockListViewModel,
                 onDismiss = {
                     isFreshConsumer = false
+                    isLoaded = false
+                    println("isFreshConsumer: $isFreshConsumer")
+                },
+                goToNextPage = {
+                    goToNextPage (blockListViewModel, currentBlock, status, position)
                 }
             )
         }
 
-        if (isNonFreshConsumer) {
+        if (isNonFreshConsumer && isLoaded) {
             PopupNonFreshConsumer(
                 dynmcInfoConModelList,
                 messages,
-                currentBlock,
-                blockListViewModel,
                 onDismiss = {
                     isNonFreshConsumer = false
+                    isLoaded = false
+                    println("isNonFreshConsumer: $isNonFreshConsumer")
+                },
+
+                goToNextPage = {
+                    goToNextPage (blockListViewModel, currentBlock, status, position)
                 }
             )
         }
+
+
+        if (isBannedConsumer && isLoaded) {
+            PopupBannedConsumer (
+                dynmcInfoConModelList,
+                messages,
+                onDismiss = {
+                    isNonFreshConsumer = false
+                    isLoaded = false
+                    println("isNonFreshConsumer: $isNonFreshConsumer")
+                },
+
+                goToNextPage = {
+                    goToNextPage (blockListViewModel, currentBlock, status, position)
+                }
+            )
+        }
+    }
+}
+
+fun goToNextPage(
+    blockListViewModel: BlockListViewModel,
+    currentBlock: Block?,
+    status: Int,
+    position: Int?
+) {
+    if (!surveyData?.conditions?.segments.isNullOrEmpty() && surveyData?.conditions?.segments?.size!! > 0){
+        for (segment in surveyData?.conditions?.segments!!){
+            if (status == segment.status){
+                segment.referTo.id?.let { blockId ->
+                    segment.referTo.group_no?.let { groupId ->
+                    if (position != null) {
+                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, position)
+                        return
+                    }
+                } }
+            }
+        }
+    }
+
+    currentBlock?.position?.let { position ->
+        blockListViewModel.addBlockToTheSurveyFlow(
+            currentBlock.jumping_logic?.get(0)!!.id,
+            currentBlock.jumping_logic[0].group_no,
+            position
+        )
     }
 }
 

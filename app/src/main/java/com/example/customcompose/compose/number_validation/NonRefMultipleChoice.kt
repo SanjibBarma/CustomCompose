@@ -25,9 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.model.number_validation.DynamicInfoConModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import com.google.gson.Gson
 
 @Composable
 fun NonRefMultipleChoice(
@@ -38,13 +41,26 @@ fun NonRefMultipleChoice(
     isActiveGroup: Boolean
 ) {
     val isRequired = block.required
-
+    val gson = Gson()
     val existingData = blockListViewModel.getDataFromIndex(position, index)
     var selectedOption by remember { mutableStateOf(existingData?.answer ?: "") }
     val question = block.question?.alias ?: ""
     val blockId = block.id ?: ""
 
     LaunchedEffect (selectedOption){
+
+        val nonRefData = appSessionManager.getMobileVerificationData()
+        if (!nonRefData.isNullOrEmpty()) {
+            println("NonRefTextInput: $nonRefData")
+            val dynamicInfoModel: List<DynamicInfoConModel> = gson.fromJson(nonRefData, Array<DynamicInfoConModel>::class.java)?.toList() ?: emptyList()
+
+            for (dynamicInfo in dynamicInfoModel) {
+                if (dynamicInfo.key == question) {
+                    selectedOption = dynamicInfo.value
+                }
+            }
+        }
+
         val surveyHistoryModel = SurveyHistoryModel(
             question = question,
             answer = selectedOption,

@@ -12,6 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,13 +25,25 @@ import com.example.customcompose.viewmodel.BlockListViewModel
 fun LocationBlock(blockListViewModel: BlockListViewModel, isActiveGroup: Boolean) {
     val routeListItem by blockListViewModel.routeParentList.collectAsState()
 
-//    val allAnswers = routeListItem
-//        .flatMap { it.locationList.orEmpty() } // fetching all the data from locationList
-//        .flatMap { it.routePlanHistory.orEmpty() } // now fetching all from surveyHistoryModel which is under locationList
-//        .mapNotNull { it?.answer } // accepts null from surveyHistoryModel taking all the answer
-//        .joinToString(", ") // seperating all the answer using ","
+    val sourceLocationName = remember { mutableStateOf("") }
+    val targetLocationName = remember { mutableStateOf("") }
 
-//    println("All_location: $allAnswers")
+    val sourceLocation = routeListItem[0].selectedId
+    val locationId = routeListItem[routeListItem.size - 1].selectedId
+
+    for (parentLocation in routeListItem){
+        for (targetLocation in parentLocation.locationList!!){
+            if (sourceLocation == targetLocation.id){
+                println("sourceLocationName: ${targetLocation.name}")
+                sourceLocationName.value = targetLocation.name
+            }
+
+            if (locationId == targetLocation.id){
+                println("LocationName: ${targetLocation.name}")
+                targetLocationName.value = targetLocation.name
+            }
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -47,7 +61,7 @@ fun LocationBlock(blockListViewModel: BlockListViewModel, isActiveGroup: Boolean
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Location: ",/*$allAnswers*/
+                "Location: ${sourceLocationName.value}, ${targetLocationName.value}",
                 modifier = Modifier
                     .padding(16.dp),
                 fontSize = 14.sp

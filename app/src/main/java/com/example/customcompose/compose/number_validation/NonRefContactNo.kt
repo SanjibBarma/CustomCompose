@@ -29,9 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.MyApplication
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.model.number_validation.DynamicInfoConModel
 import com.example.customcompose.viewmodel.BlockListViewModel
+import com.google.gson.Gson
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,11 +48,28 @@ fun NonRefContactNo(
     val isRequired = block.required
     val question = block.question?.alias ?: ""
     val blockId = block.id ?: ""
-
+    val gson = Gson()
     val existingData = blockListViewModel.getDataFromIndex(position, index)
     var phoneNumber by remember { mutableStateOf(existingData?.answer ?: "") }
+    val appSessionManager = MyApplication.appSessionManager
 
     LaunchedEffect(phoneNumber) {
+
+        val nonRefData = appSessionManager.getMobileVerificationData()
+
+        if (!nonRefData.isNullOrEmpty()) {
+            println("NonRefTextInput: $nonRefData")
+
+            val dynamicInfoModel: List<DynamicInfoConModel> =
+                gson.fromJson(nonRefData, Array<DynamicInfoConModel>::class.java)?.toList() ?: emptyList()
+
+            for (dynamicInfo in dynamicInfoModel) {
+                if (dynamicInfo.key == question) {
+                    phoneNumber = dynamicInfo.value
+                }
+            }
+        }
+
         val surveyHistoryModel = SurveyHistoryModel(
             question = question,
             answer = phoneNumber,

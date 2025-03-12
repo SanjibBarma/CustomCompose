@@ -1,7 +1,6 @@
 package com.example.customcompose.compose.referring
 
-import android.os.Build
-import android.widget.Toast
+import android.widget.DatePicker
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,16 +13,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,17 +33,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
-import com.vanpra.composematerialdialogs.MaterialDialog
-import com.vanpra.composematerialdialogs.datetime.date.datepicker
-import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import es.dmoral.toasty.Toasty
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 @Composable
 fun DatePickerBlock(
@@ -52,35 +52,31 @@ fun DatePickerBlock(
     isActiveGroup: Boolean,
     destination: String
 ) {
-    val dateDialogState = rememberMaterialDialogState()
     val currentBlockId = block.id ?: ""
     val context = LocalContext.current
     val isSkippable = block.skip?.id != "-1"
 
-    var answer by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
-    val question = block.question?.slug ?: ""
+    var mDate = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
+    val question = block.question?.alias ?: ""
+    val blockId = block.id ?: ""
 
-    var pickedDate by remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mutableStateOf<LocalDate?>(null)
-        } else {
-            TODO("VERSION.SDK_INT < O")
-        }
-    }
+    val maxAge = block.validations?.max ?: 0
+    val minAge = block.validations?.min ?: 0
 
-    val formattedDate by remember {
-        derivedStateOf {
-            pickedDate?.let {
-                DateTimeFormatter
-                    .ofPattern("dd/MM/yyyy")
-                    .format(it)
-            } ?: ""
-        }
-    }
+    val mContext = LocalContext.current
+    val mCalendar = Calendar.getInstance()
 
-    LaunchedEffect(formattedDate) {
-        answer = formattedDate
-    }
+    // Get current date
+    val currentYear = mCalendar.get(Calendar.YEAR)
+    val currentMonth = mCalendar.get(Calendar.MONTH)
+    val currentDay = mCalendar.get(Calendar.DAY_OF_MONTH)
+
+    var showDialog by remember { mutableStateOf(false) }
+    val tempDate = remember { mutableStateOf("") }
+
+    val minAllowedCalendar = Calendar.getInstance().apply { set(currentYear - maxAge, currentMonth, currentDay) }
+    val maxAllowedCalendar = Calendar.getInstance().apply { set(currentYear - minAge, currentMonth, currentDay) }
+
 
     Card(
         modifier = Modifier
@@ -101,14 +97,14 @@ fun DatePickerBlock(
                 .fillMaxWidth()
                 .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
                 .padding(8.dp)
-                .clickable(enabled = isActiveGroup) { dateDialogState.show() }
+                .clickable(enabled = isActiveGroup) { showDialog = true }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(formattedDate)
+                Text(mDate.value)
                 Icon(
                     painter = painterResource(R.drawable.ic_calendar),
                     contentDescription = "Dropdown Arrow",
@@ -117,24 +113,82 @@ fun DatePickerBlock(
             }
         }
 
-        MaterialDialog(
-            dialogState = dateDialogState,
-            buttons = {
-                positiveButton(text = "Ok") {
-                    Toast.makeText(context, "Clicked ok", Toast.LENGTH_LONG).show()
+        if (showDialog) {
+                Dialog(onDismissRequest = { showDialog = false }) {
+                    Surface(
+                        modifier = Modifier.wrapContentSize(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                question,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            AndroidView(
+                                factory = { context ->
+                                    DatePicker(context).apply {
+                                        init(currentYear - minAge, currentMonth, currentDay) { _, year, month, day ->
+                                            val selectedCalendar = Calendar.getInstance().apply {
+                                                set(year, month, day)
+                                            }
+
+                                            if (selectedCalendar.before(minAllowedCalendar)) {
+                                                Toasty.warning(context, "Must be more than $minAge years old", Toasty.LENGTH_SHORT).show()
+                                                tempDate.value = ""
+                                            }else if (selectedCalendar.after(maxAllowedCalendar)){
+                                                Toasty.warning(context, "Must be less than $maxAge years old", Toasty.LENGTH_SHORT).show()
+                                                tempDate.value = ""
+                                            } else {
+                                                tempDate.value = "$day/${month + 1}/$year"
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Row(
+                                modifier = Modifier.wrapContentWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        showDialog = false
+                                        mDate.value = ""
+                                    },
+                                    modifier = Modifier.weight(1f, fill = false).width(120.dp)
+                                ) {
+                                    Text("Cancel")
+                                }
+
+                                Button(
+                                    onClick = {
+                                        if (tempDate.value.isNotEmpty()) {
+                                            mDate.value = tempDate.value
+                                            showDialog = false
+                                        } else {
+                                            Toasty.warning(mContext, "Please select a valid date", Toasty.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f, fill = false).width(120.dp)
+                                ) {
+                                    Text("OK")
+                                }
+                            }
+
+                        }
+                    }
                 }
-                negativeButton(text = "Cancel")
             }
-        ) {
-            datepicker(
-                initialDate = LocalDate.now(),
-                title = "Pick a date",
-                //date validator will allow user to custom date selection
-//                        allowedDateValidator = {}
-            ) {
-                pickedDate = it
-            }
-        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -180,7 +234,7 @@ fun DatePickerBlock(
 
             Button(
                 onClick = {
-                    if (answer.isEmpty()) {
+                    if (mDate.value.isEmpty()) {
                         Toasty.warning(
                             context,
                             "Please enter a valid ${block.question.slug}",
@@ -189,7 +243,7 @@ fun DatePickerBlock(
                     } else {
                         val surveyHistoryModel = SurveyHistoryModel(
                             question = question,
-                            answer = answer,
+                            answer = mDate.value,
                             id = currentBlockId
                         )
                         block.surveyHistoryModel = listOf(surveyHistoryModel)

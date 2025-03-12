@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.RoutePlanParentModel
 import com.example.customcompose.model.SurveyDataModel
@@ -61,7 +62,6 @@ fun RouteChildView(
     }
 
     val context = LocalContext.current
-    val sharedPrefHelper = remember { AppSessionManager(context) }
 //    val selectedItemId = remember { mutableStateOf<Int?>(null) }
     val selectedItemId = remember { mutableStateOf(locations.selectedId ?: 0) }
     val routeListItem by blockListViewModel.routeParentList.collectAsState()
@@ -124,8 +124,8 @@ fun RouteChildView(
                                 } else {
                                     println("routelist_size: ${routeListItem.size}")
                                     blockListViewModel.hideRoutePlanView()
-                                    sharedPrefHelper.savePreviousGroupId("")
-                                    sharedPrefHelper.clearCheckList()
+                                    appSessionManager.savePreviousGroupId("")
+                                    appSessionManager.clearCheckList()
                                     blockListViewModel.addBlockToTheSurveyFlow(surveyDataModelList[0].blocks[0].id!!, surveyDataModelList[0].group, surveyDataModelList[0].blocks[0].position)
                                 }
                             },

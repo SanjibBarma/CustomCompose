@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.customcompose.MyApplication
 import com.example.customcompose.helper.ConnectivityObserver
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.number_validation.GiveAbleAchievement
@@ -17,12 +18,13 @@ class SurveyFlowViewModel(
     private val numberValidationRepository: SurveyFlowRepository,
     private val connectivityObserver: ConnectivityObserver
 ): ViewModel() {
-
+    private val sharedPrefHelper = MyApplication.appSessionManager
     private val _checkNumberData = MutableLiveData<UIState<NumberCheckModel>>(UIState.Loading)
     val checkNumberData: LiveData<UIState<NumberCheckModel>> = _checkNumberData
 
     private val _achievementData = MutableLiveData<UIState<GiveAbleAchievement>>(UIState.Loading)
     val achievementData: LiveData<UIState<GiveAbleAchievement>> = _achievementData
+    val gson = Gson()
 
     //check number validation api
     fun checkNumber(token: String, requestBody: HashMap<String, Any>) {
@@ -37,6 +39,8 @@ class SurveyFlowViewModel(
                         // API Call was successful
                         response.body()?.let { responseBody ->
                             _checkNumberData.postValue(UIState.Success(responseBody))
+
+                            sharedPrefHelper.setMobileVerificationData(gson.toJson(responseBody.data[0].information))
                         } ?: run {
                             _checkNumberData.postValue(UIState.Error(Exception("Empty response from server")))
                         }

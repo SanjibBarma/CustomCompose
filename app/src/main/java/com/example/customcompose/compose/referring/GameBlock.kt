@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.helper.GameBroadcastReceiver
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
@@ -50,7 +51,6 @@ fun GameBlock(
     val context = LocalContext.current
 //    val packageName = block.options?.get(0)?.value
     val packageName = "ltd.v2.game1"
-    val sharedPrefHelper = remember { AppSessionManager(context) }
 
     DisposableEffect(context) {
         val filter = IntentFilter("com.example.customcompose")
@@ -91,7 +91,7 @@ fun GameBlock(
                         try {
                             val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName ?: "")
                             if (launchIntent != null) {
-                                launchIntent.putExtra("brandName", sharedPrefHelper.getPrimaryBrandName())
+                                launchIntent.putExtra("brandName", appSessionManager.getPrimaryBrandName())
                                 context.startActivity(launchIntent)
                             } else {
                                 Toast.makeText(context, "Package not found", Toast.LENGTH_SHORT)

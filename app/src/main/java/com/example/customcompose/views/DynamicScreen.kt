@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.activity.addCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,16 +35,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.customcompose.MyApplication
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.compose.route_plan.RoutePlanView
 import com.example.customcompose.compose.SubmitButton
+import com.example.customcompose.compose.dialog.ExitDialog
 import com.example.customcompose.compose.group.CheckGroupOrBlock
 import com.example.customcompose.compose.referring.LocationBlock
-import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.model.SurveyModel
@@ -51,7 +53,8 @@ import com.example.customcompose.ui.theme.DimBackground
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.LoginViewModel
 import com.example.customcompose.viewmodel.SurveyFlowViewModel
-import com.example.customcompose.views.SurveyDataManager.surveyDataModel
+import com.example.customcompose.views.SurveyDataManager.surveyData
+import com.example.customcompose.views.SurveyDataManager.surveyDataFlow
 import com.google.gson.Gson
 
 @Composable
@@ -63,17 +66,30 @@ fun DynamicScreen(
     routePlanList: List<RoutePlanData>
 ) {
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    var showDialog by remember { mutableStateOf(false) }
 
     onBackPressedDispatcher?.addCallback {
-        navController.popBackStack()
-        blockListViewModel.clearRouteList()
-        blockListViewModel.clearParentBlockList()
-        Log.d("MyScreen", "Back button pressed on MyScreen")
+        showDialog = true
+        Log.d("DynamicScreen", "Back button pressed on DynamicScreen")
+    }
+
+    if (showDialog){
+        ExitDialog(
+            showDialog = showDialog,
+            onCancelClick = { showDialog = false },
+            onExitClick = {
+                navController.popBackStack()
+                blockListViewModel.clearRouteList()
+                blockListViewModel.clearParentBlockList()
+                appSessionManager.setMobileVerificationData("")
+                showDialog = false
+            }
+        )
     }
 
     val context = LocalContext.current
-    val appSessionManager = MyApplication.appSessionManager
-    val surveyViewListItem by blockListViewModel.parentSurveyBlockList.collectAsState()
+//    val appSessionManager = MyApplication.appSessionManager
+    val parentSurveyList by blockListViewModel.parentSurveyBlockList.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val isSubmitted by blockListViewModel.isSubmitted.collectAsState()
@@ -88,7 +104,7 @@ fun DynamicScreen(
 
     val surveyDataState = loginViewModel.localSurveyData.observeAsState()
 
-    var surveyData: SurveyModel? = null
+//    var surveyData: SurveyModel? = null
     var surveyName by remember { mutableStateOf("") }
 
     LaunchedEffect(surveyDataState.value) {
@@ -96,18 +112,15 @@ fun DynamicScreen(
             surveyData = gson.fromJson(campData, SurveyModel::class.java)
             surveyData?.let {
                 val routePlanLocal = it.route_plan
-                surveyDataModel = it.survey_flow
+                surveyDataFlow = it.survey_flow
                 surveyName = it.name
                 Log.d("routePlanFromLocal", routePlanLocal.toString())
 
                 routePlanLocal?.get(0)?.let { routePlan ->
                     blockListViewModel.showRoutePlanView()
                     blockListViewModel.clearRouteList()
-                    blockListViewModel.addNextRoutePlanData(
-                        routePlan.type_slug,
-                        routePlanLocal,
-                        blockListViewModel.routeParentList.value.size
-                    )
+                    appSessionManager.setMobileVerificationData("")
+                    blockListViewModel.addNextRoutePlanData(routePlan.type_slug, routePlanLocal, blockListViewModel.routeParentList.value.size)
                 }
             }
         }
@@ -129,57 +142,27 @@ fun DynamicScreen(
                 modifier = Modifier
                     .padding(paddingValues)
             ) {
-//            if (surveyViewListItem.isEmpty() && !isRoutePlanShow) {
-//                Button(
-//                    onClick = {
-//                        blockListViewModel.clearRouteList()
-//                        blockListViewModel.showRoutePlanView()
-//                          blockListViewModel.addNextRoutePlanData(routePlan.type_slug, routePlanLocal, blockListViewModel.routeParentList.value.size)
-//                    },
-//                    modifier = Modifier.fillMaxWidth().padding(top = 100.dp)
-//                ) {
-//                    Text("Start")
-//                }
-//            }
 
-                LaunchedEffect(surveyViewListItem.size) {
-                    if (surveyViewListItem.isNotEmpty()) {
+                LaunchedEffect(parentSurveyList.size) {
+                    if (parentSurveyList.isNotEmpty()) {
                         coroutineScope.launch {
-                            listState.animateScrollToItem(surveyViewListItem.size - 1)
+                            listState.animateScrollToItem(parentSurveyList.size)
                         }
                     }
                 }
 
                 LazyColumn(state = listState, modifier = Modifier.imePadding()) {
                     item {
-                        if (isRoutePlanShow) {
-                            RoutePlanView(
-                                blockListViewModel,
-                                surveyDataModel!!,
-                                navController,
-                                onDismiss = {
-                                    blockListViewModel.hideRoutePlanView()
-                                }
-                            )
-                        }
-
-                        if (surveyViewListItem.isNotEmpty()) {
+                        if (parentSurveyList.isNotEmpty()) {
                             LocationBlock(blockListViewModel, false)
                         }
                     }
 
-                    items(surveyViewListItem) { childView ->
+                    items(parentSurveyList) { childView ->
                         val isCurrentGroupActive =
-                            !isSubmitted && surveyViewListItem.lastOrNull()?.group == childView.group
+                            !isSubmitted && parentSurveyList.lastOrNull()?.group == childView.group
                         val position = childView.position
-                        CheckGroupOrBlock(
-                            blockListViewModel,
-                            childView,
-                            isCurrentGroupActive,
-                            position,
-                            "mainSurvey",
-                            numberValidationViewModel
-                        )
+                        CheckGroupOrBlock(blockListViewModel, childView, isCurrentGroupActive, position, "mainSurvey", numberValidationViewModel)
                     }
 
                     if (isSubmitted) {
@@ -192,11 +175,17 @@ fun DynamicScreen(
 
         }
 
+        if (isRoutePlanShow) {
+            RoutePlanView(blockListViewModel, surveyDataFlow!!, navController, onDismiss = { blockListViewModel.hideRoutePlanView() })
+        }
+
         if (isProgressLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(DimBackground),
+                    .background(DimBackground)
+                    .pointerInput(Unit) { }
+                    .clickable(enabled = false) {},
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(
@@ -211,7 +200,7 @@ fun DynamicScreen(
 }
 
 object SurveyDataManager {
-    var surveyDataModel: List<SurveyDataModel>? = null
+    var surveyDataFlow: List<SurveyDataModel>? = null
+    var surveyData: SurveyModel? = null
 }
-
 

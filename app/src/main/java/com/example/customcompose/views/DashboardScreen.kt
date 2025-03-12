@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.customcompose.MyApplication
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.compose.CustomAppBar
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.UIState
@@ -33,8 +34,6 @@ import com.example.customcompose.viewmodel.LoginViewModel
 fun DashboardScreen(loginViewModel: LoginViewModel, navController: NavHostController) {
 
     val context = LocalContext.current
-//    val appSessionManager = remember { AppSessionManager(context) }
-    val appSessionManager = MyApplication.appSessionManager
 
     val campaignListDataState = loginViewModel.campaignListData.observeAsState(initial = UIState.Loading)
 
