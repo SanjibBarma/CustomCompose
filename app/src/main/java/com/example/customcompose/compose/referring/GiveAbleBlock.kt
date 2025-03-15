@@ -24,6 +24,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -31,18 +32,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.customcompose.R
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.MATERIAL_STRING
 import com.example.customcompose.model.MaterialFinalModel
 import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.model.number_validation.NumberCheckData
 import com.example.customcompose.ui.theme.ProductSelected
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
@@ -59,38 +59,58 @@ fun GiveAbleBlock(
     val currentBlockId = block.id ?: ""
     var selectedOption by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
     val question = block.question?.slug ?: ""
+    val materialList = remember { mutableStateListOf<MaterialFinalModel>() }
     val finalMaterialList = remember { mutableStateListOf<MaterialFinalModel>() }
-    finalMaterialList.clear()
     val context = LocalContext.current
 
     val gson = Gson()
     val storedMaterials: List<MaterialFinalModel> = gson.fromJson(MATERIAL_STRING, Array<MaterialFinalModel>::class.java).toList()
 
-    //check main app again for the giveable validation
 
-    if (!storedMaterials.isNullOrEmpty()) {
-        for (strMaterial in storedMaterials) {
-            if (!block.options.isNullOrEmpty()) {
-                for (givable in block.options) {
-                    if (strMaterial.id.toString() == givable.value) {
-                        finalMaterialList.add(strMaterial)
+
+
+    val nonRefData = appSessionManager.getMobileVerificationData()
+    if (!nonRefData.isNullOrEmpty()) {
+        println("NonRefTextInput: $nonRefData")
+        val numberCheckData: NumberCheckData? = gson.fromJson(nonRefData, NumberCheckData::class.java)
+        if (numberCheckData != null && numberCheckData.materials != null){
+            for (material in numberCheckData.materials) {
+                if (!storedMaterials.isNullOrEmpty()){
+                    for (strMaterial in storedMaterials) {
+                        if (strMaterial.id == material.id && material.qty!! > strMaterial.qty!!){
+                            materialList.add(material)
+                            break
+                        }
                     }
                 }
             }
         }
     }
 
-    val extraMaterial = MaterialFinalModel(
-        id = 0,
-        name = "None",
-        qty = 0,
-        achievement = 0,
-        type = 0,
-        typeName = "",
-        url = ""
-    )
-    finalMaterialList.add(0, extraMaterial)
-//    println("Final material List: ${finalMaterialList.size}")
+
+    for (material in materialList) {
+        if (!block.options.isNullOrEmpty()) {
+            for (givable in block.options) {
+                if (material.id.toString() == givable.value) {
+                    finalMaterialList.add(material)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect (Unit){
+        val extraMaterial = MaterialFinalModel(
+            id = 0,
+            name = "None",
+            qty = 0,
+            achievement = 0,
+            type = 0,
+            typeName = "",
+            img_url = ""
+        )
+
+        finalMaterialList.add(0, extraMaterial)
+    }
 
     Card(
         modifier = Modifier
@@ -119,7 +139,7 @@ fun GiveAbleBlock(
                         Box(
                             modifier = Modifier
                                 .padding(4.dp)
-                                .height(120.dp)
+                                .height(80.dp)
                                 .width(100.dp)
                                 .border(1.dp, if (selectedOption == option.id.toString()) Color.Gray else Color.LightGray, RoundedCornerShape(4.dp))
                                 .clickable(enabled = isActiveGroup) {
@@ -168,10 +188,10 @@ fun GiveAbleBlock(
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                if (!option.url.isNullOrEmpty()) {
-                                    val fileName = option.url.substringAfterLast("/")
+                                if (!option.img_url.isNullOrEmpty()) {
+                                    val fileName = option.img_url.substringAfterLast("/")
                                     val imageFile = File(context.cacheDir, fileName)
-                                    val imageBitmap = remember(option.url) {
+                                    val imageBitmap = remember(option.img_url) {
                                         if (imageFile.exists()) {
                                             BitmapFactory.decodeFile(imageFile.absolutePath)?.asImageBitmap()
                                         } else null

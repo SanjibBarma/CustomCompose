@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import okhttp3.*
+import okhttp3.logging.HttpLoggingInterceptor
 import okio.Buffer
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -82,6 +83,28 @@ object RetrofitInstance {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiService::class.java)
+    }
+
+
+
+    //====================******************============================//
+    private const val MEDIA_URL = "https://ecrm3-nonremovable-uploads.s3.ap-southeast-1.amazonaws.com/"
+
+    private val media_loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
+    private val mediaClient = OkHttpClient.Builder()
+        .addInterceptor(media_loggingInterceptor)
+        .build()
+
+    val mediaService: ApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(MEDIA_URL)
+            .client(mediaClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)

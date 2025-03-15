@@ -2,6 +2,7 @@ package com.example.customcompose.views
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,26 +13,33 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -54,33 +62,31 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.customcompose.MyApplication
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.loginViewModel
 import com.example.customcompose.R
-import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.CommonUtils.getAppVersionCode
 import com.example.customcompose.helper.CommonUtils.getDeviceInfo
-import com.example.customcompose.compose.LoadingAnimation
 import com.example.customcompose.helper.UIState
+import com.example.customcompose.model.DownloadModel
 import com.example.customcompose.navigation.Screen
-import com.example.customcompose.viewmodel.LoginViewModel
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController) {
-
+fun LoginScreen(navController: NavHostController) {
     val context = LocalContext.current
-
     var username by remember { mutableStateOf(appSessionManager.getUsername() ?: "") }
     var password by remember { mutableStateOf(appSessionManager.getPassword() ?: "") }
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(appSessionManager.isRemembered()) }
+    val gson = Gson()
 
     val loginState = loginViewModel.loginData.observeAsState(initial = UIState.Loading)
     val userInfoDataState = loginViewModel.userData.observeAsState(initial = UIState.Loading)
@@ -92,7 +98,20 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
 
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    val coroutineScope = rememberCoroutineScope()
+
+    // Progress tracking states
+    var loginStepDone by remember { mutableStateOf(false) }
+    var userInfoStepDone by remember { mutableStateOf(false) }
+    var campaignListStepDone by remember { mutableStateOf(false) }
+    var surveyStepDone by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf(0f) }
+    val lazyListState = rememberLazyListState()
+    val downloadModels = mutableListOf<DownloadModel>()
+
+    var downloadProgress by remember { mutableStateOf(0f) } // Progress as a fraction (0.0 to 1.0)
+    var isDownloading by remember { mutableStateOf(false) }
+    var isDownloadComplete by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val signInInfoMap = HashMap<String, Any>().apply {
         put("password", password)
@@ -102,7 +121,9 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
     }
 
     Scaffold { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -202,6 +223,13 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                     onClick = {
                         keyboardController?.hide()
                         focusManager.clearFocus()
+
+                        loginViewModel.resetAllStates()
+                        loginStepDone = false
+                        userInfoStepDone = false
+                        campaignListStepDone = false
+                        surveyStepDone = false
+                        progress = 0f
                         isLoading = true
 
                         if (username.isEmpty() || password.isEmpty()) {
@@ -218,7 +246,6 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                                     appSessionManager.clearLoginData()
                                 }
 
-                                val gson = Gson()
                                 val _signInInfoMap = gson.toJson(signInInfoMap)
                                 println("SignInInfoMap: $_signInInfoMap")
 
@@ -234,7 +261,6 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                     )
                 }
 
-
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -249,10 +275,81 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.White),
-                    contentAlignment = Alignment.Center
+                        .background(Color.White)
+                        .clickable(enabled = false) { }
+                        .padding(start = 16.dp),
                 ) {
-                    LoadingAnimation()
+//                    LoadingAnimation()
+
+                    LazyColumn(state = lazyListState) {
+                        item{
+                            ShowProgress(progress, "Api Info")
+                        }
+
+//                        if (progress == 100f){
+//                            isDownloadComplete = false
+//                            item{
+//                                LaunchedEffect(Unit) {
+//                                    if (downloadModels.isNotEmpty()) {
+//                                        isDownloading = true
+//                                        isDownloadComplete = false
+//
+//                                        scope.launch(Dispatchers.IO) {
+//                                            downloadModels.forEachIndexed { index, model ->
+//                                                val cacheFile = File(context.cacheDir, model.url.split("/").last())
+//
+//                                                if (cacheFile.exists()) {
+//                                                    withContext(Dispatchers.Main) {
+//                                                        downloadProgress = ((index + 1) * 100f) / downloadModels.size
+//                                                    }
+//                                                } else {
+//                                                    val fullUrl = model.url
+//                                                    val response = mediaService.downloadFile(fullUrl)
+//
+//                                                    if (response.isSuccessful) {
+//                                                        val inputStream: InputStream = response.body()?.byteStream() ?: return@forEachIndexed
+//                                                        val fileOutputStream = FileOutputStream(cacheFile)
+//
+//                                                        val totalSize = response.body()?.contentLength() ?: 0
+//                                                        var downloadedSize = 0L
+//
+//                                                        val buffer = ByteArray(8192)
+//                                                        var bytesRead: Int
+//
+//                                                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+//                                                            fileOutputStream.write(buffer, 0, bytesRead)
+//                                                            downloadedSize += bytesRead
+//                                                            withContext(Dispatchers.Main) {
+//                                                                downloadProgress = ((index + downloadedSize.toFloat() / totalSize.toFloat()) / downloadModels.size) * 100f
+//                                                            }
+//                                                        }
+//
+//                                                        fileOutputStream.flush()
+//                                                        fileOutputStream.close()
+//                                                    } else {
+//                                                        withContext(Dispatchers.Main) {
+//                                                            println("Download failed for ${model.url}")
+//                                                        }
+//                                                    }
+//                                                }
+//
+//                                                withContext(Dispatchers.Main) {
+//                                                    downloadProgress = ((index + 1) * 100f) / downloadModels.size
+//                                                }
+//                                            }
+//
+//                                            withContext(Dispatchers.Main) {
+//                                                Toast.makeText(context, "Download Complete!", Toast.LENGTH_SHORT).show()
+//                                                isDownloadComplete = true
+//                                            }
+//                                            isDownloading = false
+//                                        }
+//                                    }
+//                                }
+//                                ShowProgress(downloadProgress, isDownloadComplete)
+//                            }
+//                        }
+                    }
                 }
             }
 
@@ -265,12 +362,15 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                 is UIState.Loading -> {
                 }
                 is UIState.Success -> {
-                    isLoading = false
+                    if (!loginStepDone) {
+                        loginStepDone = true
+                        progress += 25
+                    }
+
                     println("userSignInData: ${state.data.data.id}")
                     state.data.data.token?.let {token ->
                         appSessionManager.setSessionToken(token)
                     }
-
                     appSessionManager.setBrId(state.data.data.id.toString())
                 }
             }
@@ -283,6 +383,10 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                 }
                 is UIState.Loading -> {}
                 is UIState.Success -> {
+                    if (!userInfoStepDone) {
+                        userInfoStepDone = true
+                        progress += 25
+                    }
 
                     val time = SimpleDateFormat("yyyy:MM:dd:HH:mm:ss")
                     val crrTime = time.format(Date())
@@ -308,8 +412,12 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                 }
                 is UIState.Loading -> {}
                 is UIState.Success -> {
-
+                    if (!campaignListStepDone) {
+                        campaignListStepDone = true
+                        progress += 25
+                    }
                     if (state.data.data.isNullOrEmpty()){
+                        isLoading = false
                         Toasty.error(context, "No campaign assign!", Toasty.LENGTH_SHORT).show()
                     }
                 }
@@ -323,13 +431,78 @@ fun LoginScreen(loginViewModel: LoginViewModel, navController: NavHostController
                 }
                 is UIState.Loading -> {}
                 is UIState.Success -> {
-                    //if login result is success then navigate to next screen
-                    isLoading = false
 
-                    navController.navigate(Screen.DashboardScreen.route)
+                    if (!surveyStepDone) {
+                        surveyStepDone = true
+                        progress += 25
+                    }
+
+                    LaunchedEffect (Unit){
+                        delay(500)
+                        navController.navigate(Screen.DashboardScreen.route)
+                        isLoading = false
+                    }
+
+                    if (state.data.data[0].image != null && state.data.data[0].image?.size!! > 0) {
+                        // Iterate over images and add them to the imageList
+                        for (images in state.data.data[0].image!!) {
+                            val imageType = DownloadModel(
+                                type = "Image",
+                                url = images
+                            )
+                            downloadModels.add(imageType)  // Add imageType to the list
+                        }
+                    }
+
+                    println("Image_List: ${gson.toJson(downloadModels)}")
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ShowProgress(progress: Float, title: String) {
+    Spacer(modifier = Modifier.height(32.dp))
+    Row (
+        modifier = Modifier
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ){
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(60.dp)
+        ) {
+            CircularProgressIndicator(
+                progress = 1f,
+                color = Color.LightGray,
+                strokeWidth = 8.dp,
+                modifier = Modifier.fillMaxSize()
+            )
+            CircularProgressIndicator(
+                progress = progress / 100f,
+                color = Color.Blue,
+                strokeWidth = 8.dp,
+                modifier = Modifier.fillMaxSize()
+            )
+            if (progress == 100f) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = "Download Complete",
+                    tint = Color.Blue,
+                    modifier = Modifier.size(40.dp)
+                )
+            } else {
+                Text(
+                    text = "${progress.toInt()}%",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.Black,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(title)
     }
 }
 

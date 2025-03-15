@@ -7,12 +7,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.helper.AudioRecorderService
-import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.model.RoutePlanParentModel
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.views.SurveyDataManager.surveyDataFlow
+import com.example.customcompose.views.SurveyDataManager.surveyFlowData
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +32,9 @@ class BlockListViewModel(
     private val _isProgressLoading = MutableStateFlow(false)
     val isProgressLoading = _isProgressLoading.asStateFlow()
 
+    private val _isTermsShow = MutableStateFlow(false)
+    val isTermsShow = _isTermsShow.asStateFlow()
+
     private val gson = Gson()
     private var jumpMatchCount = 0;
 
@@ -41,7 +43,7 @@ class BlockListViewModel(
     fun addBlockToTheSurveyFlow(blockId: String, groupId: String, position: Int) {
         println("initial  blockId $blockId groupId: $groupId")
         println("initial_Position $position")
-        val curGroup = surveyDataFlow!!.find { it.group == groupId }
+        val curGroup = surveyFlowData!!.find { it.group == groupId }
 
         if (blockId == "submit" && groupId == "submit") {
             println("print_log: 5")
@@ -60,7 +62,7 @@ class BlockListViewModel(
                 }else{
                     if (appSessionManager.getPreviousGroupId() != groupId){
                         println("print_log: 3 ${appSessionManager.getPreviousGroupId()}")
-                        val previousGroup = surveyDataFlow!!.find { it.group == appSessionManager.getPreviousGroupId() }
+                        val previousGroup = surveyFlowData!!.find { it.group == appSessionManager.getPreviousGroupId() }
 
                         //if current block is the last block of the current group
                         //match the jumping logic condition to jump the next group
@@ -124,7 +126,7 @@ class BlockListViewModel(
     //after filtering the block and group update the list for view
     private fun loadCurrentGroupOrBlock(blockId: String, groupId: String, position: Int) {
         viewModelScope.launch {
-            val group = surveyDataFlow!!.find { it.group == groupId }
+            val group = surveyFlowData!!.find { it.group == groupId }
             val block = group?.blocks?.find { it.id == blockId }
             if (group?.type == "non-referring" || group?.type == "numbervalidation") {
                 val newBlock = Block(
@@ -225,7 +227,7 @@ class BlockListViewModel(
     }
 
     private fun stopAudioService(blockId: String?, groupId: String?, position: Int?) {
-        val group = surveyDataFlow!!.find { it.group == groupId }
+        val group = surveyFlowData!!.find { it.group == groupId }
         val block = group?.blocks?.find { it.id == blockId }
 
         val intent = Intent(context, AudioRecorderService::class.java)
@@ -300,7 +302,7 @@ class BlockListViewModel(
                 _checkListParentBlockList.value = emptyList()
             } else {
                 _isCheckList.value = false
-                val group = surveyDataFlow!!.find { it.group == groupId }
+                val group = surveyFlowData!!.find { it.group == groupId }
                 val block = group?.blocks?.find { it.id == blockId }
 
                 if (group?.type == "non-referring" || group?.type == "numbervalidation") {
@@ -434,6 +436,14 @@ class BlockListViewModel(
 
     fun hideProgressLoading() {
         _isProgressLoading.value = false
+    }
+
+    fun showTermsPopup() {
+        _isTermsShow.value = true
+    }
+
+    fun hideTermsPopup() {
+        _isTermsShow.value = false
     }
 
 }

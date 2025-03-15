@@ -128,26 +128,6 @@ object CommonUtils {
     @SuppressLint("HardwareIds")
     fun getDeviceInfo(context: Context): HashMap<String, Any> {
         val deviceInfoMap = HashMap<String, Any>()
-//        val deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-//        val androidVersion = Build.VERSION.RELEASE
-//        val apiVersion = Build.VERSION.SDK_INT
-//        val brand = Build.BRAND
-//        val model = Build.MODEL
-//        val manufacturer = Build.MANUFACTURER
-//        val uiVersion = getSystemProperty("ro.build.version.incremental") ?: "Unknown"
-//        val userType = getSystemProperty("ro.build.type") ?: "Unknown"
-//        val securityPatch = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//            Build.VERSION.SECURITY_PATCH
-//        } else {
-//            "Unknown"
-//        }
-//        val ipAddress = getIPAddress()
-//        val networkType = getNetworkType(context)
-//        val imei = "unknown"
-//        val appVersion = "e-1.0.5.5"
-//        val appVersionCode = 1055
-//        val mobileNumber = ""
-//        val currentYear = SimpleDateFormat("yyyy", Locale.ENGLISH).format(Date())
 
         deviceInfoMap.apply {
             put("device_id", Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID))

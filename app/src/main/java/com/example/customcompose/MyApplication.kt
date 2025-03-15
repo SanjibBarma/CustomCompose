@@ -6,9 +6,11 @@ import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.helper.ConnectivityObserver
 import com.example.customcompose.network.ApiService
 import com.example.customcompose.network.RetrofitInstance
+import com.example.customcompose.repository.DashboardRepository
 import com.example.customcompose.repository.LoginRepository
 import com.example.customcompose.repository.SurveyFlowRepository
 import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.viewmodel.DashboardViewModel
 import com.example.customcompose.viewmodel.LoginViewModel
 import com.example.customcompose.viewmodel.SurveyFlowViewModel
 
@@ -24,12 +26,16 @@ class MyApplication : Application() {
             RetrofitInstance.apiService
         }
 
+        val mediaService: ApiService by lazy {
+            RetrofitInstance.mediaService
+        }
+
         private val appDatabase: AppDatabase by lazy {
             instance?.let { AppDatabase.getDatabase(it) }
                 ?: throw IllegalStateException("Application instance is not initialized")
         }
 
-        private val connectivityObserver: ConnectivityObserver by lazy {
+        val connectivityObserver: ConnectivityObserver by lazy {
             instance?.let { ConnectivityObserver(it) }
                 ?: throw IllegalStateException("Application instance is not initialized")
         }
@@ -37,8 +43,17 @@ class MyApplication : Application() {
         private val loginRepository: LoginRepository by lazy {
             LoginRepository(apiService, appDatabase.dbDao())
         }
+
+        private val dashboardRepository: DashboardRepository by lazy {
+            DashboardRepository(apiService, appDatabase.dbDao())
+        }
+
         val loginViewModel: LoginViewModel by lazy {
             LoginViewModel(loginRepository, connectivityObserver)
+        }
+
+        val dashboardViewModel: DashboardViewModel by lazy {
+            DashboardViewModel(dashboardRepository)
         }
 
         val blockListViewModel: BlockListViewModel by lazy {

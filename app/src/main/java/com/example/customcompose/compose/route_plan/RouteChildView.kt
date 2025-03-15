@@ -21,10 +21,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,10 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.customcompose.MyApplication.Companion.appSessionManager
-import com.example.customcompose.helper.AppSessionManager
+import com.example.customcompose.MyApplication.Companion.dashboardViewModel
 import com.example.customcompose.model.RoutePlanParentModel
 import com.example.customcompose.model.SurveyDataModel
-import com.example.customcompose.model.TARGET_ACHIEVEMENT_LIST
 import com.example.customcompose.model.TargetAchievement
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
@@ -48,26 +50,40 @@ fun RouteChildView(
     locations: RoutePlanParentModel,
     blockListViewModel: BlockListViewModel,
     surveyDataModelList: List<SurveyDataModel>,
-    navController: NavHostController,
-    listPosition: Int
+    listPosition: Int,
+    onDismiss: () -> Unit
 ) {
 
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
     onBackPressedDispatcher?.addCallback {
-        navController.popBackStack()
-        blockListViewModel.clearRouteList()
-        blockListViewModel.clearParentBlockList()
+        //navController.popBackStack()
+        onDismiss()
         Log.d("MyScreen", "Back button pressed on MyScreen")
     }
 
     val context = LocalContext.current
-//    val selectedItemId = remember { mutableStateOf<Int?>(null) }
     val selectedItemId = remember { mutableStateOf(locations.selectedId ?: 0) }
     val routeListItem by blockListViewModel.routeParentList.collectAsState()
 
+//    val targetAchievementList: List<TargetAchievement> = gson.fromJson(TARGET_ACHIEVEMENT_LIST, Array<TargetAchievement>::class.java).toList()
+    appSessionManager.getBrId()?.let {
+        dashboardViewModel.fetchTargetAchieveDataByIds(it, appSessionManager.getCampaignId()!!)
+    }
+    val targetAchievementState by dashboardViewModel.localTargetAchieveData.observeAsState()
     val gson = Gson()
-    val targetAchievementList: List<TargetAchievement> = gson.fromJson(TARGET_ACHIEVEMENT_LIST, Array<TargetAchievement>::class.java).toList()
+    var targetAchievementList by remember { mutableStateOf<List<TargetAchievement>?>(emptyList()) }
+
+    LaunchedEffect(targetAchievementState) {
+        targetAchievementState?.target_achievement?.let {
+            try {
+                targetAchievementList = gson.fromJson(it, Array<TargetAchievement>::class.java).toList()
+            } catch (e: Exception) {
+                targetAchievementList = emptyList()
+            }
+        }
+        println("targetAchieveData_compose: $targetAchievementList")
+    }
 
     Spacer(modifier = Modifier.height(8.dp))
 
@@ -100,7 +116,7 @@ fun RouteChildView(
                                 //location list er first position check kora hocche
                                 //means route list theke selected id ber kora hobe
                                 if (listPosition == 0){
-                                    for (targetAchieve in targetAchievementList){
+                                    for (targetAchieve in targetAchievementList!!){
                                         if (targetAchieve.products.isNullOrEmpty() && targetAchieve.products.size == 0){
                                             for (locationTarget in targetAchieve.locations){
                                                 //selected loc id and target locations er jekono id jodi match kore tahole

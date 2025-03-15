@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.surveyFlowViewModel
 import com.example.customcompose.compose.dialog.PopupBannedConsumer
 import com.example.customcompose.compose.dialog.PopupFreshConsumer
 import com.example.customcompose.compose.dialog.PopupNonFreshConsumer
@@ -39,10 +40,11 @@ import com.example.customcompose.compose.number_validation.NonRefProductList
 import com.example.customcompose.compose.number_validation.NonRefTextInput
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.ExtraServiceModel
 import com.example.customcompose.model.number_validation.DynamicInfoConModel
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.SurveyFlowViewModel
-import com.example.customcompose.views.SurveyDataManager.surveyData
+import com.example.customcompose.views.SurveyDataManager.fullSurveyData
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 
@@ -53,7 +55,6 @@ fun NumberValidationGroup(
     position: Int?,
     isActiveGroup: Boolean,
     destination: String,
-    surveyFlowViewModel: SurveyFlowViewModel
 ) {
     val context = LocalContext.current
     val numberValidationState = surveyFlowViewModel.checkNumberData.observeAsState(initial = UIState.Loading)
@@ -183,18 +184,25 @@ fun NumberValidationGroup(
                         val jsonString = gson.toJson(numberValidationMap)
                         println("number_validation_map $jsonString")
 
-                        if (currentBlock.type == "numbervalidation"){
-                            val extraService = false
-                            if (extraService){
-                                surveyFlowViewModel.getAchievementData("bearer ${appSessionManager.getSessionToken()}", appSessionManager.getCampaignId().toString(), numberValidationMap)
-                            }else{
-                                isLoaded = true
-                                surveyFlowViewModel.checkNumber("bearer ${appSessionManager.getSessionToken()}", numberValidationMap)
+                        var isMaterialGiveable = false
+                        val extraService = appSessionManager.getExtraServiceCamInfo()
+                        if (!extraService.isNullOrEmpty()) {
+                            val extraServiceData: ExtraServiceModel? = gson.fromJson(extraService, ExtraServiceModel::class.java)
+
+                            for (assignedMaterial in extraServiceData?.data?.campaign_info!!){
+                                if (assignedMaterial.id == appSessionManager.getCampaignId()?.toInt()){
+                                    isMaterialGiveable = assignedMaterial.material_assigned
+                                }
                             }
+                        }
+
+//                        val extraServiceValidation = false
+                        if (isMaterialGiveable){
+                            isLoaded = true
+                            surveyFlowViewModel.getAchievementData("bearer ${appSessionManager.getSessionToken()}", appSessionManager.getCampaignId().toString(), numberValidationMap)
                         }else{
-                            currentBlock.position?.let {position ->
-                                blockListViewModel.addBlockToTheSurveyFlow(currentBlock.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no, position)
-                            }
+                            isLoaded = true
+                            surveyFlowViewModel.checkNumber("bearer ${appSessionManager.getSessionToken()}", numberValidationMap)
                         }
                     },
                     modifier = Modifier
@@ -303,8 +311,8 @@ fun goToNextPage(
     status: Int,
     position: Int?
 ) {
-    if (!surveyData?.conditions?.segments.isNullOrEmpty() && surveyData?.conditions?.segments?.size!! > 0){
-        for (segment in surveyData?.conditions?.segments!!){
+    if (!fullSurveyData?.conditions?.segments.isNullOrEmpty() && fullSurveyData?.conditions?.segments?.size!! > 0){
+        for (segment in fullSurveyData?.conditions?.segments!!){
             if (status == segment.status){
                 segment.referTo.id?.let { blockId ->
                     segment.referTo.group_no?.let { groupId ->

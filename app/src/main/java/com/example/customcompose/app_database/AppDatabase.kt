@@ -7,9 +7,18 @@ import androidx.room.RoomDatabase
 import com.example.customcompose.app_database.dao.LocalDbDao
 import com.example.customcompose.app_database.entity.SignInEntity
 import com.example.customcompose.app_database.entity.SurveyDataEntity
+import com.example.customcompose.app_database.entity.TargetAchievementEntity
 
-@Database(entities = [SignInEntity::class, SurveyDataEntity::class], version = 1, exportSchema = false)
-abstract class AppDatabase : RoomDatabase(){
+@Database(
+    entities = [
+        SignInEntity::class,
+        SurveyDataEntity::class,
+        TargetAchievementEntity::class
+    ],
+    version = 1,
+    exportSchema = false
+)
+abstract class AppDatabase : RoomDatabase() {
     abstract fun dbDao(): LocalDbDao
 
     companion object {

@@ -135,6 +135,16 @@ fun VideoBlock(
                             Log.d("Box Clicked", "Showing video dialog")
                             videoUri = Uri.fromFile(File(videoPath)) // Set the video Uri
                             showDialog = true // Show the dialog
+                        }else{
+                            block.options[0].referTo?.id?.let { blockId ->
+                                block.options[0].referTo!!.group_no?.let { groupId ->
+                                    if (destination == "mainSurvey") {
+                                        blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
+                                    } else {
+                                        blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                    }
+                                }
+                            }
                         }
                     },
                 contentAlignment = Alignment.Center,
@@ -154,6 +164,16 @@ fun VideoBlock(
                                 Log.d("Box Clicked", "Showing video dialog")
                                 videoUri = Uri.fromFile(File(videoPath)) // Set the video Uri
                                 showDialog = true // Show the dialog
+                            }else{
+                                block.options[0].referTo?.id?.let { blockId ->
+                                    block.options[0].referTo!!.group_no?.let { groupId ->
+                                        if (destination == "mainSurvey") {
+                                            blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
+                                        } else {
+                                            blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                        }
+                                    }
+                                }
                             }
                         },
                         modifier = Modifier.size(60.dp)
@@ -271,7 +291,6 @@ fun VideoBlock(
                                                         } else {
                                                             blockListViewModel.addBlockToTheCheckList(blockId, groupId)
                                                         }
-
                                                     }
                                                 }
                                             }

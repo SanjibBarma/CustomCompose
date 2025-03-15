@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.customcompose.app_database.entity.SignInEntity
 import com.example.customcompose.app_database.entity.SurveyDataEntity
+import com.example.customcompose.app_database.entity.TargetAchievementEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -21,5 +22,11 @@ interface LocalDbDao {
 
     @Query("SELECT * FROM CAMPAIGN_Table WHERE brId = :brId AND campId = :campId LIMIT 1")
     fun getSurveyDataDataByIds(brId: String, campId: String): Flow<SurveyDataEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertTargetAchievementData(targetAchievementEntity: TargetAchievementEntity)
+
+    @Query("SELECT * FROM target_achievement_table WHERE user_id = :brId AND campaign_id = :campId")
+    fun getAllTargetAchievementData(brId: String, campId: String): Flow<TargetAchievementEntity?>
 
 }

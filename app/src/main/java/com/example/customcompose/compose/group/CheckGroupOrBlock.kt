@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.example.customcompose.MyApplication.Companion.surveyFlowViewModel
 import com.example.customcompose.compose.referring.*
 import com.example.customcompose.compose.referring.otp.OTPBlock
 import com.example.customcompose.compose.referring.emoji_rating.EmojiRatingBlock
@@ -25,7 +26,6 @@ fun CheckGroupOrBlock(
     isActiveGroup: Boolean,
     position: Int?,
     destination: String,
-    numberValidationViewModel: SurveyFlowViewModel
 ) {
     val context = LocalContext.current
 
@@ -46,7 +46,7 @@ fun CheckGroupOrBlock(
             "video" -> VideoBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "star_rating" -> StarRatingBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "date" -> DatePickerBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "checklist" -> CheckListBlock(surveyBlock, blockListViewModel, isActiveGroup, destination, numberValidationViewModel)
+            "checklist" -> CheckListBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "product" -> BrandBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "interactive_gallery" -> InteractiveGalleryBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "image" -> ImageBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
@@ -55,17 +55,14 @@ fun CheckGroupOrBlock(
             "giveable" -> GiveAbleBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "interactive_av" -> InteractiveAvBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
             "non-referring" -> NonReferringGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination)
-            "numbervalidation" -> NumberValidationGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination, numberValidationViewModel)
+            "numbervalidation" -> NumberValidationGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination)
 
             else -> {
                 Text("Unsupported block type: ${surveyBlock.type}", color = Color.Red)
-
                 LaunchedEffect(surveyBlock.type) {
                     Toasty.error(context, "View not found for block type: ${surveyBlock.type}", Toasty.LENGTH_SHORT).show()
                 }
             }
         }
-
     }
-
 }

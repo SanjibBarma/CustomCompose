@@ -17,31 +17,21 @@ fun Navigation (
     blockListViewModel: BlockListViewModel,
     numberValidationViewModel: SurveyFlowViewModel,
     loginViewModel: LoginViewModel,
-    routePlanList: List<RoutePlanData>
 ){
 
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Screen.LoginScreen.route) {
         composable(route = Screen.LoginScreen.route){
-            LoginScreen(loginViewModel, navController)
+            LoginScreen(navController)
         }
 
         composable(route = Screen.DynamicScreen.route){
-            DynamicScreen(
-                blockListViewModel,
-                loginViewModel,
-                numberValidationViewModel,
-                navController,
-                routePlanList
-            )
+            DynamicScreen(navController)
         }
 
         composable(route = Screen.DashboardScreen.route){
-            DashboardScreen(
-                loginViewModel,
-                navController
-            )
+            DashboardScreen(navController)
         }
     }
 }

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.surveyFlowViewModel
 import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -96,8 +97,7 @@ fun CheckListDialog(
                             childView,
                             isCurrentGroupActive,
                             position,
-                            "checkList",
-                            numberValidationViewModel
+                            "checkList"
                         )
                     }
 

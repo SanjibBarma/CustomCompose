@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.MyApplication
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.helper.ConnectivityObserver
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.number_validation.GiveAbleAchievement
@@ -18,12 +19,9 @@ class SurveyFlowViewModel(
     private val numberValidationRepository: SurveyFlowRepository,
     private val connectivityObserver: ConnectivityObserver
 ): ViewModel() {
-    private val sharedPrefHelper = MyApplication.appSessionManager
     private val _checkNumberData = MutableLiveData<UIState<NumberCheckModel>>(UIState.Loading)
     val checkNumberData: LiveData<UIState<NumberCheckModel>> = _checkNumberData
 
-    private val _achievementData = MutableLiveData<UIState<GiveAbleAchievement>>(UIState.Loading)
-    val achievementData: LiveData<UIState<GiveAbleAchievement>> = _achievementData
     val gson = Gson()
 
     //check number validation api
@@ -40,7 +38,7 @@ class SurveyFlowViewModel(
                         response.body()?.let { responseBody ->
                             _checkNumberData.postValue(UIState.Success(responseBody))
 
-                            sharedPrefHelper.setMobileVerificationData(gson.toJson(responseBody.data[0].information))
+                            appSessionManager.setMobileVerificationData(gson.toJson(responseBody.data[0]))
                         } ?: run {
                             _checkNumberData.postValue(UIState.Error(Exception("Empty response from server")))
                         }
@@ -63,6 +61,9 @@ class SurveyFlowViewModel(
     }
 
     //get givable list api
+    private val _achievementData = MutableLiveData<UIState<GiveAbleAchievement>>(UIState.Loading)
+    val achievementData: LiveData<UIState<GiveAbleAchievement>> = _achievementData
+
     fun getAchievementData(token: String, id: String, requestBody: HashMap<String, Any>) {
         viewModelScope.launch(Dispatchers.IO) {
             if (connectivityObserver.checkInternetConnection()) {

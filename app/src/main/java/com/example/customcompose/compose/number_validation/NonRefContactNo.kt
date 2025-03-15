@@ -30,9 +30,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication
+import com.example.customcompose.MyApplication.Companion
+import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.model.number_validation.DynamicInfoConModel
+import com.example.customcompose.model.number_validation.NumberCheckData
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
 
@@ -51,21 +54,18 @@ fun NonRefContactNo(
     val gson = Gson()
     val existingData = blockListViewModel.getDataFromIndex(position, index)
     var phoneNumber by remember { mutableStateOf(existingData?.answer ?: "") }
-    val appSessionManager = MyApplication.appSessionManager
 
     LaunchedEffect(phoneNumber) {
-
         val nonRefData = appSessionManager.getMobileVerificationData()
-
         if (!nonRefData.isNullOrEmpty()) {
             println("NonRefTextInput: $nonRefData")
+            val numberCheckData: NumberCheckData? = gson.fromJson(nonRefData, NumberCheckData::class.java)
 
-            val dynamicInfoModel: List<DynamicInfoConModel> =
-                gson.fromJson(nonRefData, Array<DynamicInfoConModel>::class.java)?.toList() ?: emptyList()
-
-            for (dynamicInfo in dynamicInfoModel) {
-                if (dynamicInfo.key == question) {
-                    phoneNumber = dynamicInfo.value
+            if (numberCheckData != null && numberCheckData.information != null){
+                for (dynamicInfo in numberCheckData.information) {
+                    if (dynamicInfo.key == question) {
+                        phoneNumber = dynamicInfo.value
+                    }
                 }
             }
         }

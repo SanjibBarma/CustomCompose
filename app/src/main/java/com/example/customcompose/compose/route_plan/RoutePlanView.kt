@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.navigation.NavHostController
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.ui.theme.RouteHeading
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -37,7 +36,6 @@ import kotlinx.coroutines.launch
 fun RoutePlanView(
     blockListViewModel: BlockListViewModel,
     surveyDataModel: List<SurveyDataModel>,
-    navController: NavHostController,
     onDismiss: () -> Unit
 ) {
 
@@ -51,7 +49,7 @@ fun RoutePlanView(
         },
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
-            dismissOnBackPress = true
+            dismissOnBackPress = false
         )
     ) {
         Column(
@@ -88,11 +86,9 @@ fun RoutePlanView(
                         )
                         println("ListPosition: ${routeItem.typeTitle} and ${routeItem.listPosition}")
                     }
-                    RouteChildView(routeItem, blockListViewModel, surveyDataModel, navController, routeItem.listPosition)
+                    RouteChildView(routeItem, blockListViewModel, surveyDataModel, routeItem.listPosition, onDismiss)
                 }
             }
-
-
         }
     }
 }

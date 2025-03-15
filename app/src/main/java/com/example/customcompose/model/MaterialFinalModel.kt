@@ -7,7 +7,7 @@ data class MaterialFinalModel (
     val achievement: Int?,
     val type: Int?,
     val typeName: String?,
-    val url: String?
+    val img_url: String?
 )
 
 const val MATERIAL_STRING = """[{"id":12,"name":"Tea","qty":10,"type_name":"physical-giveable","type":40,"achievement":0},{"id":11,"name":"Swapping","qty":10,"type_name":"physical-giveable","type":40,"achievement":0}]""";

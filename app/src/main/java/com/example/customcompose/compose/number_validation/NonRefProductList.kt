@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,14 +24,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.dashboardViewModel
 import com.example.customcompose.R
-import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.Option
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.model.TARGET_ACHIEVEMENT_LIST
 import com.example.customcompose.model.TargetAchievement
-import com.example.customcompose.model.number_validation.DynamicInfoConModel
+import com.example.customcompose.model.number_validation.NumberCheckData
 import com.example.customcompose.ui.theme.ProductSelected
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
@@ -53,22 +53,40 @@ fun NonRefProductList(
     val options = block.options ?: emptyList()
     val blockId = block.id ?: ""
 
+    appSessionManager.getBrId()?.let {
+        dashboardViewModel.fetchTargetAchieveDataByIds(it, appSessionManager.getCampaignId()!!)
+    }
+    val targetAchievementState by dashboardViewModel.localTargetAchieveData.observeAsState()
     val gson = Gson()
-    val targetAchievementList: List<TargetAchievement> = gson.fromJson(TARGET_ACHIEVEMENT_LIST, Array<TargetAchievement>::class.java).toList()
+    var targetAchievementList by remember { mutableStateOf<List<TargetAchievement>?>(emptyList()) }
+
+    LaunchedEffect(targetAchievementState) {
+        targetAchievementState?.target_achievement?.let {
+            try {
+                targetAchievementList = gson.fromJson(it, Array<TargetAchievement>::class.java).toList()
+            } catch (e: Exception) {
+                targetAchievementList = emptyList()
+            }
+        }
+        println("targetAchieveData_compose: $targetAchievementList")
+    }
 
     var selectedItem by remember {
         mutableStateOf<Option?>(options.find { it.slug == selectedBrand })
     }
 
-    LaunchedEffect (selectedBrand){
+    LaunchedEffect(selectedBrand) {
         val nonRefData = appSessionManager.getMobileVerificationData()
         if (!nonRefData.isNullOrEmpty()) {
             println("NonRefTextInput: $nonRefData")
-            val dynamicInfoModel: List<DynamicInfoConModel> = gson.fromJson(nonRefData, Array<DynamicInfoConModel>::class.java)?.toList() ?: emptyList()
+            val numberCheckData: NumberCheckData? =
+                gson.fromJson(nonRefData, NumberCheckData::class.java)
 
-            for (dynamicInfo in dynamicInfoModel) {
-                if (dynamicInfo.key == question) {
-                    selectedBrand = dynamicInfo.value
+            if (numberCheckData != null && numberCheckData.information != null) {
+                for (dynamicInfo in numberCheckData.information) {
+                    if (dynamicInfo.key == question) {
+                        selectedBrand = dynamicInfo.value
+                    }
                 }
             }
         }
@@ -113,37 +131,42 @@ fun NonRefProductList(
                         .background(backgroundColor)
                         .clickable(enabled = isActiveGroup) {
 
-                            val sourceLocation = blockListViewModel.routeParentList.value[0].selectedId
+                            val sourceLocation =
+                                blockListViewModel.routeParentList.value[0].selectedId
 
                             println("source_location: $sourceLocation")
 
                             //match the primary brand alias
-                            if (block.question?.alias == "product"){
+                            if (block.question?.alias == "product") {
                                 var matched = false
                                 println("print_log 1")
-                                for(achievementModel in targetAchievementList){
+                                for (achievementModel in targetAchievementList!!) {
                                     println("print_log 2")
-                                    if (achievementModel.products.size != 0){
+                                    if (achievementModel.products.size != 0) {
                                         //achievementlist er product theklei shudhu location target achievement calculate kora hobe
                                         println("print_log 3")
-                                        for (locationTarget in achievementModel.locations){
+                                        for (locationTarget in achievementModel.locations) {
                                             println("print_log 4")
                                             println("sourceLocation: $sourceLocation    locationTarget.id: ${locationTarget.id}")
 
                                             //current block er alias jodi product hoy
                                             //and target achievement list er product list size jodi 0 na hoy
                                             //then selected route location id and target location id match kore achievement compare kora hobe
-                                            if (sourceLocation?.toInt() == locationTarget.id){
+                                            if (sourceLocation?.toInt() == locationTarget.id) {
                                                 println("print_log 5")
-                                                for (productTarget in achievementModel.products){
+                                                for (productTarget in achievementModel.products) {
                                                     println("print_log 6")
-                                                    if (option.alias == productTarget.id){
+                                                    if (option.alias == productTarget.id) {
                                                         println("print_log 7")
                                                         //if daily_achievement jodi daily_target er soman ba boro hoy
                                                         //tahole oi location and product er kono target nai
-                                                        if (achievementModel.daily_achievement >= achievementModel.daily_target && !achievementModel.over_achivement){
+                                                        if (achievementModel.daily_achievement >= achievementModel.daily_target && !achievementModel.over_achivement) {
                                                             println("print_log 8")
-                                                            Toasty.warning(context, "No more target for this location and products combination", Toasty.LENGTH_SHORT).show()
+                                                            Toasty.warning(
+                                                                context,
+                                                                "No more target for this location and products combination",
+                                                                Toasty.LENGTH_SHORT
+                                                            ).show()
                                                             return@clickable
                                                         }
                                                         //kintu jodi daily_achievement, daily_target er choto hoy
@@ -153,14 +176,18 @@ fun NonRefProductList(
                                                 }
                                             }
                                         }
-                                    }else{
+                                    } else {
                                         println("print_log else 2")
                                         //ar achievementlist er product na thakle sorasori samne agay jabe
                                         matched = true
                                     }
                                 }
-                                if (!matched){
-                                    Toasty.warning(context, "This product is not allowed for this location", Toasty.LENGTH_SHORT).show()
+                                if (!matched) {
+                                    Toasty.warning(
+                                        context,
+                                        "This product is not allowed for this location",
+                                        Toasty.LENGTH_SHORT
+                                    ).show()
                                     return@clickable
                                 }
                             }

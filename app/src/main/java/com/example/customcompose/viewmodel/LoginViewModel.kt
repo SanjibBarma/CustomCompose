@@ -231,9 +231,12 @@ class LoginViewModel(
         }
     }
 
-
-
-
+    fun resetAllStates() {
+        _loginData.value = UIState.Loading
+        _userData.value = UIState.Loading
+        _campaignListData.value = UIState.Loading
+        _surveyData.value = UIState.Loading
+    }
 
 
     //======================************************============================//
@@ -253,6 +256,4 @@ class LoginViewModel(
                 }
         }
     }
-
-
 }

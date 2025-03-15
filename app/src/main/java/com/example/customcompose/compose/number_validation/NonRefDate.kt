@@ -41,6 +41,7 @@ import com.example.customcompose.R
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.model.number_validation.DynamicInfoConModel
+import com.example.customcompose.model.number_validation.NumberCheckData
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
@@ -80,14 +81,16 @@ fun NonRefDate(
 
 
     LaunchedEffect(mDate.value) {
-        val nonRefData = appSessionManager.getMobileVerificationData()
+      val nonRefData = appSessionManager.getMobileVerificationData()
         if (!nonRefData.isNullOrEmpty()) {
             println("NonRefTextInput: $nonRefData")
-            val dynamicInfoModel: List<DynamicInfoConModel> = gson.fromJson(nonRefData, Array<DynamicInfoConModel>::class.java)?.toList() ?: emptyList()
+            val numberCheckData: NumberCheckData? = gson.fromJson(nonRefData, NumberCheckData::class.java)
 
-            for (dynamicInfo in dynamicInfoModel) {
-                if (dynamicInfo.key == question) {
-                    mDate.value = dynamicInfo.value
+            if (numberCheckData != null && numberCheckData.information != null){
+                for (dynamicInfo in numberCheckData.information) {
+                    if (dynamicInfo.key == question) {
+                        mDate.value = dynamicInfo.value
+                    }
                 }
             }
         }
