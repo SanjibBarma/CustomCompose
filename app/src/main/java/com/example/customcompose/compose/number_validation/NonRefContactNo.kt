@@ -1,7 +1,6 @@
 package com.example.customcompose.compose.number_validation
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,13 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.example.customcompose.MyApplication
-import com.example.customcompose.MyApplication.Companion
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.model.number_validation.DynamicInfoConModel
-import com.example.customcompose.model.number_validation.NumberCheckData
+import com.example.customcompose.model.NumberCheckData
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
 

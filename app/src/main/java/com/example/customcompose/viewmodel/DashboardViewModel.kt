@@ -6,12 +6,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.MyApplication.Companion.connectivityObserver
-import com.example.customcompose.app_database.entity.SurveyDataEntity
 import com.example.customcompose.app_database.entity.TargetAchievementEntity
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.AchievementData
 import com.example.customcompose.model.ExtraServiceModel
-import com.example.customcompose.model.number_validation.NumberCheckModel
+import com.example.customcompose.model.NumberCheckModel
 import com.example.customcompose.repository.DashboardRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -130,7 +129,7 @@ class DashboardViewModel(private val dashboardRepository: DashboardRepository) :
     fun fetchTargetAchieveDataByIds(brId: String, campId: String) {
         viewModelScope.launch {
             dashboardRepository.getTargetAchievementData(brId, campId)
-                .flowOn(Dispatchers.IO)  // Ensure it's on IO thread
+                //.flowOn(Dispatchers.IO)  // Ensure it's on IO thread
                 .collect { result ->
                     _localTargetAchieveData.postValue(result)
                     println("targetAchieveData_repo: $result")

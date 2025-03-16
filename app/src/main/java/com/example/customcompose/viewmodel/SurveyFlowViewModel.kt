@@ -4,24 +4,23 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.customcompose.MyApplication
 import com.example.customcompose.MyApplication.Companion.appSessionManager
-import com.example.customcompose.helper.ConnectivityObserver
+import com.example.customcompose.MyApplication.Companion.connectivityObserver
+import com.example.customcompose.app_database.entity.PtrProgressEntity
 import com.example.customcompose.helper.UIState
-import com.example.customcompose.model.number_validation.GiveAbleAchievement
-import com.example.customcompose.model.number_validation.NumberCheckModel
+import com.example.customcompose.model.GiveAbleAchievement
+import com.example.customcompose.model.NumberCheckModel
 import com.example.customcompose.repository.SurveyFlowRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 class SurveyFlowViewModel(
-    private val numberValidationRepository: SurveyFlowRepository,
-    private val connectivityObserver: ConnectivityObserver
+    private val surveyFlowRepository: SurveyFlowRepository
 ): ViewModel() {
     private val _checkNumberData = MutableLiveData<UIState<NumberCheckModel>>(UIState.Loading)
     val checkNumberData: LiveData<UIState<NumberCheckModel>> = _checkNumberData
-
     val gson = Gson()
 
     //check number validation api
@@ -31,7 +30,7 @@ class SurveyFlowViewModel(
                 _checkNumberData.postValue(UIState.Loading)
 
                 try {
-                    val response = numberValidationRepository.checkNumber(token, requestBody)
+                    val response = surveyFlowRepository.checkNumber(token, requestBody)
 
                     if (response.isSuccessful) {
                         // API Call was successful
@@ -70,13 +69,26 @@ class SurveyFlowViewModel(
                 _achievementData.postValue(UIState.Loading)
 
                 try {
-                    val response = numberValidationRepository.getAchievementData(token, id)
+                    val response = surveyFlowRepository.getAchievementData(token, id)
 
                     if (response.isSuccessful) {
                         // API Call was successful
                         response.body()?.let { responseBody ->
                             _achievementData.postValue(UIState.Success(responseBody))
                             checkNumber(token, requestBody)
+
+                            val ptrData = appSessionManager.getCampaignId()?.let {
+                                PtrProgressEntity(
+                                    campId = it,
+                                    brId = appSessionManager.getBrId()!!,
+                                    ptrData = gson.toJson(responseBody)
+                                )
+                            }
+
+                            if (ptrData != null) {
+                                surveyFlowRepository.upsertPtrData(ptrData)
+                            }
+
                         } ?: run {
                             _achievementData.postValue(UIState.Error(Exception("Empty response from server")))
                         }
@@ -98,4 +110,24 @@ class SurveyFlowViewModel(
         }
     }
 
+
+
+
+    //======================************************============================//
+    //*********************** get local data **********************************//
+    //========================************************=========================//
+
+    private val _prtData = MutableLiveData<PtrProgressEntity?>()
+    val prtData: LiveData<PtrProgressEntity?> = _prtData
+
+    fun fetchPtrDataById(brId: String, campId: String) {
+        viewModelScope.launch {
+            surveyFlowRepository.getPtrData(brId, campId)
+//                .flowOn(Dispatchers.IO)  // Ensure it's on IO thread which is background
+                .collect { result ->
+                    _prtData.postValue(result)  // Post value to LiveData (safe for background threads)
+                    println("ptrDataState_repo: $result")
+                }
+        }
+    }
 }

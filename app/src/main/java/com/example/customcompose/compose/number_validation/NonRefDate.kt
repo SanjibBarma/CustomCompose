@@ -40,8 +40,7 @@ import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.model.number_validation.DynamicInfoConModel
-import com.example.customcompose.model.number_validation.NumberCheckData
+import com.example.customcompose.model.NumberCheckData
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty

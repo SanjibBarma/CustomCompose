@@ -3,13 +3,12 @@ package com.example.customcompose.network
 import com.example.customcompose.model.AchievementData
 import com.example.customcompose.model.CampaignsModel
 import com.example.customcompose.model.ExtraServiceModel
+import com.example.customcompose.model.GiveAbleAchievement
 import com.example.customcompose.model.SignInModel
 import com.example.customcompose.model.SurveyData
 import com.example.customcompose.model.UserInfoModel
-import com.example.customcompose.model.number_validation.GiveAbleAchievement
-import com.example.customcompose.model.number_validation.NumberCheckModel
+import com.example.customcompose.model.NumberCheckModel
 import okhttp3.ResponseBody
-import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET

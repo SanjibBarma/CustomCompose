@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.customcompose.app_database.dao.LocalDbDao
+import com.example.customcompose.app_database.entity.PtrProgressEntity
 import com.example.customcompose.app_database.entity.SignInEntity
 import com.example.customcompose.app_database.entity.SurveyDataEntity
 import com.example.customcompose.app_database.entity.TargetAchievementEntity
@@ -13,7 +14,8 @@ import com.example.customcompose.app_database.entity.TargetAchievementEntity
     entities = [
         SignInEntity::class,
         SurveyDataEntity::class,
-        TargetAchievementEntity::class
+        TargetAchievementEntity::class,
+        PtrProgressEntity::class
     ],
     version = 1,
     exportSchema = false
@@ -30,7 +32,7 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "user_database"
+                    "ecrm_database"
                 ).build()
                 INSTANCE = instance
                 instance

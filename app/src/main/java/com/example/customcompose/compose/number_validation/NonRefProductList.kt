@@ -30,7 +30,7 @@ import com.example.customcompose.model.Block
 import com.example.customcompose.model.Option
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.model.TargetAchievement
-import com.example.customcompose.model.number_validation.NumberCheckData
+import com.example.customcompose.model.NumberCheckData
 import com.example.customcompose.ui.theme.ProductSelected
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson

@@ -83,6 +83,7 @@ fun DynamicScreen(
     LaunchedEffect(surveyDataState.value) {
         surveyDataState.value?.campData?.let { campData ->
             fullSurveyData = gson.fromJson(campData, SurveyModel::class.java)
+
             fullSurveyData?.let {
                 val routePlanLocal = it.route_plan
                 surveyFlowData = it.survey_flow
@@ -196,7 +197,6 @@ fun DynamicScreen(
 
     if (showExitDialog){
         ExitDialog(
-            showDialog = showExitDialog,
             onCancelClick = { showExitDialog = false },
             onExitClick = {
                 navController.popBackStack()

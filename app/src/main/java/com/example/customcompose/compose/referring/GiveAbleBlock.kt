@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,11 +39,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.surveyFlowViewModel
 import com.example.customcompose.model.Block
-import com.example.customcompose.model.MATERIAL_STRING
+import com.example.customcompose.model.GiveAbleAchievement
 import com.example.customcompose.model.MaterialFinalModel
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.model.number_validation.NumberCheckData
+import com.example.customcompose.model.NumberCheckData
 import com.example.customcompose.ui.theme.ProductSelected
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
@@ -64,35 +66,57 @@ fun GiveAbleBlock(
     val context = LocalContext.current
 
     val gson = Gson()
-    val storedMaterials: List<MaterialFinalModel> = gson.fromJson(MATERIAL_STRING, Array<MaterialFinalModel>::class.java).toList()
 
+    appSessionManager.getCampaignId()?.let { camId ->
+        surveyFlowViewModel.fetchPtrDataById(appSessionManager.getBrId().toString(), camId)
+    }
 
+//    val storedMaterials: List<MaterialFinalModel> = gson.fromJson(MATERIAL_STRING, Array<MaterialFinalModel>::class.java).toList()
+    var storedMaterials: List<MaterialFinalModel>? = null
+    val ptrDataState = surveyFlowViewModel.prtData.observeAsState()
 
+    var giveAbleAchievement: GiveAbleAchievement? = null
 
-    val nonRefData = appSessionManager.getMobileVerificationData()
-    if (!nonRefData.isNullOrEmpty()) {
-        println("NonRefTextInput: $nonRefData")
-        val numberCheckData: NumberCheckData? = gson.fromJson(nonRefData, NumberCheckData::class.java)
-        if (numberCheckData != null && numberCheckData.materials != null){
-            for (material in numberCheckData.materials) {
-                if (!storedMaterials.isNullOrEmpty()){
-                    for (strMaterial in storedMaterials) {
-                        if (strMaterial.id == material.id && material.qty!! > strMaterial.qty!!){
-                            materialList.add(material)
-                            break
+    LaunchedEffect(ptrDataState.value) {
+
+        //first check the survey data from local. if local survey data or pending data is exist then calculate here
+
+        giveAbleAchievement = gson.fromJson(ptrDataState.value?.ptrData, GiveAbleAchievement::class.java)
+
+        if (giveAbleAchievement?.data != null) { // Check if data is not null before assigning
+            storedMaterials = giveAbleAchievement!!.data
+
+            val nonRefData = appSessionManager.getMobileVerificationData()
+            if (!nonRefData.isNullOrEmpty()) {
+                println("NonRefTextInput: $nonRefData")
+                val numberCheckData: NumberCheckData? = gson.fromJson(nonRefData, NumberCheckData::class.java)
+                if (numberCheckData != null && numberCheckData.materials != null){
+                    for (material in numberCheckData.materials) {
+                        if (!storedMaterials.isNullOrEmpty()){
+                            for (strMaterial in storedMaterials!!) {
+                                println("strMaterial: $strMaterial")
+
+                                //material.qty!! from check number
+                                //strMaterial.achievement!! from givable achievement
+                                if (strMaterial.id == material.id && material.qty!! > strMaterial.achievement!!){
+                                    materialList.add(material)
+                                    println("materialList: ${gson.toJson(materialList)}")
+
+                                    break
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
-    }
 
-
-    for (material in materialList) {
-        if (!block.options.isNullOrEmpty()) {
-            for (givable in block.options) {
-                if (material.id.toString() == givable.value) {
-                    finalMaterialList.add(material)
+            for (material in materialList) {
+                if (!block.options.isNullOrEmpty()) {
+                    for (givable in block.options) {
+                        if (material.id.toString() == givable.value) {
+                            finalMaterialList.add(material)
+                        }
+                    }
                 }
             }
         }
@@ -178,10 +202,8 @@ fun GiveAbleBlock(
                                                     }
                                                 }
                                             }
-
                                         }
                                     }
-
                                 }
                                 .background(if (selectedOption == option.id.toString()) ProductSelected else Color.White
                                 ),

@@ -41,9 +41,8 @@ import com.example.customcompose.compose.number_validation.NonRefTextInput
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.ExtraServiceModel
-import com.example.customcompose.model.number_validation.DynamicInfoConModel
+import com.example.customcompose.model.DynamicInfoConModel
 import com.example.customcompose.viewmodel.BlockListViewModel
-import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import com.example.customcompose.views.SurveyDataManager.fullSurveyData
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
@@ -62,16 +61,12 @@ fun NumberValidationGroup(
     var isFreshConsumer by remember { mutableStateOf(false) }
     var isNonFreshConsumer by remember { mutableStateOf(false) }
     var isBannedConsumer by remember { mutableStateOf(false) }
+    var isMaterialGiveable by remember { mutableStateOf(false) }
     var status by remember { mutableIntStateOf(100) }
     var isLoaded by remember { mutableStateOf(false) }
     var dynmcInfoConModelList by remember { mutableStateOf(emptyList<DynamicInfoConModel>()) }
     var messages by remember { mutableStateOf(emptyList<String>()) }
     val gson = Gson()
-
-    LaunchedEffect(Unit) {
-        //isLoaded = true
-        println("isNonFreshConsumer changed: $isNonFreshConsumer")
-    }
 
     Box(
         modifier = Modifier
@@ -184,7 +179,6 @@ fun NumberValidationGroup(
                         val jsonString = gson.toJson(numberValidationMap)
                         println("number_validation_map $jsonString")
 
-                        var isMaterialGiveable = false
                         val extraService = appSessionManager.getExtraServiceCamInfo()
                         if (!extraService.isNullOrEmpty()) {
                             val extraServiceData: ExtraServiceModel? = gson.fromJson(extraService, ExtraServiceModel::class.java)
@@ -262,7 +256,6 @@ fun NumberValidationGroup(
                 onDismiss = {
                     isFreshConsumer = false
                     isLoaded = false
-                    println("isFreshConsumer: $isFreshConsumer")
                 },
                 goToNextPage = {
                     goToNextPage (blockListViewModel, currentBlock, status, position)
@@ -277,7 +270,6 @@ fun NumberValidationGroup(
                 onDismiss = {
                     isNonFreshConsumer = false
                     isLoaded = false
-                    println("isNonFreshConsumer: $isNonFreshConsumer")
                 },
 
                 goToNextPage = {
@@ -292,9 +284,8 @@ fun NumberValidationGroup(
                 dynmcInfoConModelList,
                 messages,
                 onDismiss = {
-                    isNonFreshConsumer = false
+                    isBannedConsumer = false
                     isLoaded = false
-                    println("isNonFreshConsumer: $isNonFreshConsumer")
                 },
 
                 goToNextPage = {

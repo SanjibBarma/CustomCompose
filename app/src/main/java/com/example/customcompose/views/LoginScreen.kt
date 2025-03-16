@@ -106,7 +106,7 @@ fun LoginScreen(navController: NavHostController) {
     var surveyStepDone by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
     val lazyListState = rememberLazyListState()
-    val downloadModels = mutableListOf<DownloadModel>()
+    val downloadImageList = mutableListOf<DownloadModel>()
 
     var downloadProgress by remember { mutableStateOf(0f) } // Progress as a fraction (0.0 to 1.0)
     var isDownloading by remember { mutableStateOf(false) }
@@ -450,11 +450,11 @@ fun LoginScreen(navController: NavHostController) {
                                 type = "Image",
                                 url = images
                             )
-                            downloadModels.add(imageType)  // Add imageType to the list
+                            downloadImageList.add(imageType)
                         }
                     }
 
-                    println("Image_List: ${gson.toJson(downloadModels)}")
+                    println("Image_List: ${gson.toJson(downloadImageList)}")
                 }
             }
         }

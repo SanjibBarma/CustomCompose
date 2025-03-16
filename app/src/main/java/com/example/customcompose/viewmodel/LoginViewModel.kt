@@ -32,7 +32,7 @@ class LoginViewModel(
     //login api
     private val _loginData = MutableLiveData<UIState<SignInModel>>(UIState.Loading)
     val loginData: LiveData<UIState<SignInModel>> = _loginData
-
+    val gson = Gson()
     private val _userId = MutableLiveData<String>()
 
     fun getLoginInfo(signInMap: HashMap<String, Any>){
@@ -192,8 +192,6 @@ class LoginViewModel(
                             _surveyData.postValue(UIState.Success(responseBody))
 
                             println("responseBody ${responseBody.toString()}")
-                            val gson = Gson()
-
                             val campData = _userId.value?.let {
                                 SurveyDataEntity(
                                     brId = it,
@@ -249,7 +247,7 @@ class LoginViewModel(
     fun fetchSurveyDataByIds(brId: String, campId: String) {
         viewModelScope.launch {
             loginRepository.getSurveyDataDataByIds(brId, campId)
-                .flowOn(Dispatchers.IO)  // Ensure it's on IO thread
+                //.flowOn(Dispatchers.IO)  // Ensure it's on IO thread
                 .collect { result ->
                     _localSurveyData.postValue(result)  // Post value to LiveData (safe for background threads)
                     println("surveyDataState_repo: $result")

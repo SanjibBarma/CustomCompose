@@ -1,6 +1,4 @@
-package com.example.customcompose.model.number_validation
-
-import com.example.customcompose.model.MaterialFinalModel
+package com.example.customcompose.model
 
 
 data class NumberCheckModel(

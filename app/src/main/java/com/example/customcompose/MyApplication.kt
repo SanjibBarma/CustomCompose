@@ -62,11 +62,11 @@ class MyApplication : Application() {
         }
 
         private val surveyFlowRepository: SurveyFlowRepository by lazy {
-            SurveyFlowRepository(apiService)
+            SurveyFlowRepository(apiService, appDatabase.dbDao())
         }
 
         val surveyFlowViewModel: SurveyFlowViewModel by lazy {
-            SurveyFlowViewModel(surveyFlowRepository, connectivityObserver)
+            SurveyFlowViewModel(surveyFlowRepository)
         }
 
         private var instance: MyApplication? = null

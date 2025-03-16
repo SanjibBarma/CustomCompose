@@ -37,9 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.customcompose.R
-import com.example.customcompose.model.Block
-import com.example.customcompose.model.number_validation.DynamicInfoConModel
-import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.model.DynamicInfoConModel
 
 @Composable
 fun PopupNonFreshConsumer(

@@ -1,6 +1,7 @@
 package com.example.customcompose.views
 
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,6 +43,7 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun DashboardScreen(navController: NavHostController) {
+    BackHandler {  }
 
     val context = LocalContext.current
     val campaignListDataState = loginViewModel.campaignListData.observeAsState(initial = UIState.Loading)

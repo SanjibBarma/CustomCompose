@@ -33,7 +33,6 @@ import com.example.customcompose.R
 
 @Composable
 fun ExitDialog(
-    showDialog: Boolean,
     onCancelClick: () -> Unit,
     onExitClick: () -> Unit
 ) {
