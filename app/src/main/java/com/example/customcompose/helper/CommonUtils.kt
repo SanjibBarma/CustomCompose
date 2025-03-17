@@ -19,6 +19,7 @@ import java.util.Locale
 import java.util.Random
 
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -91,7 +92,6 @@ object CommonUtils {
                 else -> bitmap
             }
 
-            // ফিক্সড ইমেজ ফাইল হিসেবে পুনরায় সেভ করা হচ্ছে
             FileOutputStream(file).use { out ->
                 rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
             }
@@ -201,6 +201,16 @@ object CommonUtils {
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "mobile"
             else -> "unknown"
         }
+    }
+
+    fun isServiceRunning(serviceClass: Class<*>, context: Context): Boolean {
+        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
+            if (service.service.className == serviceClass.name) {
+                return true
+            }
+        }
+        return false
     }
 
 }

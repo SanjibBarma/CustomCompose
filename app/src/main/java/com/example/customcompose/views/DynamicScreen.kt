@@ -2,8 +2,10 @@
 
 package com.example.customcompose.views
 
+import android.content.Intent
 import android.util.Log
 import androidx.activity.addCallback
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -47,10 +48,12 @@ import com.example.customcompose.compose.dialog.ExitDialog
 import com.example.customcompose.compose.group.CheckGroupOrBlock
 import com.example.customcompose.compose.referring.LocationBlock
 import com.example.customcompose.compose.route_plan.RoutePlanView
+import com.example.customcompose.helper.AudioRecorderService
+import com.example.customcompose.helper.CommonUtils.isServiceRunning
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.model.SurveyModel
 import com.example.customcompose.ui.theme.DimBackground
-import com.example.customcompose.views.SurveyDataManager.fullSurveyData
+import com.example.customcompose.views.SurveyDataManager.fullCampaignData
 import com.example.customcompose.views.SurveyDataManager.surveyFlowData
 import com.google.gson.Gson
 
@@ -82,9 +85,9 @@ fun DynamicScreen(
 
     LaunchedEffect(surveyDataState.value) {
         surveyDataState.value?.campData?.let { campData ->
-            fullSurveyData = gson.fromJson(campData, SurveyModel::class.java)
+            fullCampaignData = gson.fromJson(campData, SurveyModel::class.java)
 
-            fullSurveyData?.let {
+            fullCampaignData?.let {
                 val routePlanLocal = it.route_plan
                 surveyFlowData = it.survey_flow
                 surveyName = it.name
@@ -192,7 +195,7 @@ fun DynamicScreen(
 
     onBackPressedDispatcher?.addCallback {
         showExitDialog = true
-        Log.d("DynamicScreen", "Back button pressed on DynamicScreen")
+        println("Back button pressed on DynamicScreen")
     }
 
     if (showExitDialog){
@@ -205,6 +208,12 @@ fun DynamicScreen(
                 appSessionManager.setMobileVerificationData("")
                 showExitDialog = false
                 blockListViewModel.showTermsPopup()
+
+                val intent = Intent(context, AudioRecorderService::class.java)
+
+                if (isServiceRunning(AudioRecorderService::class.java, context)) {
+                    context.stopService(intent)
+                }
             }
         )
     }
@@ -212,6 +221,6 @@ fun DynamicScreen(
 
 object SurveyDataManager {
     var surveyFlowData: List<SurveyDataModel>? = null
-    var fullSurveyData: SurveyModel? = null
+    var fullCampaignData: SurveyModel? = null
 }
 

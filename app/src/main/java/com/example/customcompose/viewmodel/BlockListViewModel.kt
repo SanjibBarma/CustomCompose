@@ -8,9 +8,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.helper.AudioRecorderService
 import com.example.customcompose.model.Block
+import com.example.customcompose.model.FailedContact
 import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.model.RoutePlanParentModel
 import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.views.SurveyDataManager.fullCampaignData
 import com.example.customcompose.views.SurveyDataManager.surveyFlowData
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
@@ -47,7 +49,11 @@ class BlockListViewModel(
 
         if (blockId == "submit" && groupId == "submit") {
             println("print_log: 5")
-            _isSubmitted.value = true
+            if (fullCampaignData?.conditions != null && fullCampaignData?.conditions!!.submit != null && fullCampaignData?.conditions!!.submit.failed_contact != null && fullCampaignData?.conditions!!.submit.failed_contact.size != 0){
+                checkConditions(fullCampaignData?.conditions!!.submit.failed_contact)
+            }else{
+                _isSubmitted.value = true
+            }
         } else {
             _isSubmitted.value = false
             if (curGroup?.type == "non-referring" || curGroup?.type == "numbervalidation") {
@@ -121,6 +127,33 @@ class BlockListViewModel(
             }
         }
         //loadCurrentGrouporBlock(blockId, groupId)
+    }
+
+    private fun checkConditions(failedContact: List<List<FailedContact>>) {
+        for (surveyConList in failedContact){
+            var failedMatchCount = 0
+            for (survey in surveyConList){
+                for (surveyModel in _parentSurveyBlockList.value){
+                    for (surveyHistory in surveyModel.surveyHistoryModel){
+                        if (surveyHistory != null && !surveyHistory.id.isNullOrEmpty()){
+                            if (surveyHistory.id == survey.id && surveyHistory.answer == survey.answer){
+                                failedMatchCount++
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (failedMatchCount != 0 && surveyConList.size == failedMatchCount){
+                println("contact_status: failed")
+                break
+            }else{
+                println("contact_status: success")
+            }
+
+            _isSubmitted.value = true
+        }
     }
 
     //after filtering the block and group update the list for view

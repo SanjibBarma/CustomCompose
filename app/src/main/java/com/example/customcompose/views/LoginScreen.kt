@@ -283,7 +283,7 @@ fun LoginScreen(navController: NavHostController) {
 
                     LazyColumn(state = lazyListState) {
                         item{
-                            ShowProgress(progress, "Api Info")
+                            ShowProgress(navController, progress, "Api Info")
                         }
 
 //                        if (progress == 100f){
@@ -437,11 +437,11 @@ fun LoginScreen(navController: NavHostController) {
                         progress += 25
                     }
 
-                    LaunchedEffect (Unit){
-                        delay(500)
-                        navController.navigate(Screen.DashboardScreen.route)
-                        isLoading = false
-                    }
+//                    LaunchedEffect (Unit){
+//                        delay(500)
+//                        navController.navigate(Screen.DashboardScreen.route)
+//                        isLoading = false
+//                    }
 
                     if (state.data.data[0].image != null && state.data.data[0].image?.size!! > 0) {
                         // Iterate over images and add them to the imageList
@@ -462,7 +462,7 @@ fun LoginScreen(navController: NavHostController) {
 }
 
 @Composable
-fun ShowProgress(progress: Float, title: String) {
+fun ShowProgress(navController: NavHostController, progress: Float, title: String) {
     Spacer(modifier = Modifier.height(32.dp))
     Row (
         modifier = Modifier
@@ -492,6 +492,9 @@ fun ShowProgress(progress: Float, title: String) {
                     tint = Color.Blue,
                     modifier = Modifier.size(40.dp)
                 )
+
+                //navigate to next screen
+                navController.navigate(Screen.DashboardScreen.route)
             } else {
                 Text(
                     text = "${progress.toInt()}%",

@@ -121,9 +121,9 @@ class SurveyFlowViewModel(
     val prtData: LiveData<PtrProgressEntity?> = _prtData
 
     fun fetchPtrDataById(brId: String, campId: String) {
-        viewModelScope.launch {
+        viewModelScope.launch (Dispatchers.IO){
             surveyFlowRepository.getPtrData(brId, campId)
-//                .flowOn(Dispatchers.IO)  // Ensure it's on IO thread which is background
+//                .flowOn(Dispatchers.IO)
                 .collect { result ->
                     _prtData.postValue(result)  // Post value to LiveData (safe for background threads)
                     println("ptrDataState_repo: $result")

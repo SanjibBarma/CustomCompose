@@ -245,7 +245,8 @@ class LoginViewModel(
     val localSurveyData: LiveData<SurveyDataEntity?> = _localSurveyData
 
     fun fetchSurveyDataByIds(brId: String, campId: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            println("threadName: ${Thread.currentThread().name}")
             loginRepository.getSurveyDataDataByIds(brId, campId)
                 //.flowOn(Dispatchers.IO)  // Ensure it's on IO thread
                 .collect { result ->

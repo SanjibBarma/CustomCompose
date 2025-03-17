@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.MyApplication.Companion.dashboardViewModel
 import com.example.customcompose.MyApplication.Companion.loginViewModel
 import com.example.customcompose.compose.CustomAppBar
@@ -54,6 +55,8 @@ fun DashboardScreen(navController: NavHostController) {
 
     extraServiceMap.apply {
         extraServiceMap.put("device_id", Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) )
+    }
+    extraServiceMap.apply {
         extraServiceMap.put("supervisor", false)
     }
 
@@ -104,6 +107,9 @@ fun DashboardScreen(navController: NavHostController) {
                                     )
                                     .background(if (isSelected) Color.LightGray else Color.White)
                                     .clickable {
+
+                                        blockListViewModel.clearRouteList()
+
                                         selectedItemId.value = campaign.id
                                         state.data.selectedCamp = campaign.id
 
@@ -127,6 +133,7 @@ fun DashboardScreen(navController: NavHostController) {
 
                                             awaitAll(resultSurveyData, resultTargetAchievement)
 
+                                            //back to the main thread
                                             withContext(Dispatchers.Main) {
                                                 navController.navigate(Screen.DynamicScreen.route)
                                             }
