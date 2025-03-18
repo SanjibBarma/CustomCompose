@@ -1,5 +1,6 @@
 package com.example.customcompose.views
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.MyApplication.Companion.loginViewModel
+import com.example.customcompose.MyApplication.Companion.mediaService
 import com.example.customcompose.R
 import com.example.customcompose.helper.CommonUtils.getAppVersionCode
 import com.example.customcompose.helper.CommonUtils.getDeviceInfo
@@ -72,7 +74,13 @@ import com.example.customcompose.model.DownloadModel
 import com.example.customcompose.navigation.Screen
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -106,11 +114,11 @@ fun LoginScreen(navController: NavHostController) {
     var surveyStepDone by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
     val lazyListState = rememberLazyListState()
-    val downloadImageList = mutableListOf<DownloadModel>()
 
-    var downloadProgress by remember { mutableStateOf(0f) } // Progress as a fraction (0.0 to 1.0)
-    var isDownloading by remember { mutableStateOf(false) }
-    var isDownloadComplete by remember { mutableStateOf(false) }
+    val downloadImageList = mutableListOf<DownloadModel>()
+    val downloadVideoList = mutableListOf<DownloadModel>()
+    var imageDownloadProgress by remember { mutableStateOf(0f) }
+    var videoDownloadProgress by remember { mutableStateOf(0f) }
     val scope = rememberCoroutineScope()
 
     val signInInfoMap = HashMap<String, Any>().apply {
@@ -286,69 +294,133 @@ fun LoginScreen(navController: NavHostController) {
                             ShowProgress(navController, progress, "Api Info")
                         }
 
-//                        if (progress == 100f){
-//                            isDownloadComplete = false
-//                            item{
-//                                LaunchedEffect(Unit) {
-//                                    if (downloadModels.isNotEmpty()) {
-//                                        isDownloading = true
-//                                        isDownloadComplete = false
-//
-//                                        scope.launch(Dispatchers.IO) {
-//                                            downloadModels.forEachIndexed { index, model ->
-//                                                val cacheFile = File(context.cacheDir, model.url.split("/").last())
-//
-//                                                if (cacheFile.exists()) {
-//                                                    withContext(Dispatchers.Main) {
-//                                                        downloadProgress = ((index + 1) * 100f) / downloadModels.size
-//                                                    }
-//                                                } else {
-//                                                    val fullUrl = model.url
-//                                                    val response = mediaService.downloadFile(fullUrl)
-//
-//                                                    if (response.isSuccessful) {
-//                                                        val inputStream: InputStream = response.body()?.byteStream() ?: return@forEachIndexed
-//                                                        val fileOutputStream = FileOutputStream(cacheFile)
-//
-//                                                        val totalSize = response.body()?.contentLength() ?: 0
-//                                                        var downloadedSize = 0L
-//
-//                                                        val buffer = ByteArray(8192)
-//                                                        var bytesRead: Int
-//
-//                                                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-//                                                            fileOutputStream.write(buffer, 0, bytesRead)
-//                                                            downloadedSize += bytesRead
-//                                                            withContext(Dispatchers.Main) {
-//                                                                downloadProgress = ((index + downloadedSize.toFloat() / totalSize.toFloat()) / downloadModels.size) * 100f
-//                                                            }
-//                                                        }
-//
-//                                                        fileOutputStream.flush()
-//                                                        fileOutputStream.close()
-//                                                    } else {
-//                                                        withContext(Dispatchers.Main) {
-//                                                            println("Download failed for ${model.url}")
-//                                                        }
-//                                                    }
-//                                                }
-//
-//                                                withContext(Dispatchers.Main) {
-//                                                    downloadProgress = ((index + 1) * 100f) / downloadModels.size
-//                                                }
-//                                            }
-//
-//                                            withContext(Dispatchers.Main) {
-//                                                Toast.makeText(context, "Download Complete!", Toast.LENGTH_SHORT).show()
-//                                                isDownloadComplete = true
-//                                            }
-//                                            isDownloading = false
-//                                        }
-//                                    }
-//                                }
-//                                ShowProgress(downloadProgress, isDownloadComplete)
-//                            }
-//                        }
+                        if (progress == 100f){
+                            if (downloadImageList.size > 0){
+                                item{
+                                    LaunchedEffect(Unit) {
+                                        if (downloadImageList.isNotEmpty()) {
+                                            val imageListToProcess = downloadImageList.toList()
+
+                                            scope.launch(Dispatchers.IO) {
+                                                imageListToProcess.forEachIndexed { index, imageUrl ->
+                                                    val cacheFile = File(context.cacheDir, imageUrl.url.split("/").last())
+
+                                                    if (cacheFile.exists()) {
+                                                        withContext(Dispatchers.Main) {
+                                                            imageDownloadProgress = ((index + 1) * 100f) / imageListToProcess.size
+                                                        }
+                                                    } else {
+                                                        val fullUrl = imageUrl.url
+                                                        val response = mediaService.downloadFile(fullUrl)
+
+                                                        if (response.isSuccessful) {
+                                                            val inputStream: InputStream = response.body()?.byteStream() ?: return@forEachIndexed
+                                                            val fileOutputStream = FileOutputStream(cacheFile)
+
+                                                            val totalSize = response.body()?.contentLength() ?: 0
+                                                            var downloadedSize = 0L
+
+                                                            val buffer = ByteArray(8192)
+                                                            var bytesRead: Int
+
+                                                            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                                                                fileOutputStream.write(buffer, 0, bytesRead)
+                                                                downloadedSize += bytesRead
+                                                                withContext(Dispatchers.Main) {
+                                                                    imageDownloadProgress = ((index + downloadedSize.toFloat() / totalSize.toFloat()) / imageListToProcess.size) * 100f
+                                                                }
+                                                            }
+
+                                                            fileOutputStream.flush()
+                                                            fileOutputStream.close()
+                                                        } else {
+                                                            withContext(Dispatchers.Main) {
+                                                                println("Download failed for ${imageUrl.url}")
+                                                            }
+                                                        }
+                                                    }
+
+                                                    withContext(Dispatchers.Main) {
+                                                        imageDownloadProgress = ((index + 1) * 100f) / imageListToProcess.size
+                                                    }
+                                                }
+
+                                                withContext(Dispatchers.Main) {
+                                                    if (downloadVideoList.size == 0){
+                                                        navController.navigate(Screen.DashboardScreen.route)
+                                                    }
+                                                }
+                                            }
+
+                                        }
+                                    }
+                                    ShowProgress(navController, imageDownloadProgress, downloadImageList[0].type)
+                                }
+                            }
+
+                            if (downloadVideoList.size > 0 && imageDownloadProgress == 100f){
+                                item{
+                                    LaunchedEffect(Unit) {
+                                        if (downloadVideoList.isNotEmpty()) {
+
+                                            val imageListToProcess = downloadVideoList.toList()
+
+                                            scope.launch(Dispatchers.IO) {
+                                                imageListToProcess.forEachIndexed { index, imageUrl ->
+                                                    val cacheFile = File(context.cacheDir, imageUrl.url.split("/").last())
+
+                                                    if (cacheFile.exists()) {
+                                                        withContext(Dispatchers.Main) {
+                                                            videoDownloadProgress = ((index + 1) * 100f) / imageListToProcess.size
+                                                        }
+                                                    } else {
+                                                        val fullUrl = imageUrl.url
+                                                        val response = mediaService.downloadFile(fullUrl)
+
+                                                        if (response.isSuccessful) {
+                                                            val inputStream: InputStream = response.body()?.byteStream() ?: return@forEachIndexed
+                                                            val fileOutputStream = FileOutputStream(cacheFile)
+
+                                                            val totalSize = response.body()?.contentLength() ?: 0
+                                                            var downloadedSize = 0L
+
+                                                            val buffer = ByteArray(8192)
+                                                            var bytesRead: Int
+
+                                                            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                                                                fileOutputStream.write(buffer, 0, bytesRead)
+                                                                downloadedSize += bytesRead
+                                                                withContext(Dispatchers.Main) {
+                                                                    videoDownloadProgress = ((index + downloadedSize.toFloat() / totalSize.toFloat()) / imageListToProcess.size) * 100f
+                                                                }
+                                                            }
+
+                                                            fileOutputStream.flush()
+                                                            fileOutputStream.close()
+                                                        } else {
+                                                            withContext(Dispatchers.Main) {
+                                                                println("Download failed for ${imageUrl.url}")
+                                                            }
+                                                        }
+                                                    }
+
+                                                    withContext(Dispatchers.Main) {
+                                                        videoDownloadProgress = ((index + 1) * 100f) / imageListToProcess.size
+                                                    }
+                                                }
+
+                                                withContext(Dispatchers.Main) {
+                                                    delay(500)
+                                                    navController.navigate(Screen.DashboardScreen.route)
+                                                }
+                                            }
+
+                                        }
+                                    }
+                                    ShowProgress(navController, videoDownloadProgress, downloadVideoList[0].type)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -437,24 +509,27 @@ fun LoginScreen(navController: NavHostController) {
                         progress += 25
                     }
 
-//                    LaunchedEffect (Unit){
-//                        delay(500)
-//                        navController.navigate(Screen.DashboardScreen.route)
-//                        isLoading = false
-//                    }
-
                     if (state.data.data[0].image != null && state.data.data[0].image?.size!! > 0) {
                         // Iterate over images and add them to the imageList
-                        for (images in state.data.data[0].image!!) {
+                        for (image in state.data.data[0].image!!) {
                             val imageType = DownloadModel(
-                                type = "Image",
-                                url = images
+                                type = "Images",
+                                url = image
                             )
                             downloadImageList.add(imageType)
                         }
                     }
 
-                    println("Image_List: ${gson.toJson(downloadImageList)}")
+                    if (state.data.data[0].video != null && state.data.data[0].video?.size!! > 0) {
+                        // Iterate over images and add them to the imageList
+                        for (video in state.data.data[0].video!!) {
+                            val imageType = DownloadModel(
+                                type = "Videos",
+                                url = video.name
+                            )
+                            downloadVideoList.add(imageType)
+                        }
+                    }
                 }
             }
         }
@@ -494,7 +569,7 @@ fun ShowProgress(navController: NavHostController, progress: Float, title: Strin
                 )
 
                 //navigate to next screen
-                navController.navigate(Screen.DashboardScreen.route)
+//                navController.navigate(Screen.DashboardScreen.route)
             } else {
                 Text(
                     text = "${progress.toInt()}%",

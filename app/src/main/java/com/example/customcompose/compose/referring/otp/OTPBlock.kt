@@ -62,21 +62,21 @@ fun OTPBlock(
     var checkInitialOtp by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull() == null) }
 
     var generatedOtp by remember { mutableStateOf(if (isBypass == true) "123456" else generateOtp()) }
-    var countdown by remember { mutableStateOf(10) }
+    var countdown by remember { mutableStateOf(90) }
     var isResendVisible by remember { mutableStateOf(false) }
     var toastShown by remember { mutableStateOf(false) }
     var showSendButton by remember { mutableStateOf(false) }
 
     LaunchedEffect(countdown) {
         while (countdown > 0) {
-            delay(1000L)
+            delay(90000L)
             countdown--
         }
         isResendVisible = true
     }
 
 
-    LaunchedEffect(isBypass) {
+    LaunchedEffect(Unit) {
 
         if (isBypass == true && !toastShown && checkInitialOtp) {
             Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
@@ -100,6 +100,8 @@ fun OTPBlock(
             }
         } else if (!block.validations?.server!! && block.validations?.device!!) {
             Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+        }else if (block.validations.server!! && !block.validations.device!!){
+            Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
         } else {
             if (checkInitialOtp){
                 Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()
@@ -125,7 +127,7 @@ fun OTPBlock(
             if (showSendButton) {
                 Button(
                     onClick = {
-                        countdown = 10
+                        countdown = 90
                         if (isBypass == true && !toastShown && checkInitialOtp) {
                             Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
                             generatedOtp = "123456"
@@ -148,6 +150,8 @@ fun OTPBlock(
                             }
                         } else if (!block.validations?.server!! && block.validations?.device!!) {
                             Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                        } else if (block.validations.server!! && !block.validations.device!!){
+                            Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
                         } else {
                             if (checkInitialOtp){
                                 Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()
@@ -251,7 +255,7 @@ fun OTPBlock(
                         if (isResendVisible) {
                             Button(
                                 onClick = {
-                                    countdown = 10
+                                    countdown = 90
                                     isResendVisible = false
 
                                     if (isBypass == true && !toastShown && checkInitialOtp) {
@@ -276,6 +280,8 @@ fun OTPBlock(
                                         }
                                     } else if (!block.validations?.server!! && block.validations?.device!!) {
                                         Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                                    } else if (block.validations.server!! && !block.validations.device!!){
+                                        Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
                                     } else {
                                         if (checkInitialOtp){
                                             Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()

@@ -218,6 +218,7 @@ fun NumberValidationGroup(
                     blockListViewModel.hideProgressLoading()
                     val isExist = state.data.data[0].exist
                     val isEligible = state.data.data[0].eligible
+                    status = state.data.data[0].status
 
                     dynmcInfoConModelList = state.data.data[0].information
                     messages = state.data.data[0].message
@@ -245,7 +246,6 @@ fun NumberValidationGroup(
             }
             is UIState.Loading -> {}
             is UIState.Success -> {
-                blockListViewModel.hideProgressLoading()
             }
         }
 

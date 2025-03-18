@@ -12,6 +12,7 @@ import com.example.customcompose.model.GiveAbleAchievement
 import com.example.customcompose.model.NumberCheckModel
 import com.example.customcompose.repository.SurveyFlowRepository
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
@@ -109,6 +110,48 @@ class SurveyFlowViewModel(
             }
         }
     }
+
+
+    //send otp
+    private val _otpData = MutableLiveData<UIState<JsonObject>>(UIState.Loading)
+    val otpData: LiveData<UIState<JsonObject>> = _otpData
+
+    fun sendOtp(token: String, requestBody: HashMap<String, Any>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (connectivityObserver.checkInternetConnection()) {
+                _otpData.postValue(UIState.Loading)
+
+                try {
+                    val response = surveyFlowRepository.sendOtp( token, requestBody)
+
+                    if (response.isSuccessful) {
+                        // API Call was successful
+                        response.body()?.let { responseBody ->
+                            _otpData.postValue(UIState.Success(responseBody))
+
+                        } ?: run {
+                            _otpData.postValue(UIState.Error(Exception("Empty response from server")))
+                        }
+                    } else {
+                        val errorResponse = response.errorBody()?.let { errorBody ->
+                            val errorMessage = errorBody.string()
+                            errorMessage ?: "Unknown error"
+                        } ?: "Unknown error"
+                        _otpData.postValue(UIState.Error(Exception("Error ${response.code()}: $errorResponse")))
+                    }
+
+                } catch (e: Exception) {
+                    _otpData.postValue(UIState.Error(e))
+                }
+            } else {
+                _otpData.postValue(UIState.Error(Exception("No internet connection")))
+            }
+        }
+    }
+
+
+
+
 
 
 

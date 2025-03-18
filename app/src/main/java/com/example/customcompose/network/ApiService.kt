@@ -4,10 +4,11 @@ import com.example.customcompose.model.AchievementData
 import com.example.customcompose.model.CampaignsModel
 import com.example.customcompose.model.ExtraServiceModel
 import com.example.customcompose.model.GiveAbleAchievement
+import com.example.customcompose.model.NumberCheckModel
 import com.example.customcompose.model.SignInModel
 import com.example.customcompose.model.SurveyData
 import com.example.customcompose.model.UserInfoModel
-import com.example.customcompose.model.NumberCheckModel
+import com.google.gson.JsonObject
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -83,4 +84,13 @@ interface ApiService {
     @Streaming
     @GET
     suspend fun downloadFile(@Url fileUrl: String): Response<ResponseBody>
+
+    //send otp
+    @Headers("Content-Type: application/json;charset=UTF-8")
+    @POST("/campaign-manager/api/v1/verification/send-otp")
+    suspend fun sendOTP(
+        @Body otpMap: HashMap<String, Any>?,
+        @Header("Authorization") token: String?
+    ): Response<JsonObject>
+
 }
