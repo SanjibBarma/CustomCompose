@@ -4,13 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.LoginViewModel
 import com.example.customcompose.viewmodel.SurveyFlowViewModel
-import com.example.customcompose.views.DashboardScreen
-import com.example.customcompose.views.DynamicScreen
-import com.example.customcompose.views.LoginScreen
+import com.example.customcompose.views.screens.DashboardScreen
+import com.example.customcompose.views.screens.DynamicScreen
+import com.example.customcompose.views.screens.LoginScreen
 
 @Composable
 fun Navigation (

@@ -12,8 +12,8 @@ import com.example.customcompose.model.FailedContact
 import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.model.RoutePlanParentModel
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.views.SurveyDataManager.fullCampaignData
-import com.example.customcompose.views.SurveyDataManager.surveyFlowData
+import com.example.customcompose.views.screens.SurveyDataManager.fullCampaignData
+import com.example.customcompose.views.screens.SurveyDataManager.surveyFlowData
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.Dispatchers
