@@ -106,6 +106,7 @@ fun NumberValidationGroup(
                 Button(
                     onClick = {
                         blockListViewModel.showProgressLoading()
+                        surveyFlowViewModel.resetNumberValidationState()
 
                         if (currentBlock.surveyHistoryModel.isNotEmpty()){
                             println("history list size: ${currentBlock.surveyHistoryModel}")

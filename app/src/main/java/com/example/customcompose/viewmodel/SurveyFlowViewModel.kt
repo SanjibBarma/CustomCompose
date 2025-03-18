@@ -111,6 +111,12 @@ class SurveyFlowViewModel(
         }
     }
 
+    //reset number validation
+    fun resetNumberValidationState(){
+        _checkNumberData.value = UIState.Loading
+        _achievementData.value = UIState.Loading
+    }
+
 
     //send otp
     private val _otpData = MutableLiveData<UIState<JsonObject>>(UIState.Loading)
