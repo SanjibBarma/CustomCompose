@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
@@ -70,7 +69,7 @@ fun InteractiveGalleryBlock(
         mutableStateOf<Option?>(options.find { it.value == selectedImage })
     }
 
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val context = LocalContext.current
 
     val lazyListState = rememberLazyListState()
@@ -90,7 +89,7 @@ fun InteractiveGalleryBlock(
             modifier = Modifier.padding(8.dp)
         ) {
         println("Block Id is: $currentBlockId")
-        Text(text = question)
+        Text(text = block.question!!.slug)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -197,14 +196,7 @@ fun InteractiveGalleryBlock(
                                             .matchParentSize()
                                             .background(Color.Black.copy(alpha = 0.4f))
                                             .clip(RoundedCornerShape(4.dp))
-                                    ) {
-//                                        Image(
-//                                            imageVector = Icons.Default.CheckCircle,
-//                                            contentDescription = "Selected",
-//                                            modifier = Modifier
-//                                                .align(Alignment.Center)
-//                                        )
-                                    }
+                                    )
                                 }
                             }
 

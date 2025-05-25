@@ -15,14 +15,14 @@ import com.example.customcompose.views.compose.referring.DropdownBlock
 import com.example.customcompose.views.compose.referring.EditTextBlock
 import com.example.customcompose.views.compose.referring.GameBlock
 import com.example.customcompose.views.compose.referring.GiveAbleBlock
-import com.example.customcompose.views.compose.referring.ImageBlock
+import com.example.customcompose.views.compose.referring.image_view.ImageBlock
 import com.example.customcompose.views.compose.referring.InteractiveAvBlock
 import com.example.customcompose.views.compose.referring.InteractiveGalleryBlock
 import com.example.customcompose.views.compose.referring.LookupBlock
 import com.example.customcompose.views.compose.referring.MultipleChoiceBlock
 import com.example.customcompose.views.compose.referring.NumberInputBlock
-import com.example.customcompose.views.compose.referring.TermsAgreementBlock
-import com.example.customcompose.views.compose.referring.VideoBlock
+import com.example.customcompose.views.compose.referring.terms_agreement.TermsAgreementBlock
+import com.example.customcompose.views.compose.referring.video.VideoBlock
 import com.example.customcompose.views.compose.referring.check_list.CheckListBlock
 import com.example.customcompose.views.compose.referring.emoji_rating.EmojiRatingBlock
 import com.example.customcompose.views.compose.referring.image_capture.ImageCaptureBlock

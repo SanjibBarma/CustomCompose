@@ -25,8 +25,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,55 +59,56 @@ fun OTPBlock(
     val currentBlockId = block.id ?: ""
     val isSkippable = block.skip?.id != "-1"
     val isBypass = block.validations?.bypass
-//    val isBypass = false
-    val showPopup by blockListViewModel.isShowOtp.collectAsState()
-    var checkInitialOtp by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull() == null) }
-
+    var showPopup by remember { mutableStateOf(false) }
+    var checkInitialOtp by remember { mutableStateOf(block.surveyHistoryModel.firstOrNull() ?: "") }
     var generatedOtp by remember { mutableStateOf(if (isBypass == true) "123456" else generateOtp()) }
-    var countdown by remember { mutableStateOf(90) }
     var isResendVisible by remember { mutableStateOf(false) }
-    var toastShown by remember { mutableStateOf(false) }
     var showSendButton by remember { mutableStateOf(false) }
 
-    LaunchedEffect(countdown) {
-        while (countdown > 0) {
-            delay(90000L)
-            countdown--
+    val targetTimeMillis = rememberSaveable { mutableStateOf<Long?>(null) }
+    var countdown by remember { mutableIntStateOf(90) }
+
+    LaunchedEffect(targetTimeMillis.value) {
+        while (targetTimeMillis.value != null) {
+            val remaining = ((targetTimeMillis.value ?: 0) - System.currentTimeMillis()) / 1000
+            countdown = remaining.toInt().coerceAtLeast(0)
+            isResendVisible = countdown <= 0
+            delay(1000L)
         }
-        isResendVisible = true
+        targetTimeMillis.value = System.currentTimeMillis() + 90_000
     }
 
-
     LaunchedEffect(Unit) {
-
-        if (isBypass == true && !toastShown && checkInitialOtp) {
-            Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
-            generatedOtp = "123456"
-            toastShown = true
-            blockListViewModel.showOtpPopup()
-            showSendButton = false
-            return@LaunchedEffect
-        }
-
-        if (block.validations?.server == true && block.validations.device == true) {
-            if (sentOtpTrack == 0) {
-                Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
-                sentOtpTrack = 1
-            } else if (sentOtpTrack == 1) {
-                Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
-                sentOtpTrack = 2
-            } else {
-                Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
-                sentOtpTrack = 1
-            }
-        } else if (!block.validations?.server!! && block.validations?.device!!) {
-            Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
-        }else if (block.validations.server!! && !block.validations.device!!){
-            Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
-        } else {
-            if (checkInitialOtp){
-                Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()
-                return@LaunchedEffect
+        if (checkInitialOtp == "") {
+            if (countdown != 0){
+                showPopup = true
+            }else{
+                showPopup = true
+                if (isBypass == true) {
+                    Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
+                    generatedOtp = "123456"
+                    showSendButton = false
+                    return@LaunchedEffect
+                }
+                if (block.validations?.server == true && block.validations.device == true) {
+                    if (sentOtpTrack == 0) {
+                        Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                        sentOtpTrack = 1
+                    } else if (sentOtpTrack == 1) {
+                        Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                        sentOtpTrack = 2
+                    } else {
+                        Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                        sentOtpTrack = 1
+                    }
+                } else if (!block.validations?.server!! && block.validations.device!!) {
+                    Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                } else if (block.validations.server!! && !block.validations.device!!) {
+                    Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                } else {
+                    Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()
+                    return@LaunchedEffect
+                }
             }
         }
     }
@@ -127,35 +130,40 @@ fun OTPBlock(
             if (showSendButton) {
                 Button(
                     onClick = {
-                        countdown = 90
-                        if (isBypass == true && !toastShown && checkInitialOtp) {
-                            Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
-                            generatedOtp = "123456"
-                            toastShown = true
-                            blockListViewModel.showOtpPopup()
-                            showSendButton = false
-                            return@Button
-                        }
+                        if (checkInitialOtp == "") {
+                            if (countdown != 0){
+                                showPopup = true
+                            }else{
+                                showPopup = true
+                                targetTimeMillis.value = System.currentTimeMillis() + 90_000
+                                isResendVisible = false
 
-                        if (block.validations?.server == true && block.validations.device == true) {
-                            if (sentOtpTrack == 0) {
-                                Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
-                                sentOtpTrack = 1
-                            } else if (sentOtpTrack == 1) {
-                                Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
-                                sentOtpTrack = 2
-                            } else {
-                                Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
-                                sentOtpTrack = 1
-                            }
-                        } else if (!block.validations?.server!! && block.validations?.device!!) {
-                            Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
-                        } else if (block.validations.server!! && !block.validations.device!!){
-                            Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
-                        } else {
-                            if (checkInitialOtp){
-                                Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()
-                                return@Button
+                                if (isBypass == true) {
+                                    Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
+                                    generatedOtp = "123456"
+                                    showSendButton = false
+                                    return@Button
+                                }
+
+                                if (block.validations?.server == true && block.validations.device == true) {
+                                    if (sentOtpTrack == 0) {
+                                        Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                                        sentOtpTrack = 1
+                                    } else if (sentOtpTrack == 1) {
+                                        Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                                        sentOtpTrack = 2
+                                    } else {
+                                        Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                                        sentOtpTrack = 1
+                                    }
+                                } else if (!block.validations?.server!! && block.validations?.device!!) {
+                                    Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                                } else if (block.validations.server!! && !block.validations.device!!) {
+                                    Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                                } else {
+                                    Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()
+                                    return@Button
+                                }
                             }
                         }
                     },
@@ -163,7 +171,7 @@ fun OTPBlock(
                 ) {
                     Text("Send Otp", fontSize = 12.sp)
                 }
-            }else if (!showPopup){
+            } else if (!showPopup) {
                 Text(
                     text = "Verified successfully.",
                     color = OtpVerify,
@@ -175,7 +183,7 @@ fun OTPBlock(
         }
     }
 
-    if (showPopup){
+    if (showPopup) {
         Dialog(onDismissRequest = { }) {
             Box(
                 modifier = Modifier
@@ -220,18 +228,19 @@ fun OTPBlock(
                         if (isSkippable) {
                             Button(
                                 onClick = {
-                                    var surveyHistoryModel = SurveyHistoryModel(
+                                    showPopup = false
+                                    val surveyHistoryModel = SurveyHistoryModel(
                                         question = "",
                                         answer = "",
                                         id = currentBlockId
                                     )
-                                    block.surveyHistoryModel= listOf(surveyHistoryModel)
+                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
 
                                     block.skip?.group_no?.let { groupId ->
                                         block.skip.id.let { nextBlockId ->
-                                            if (destination == "mainSurvey"){
+                                            if (destination == "mainSurvey") {
                                                 blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
-                                            }else{
+                                            } else {
                                                 blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
                                             }
                                         }
@@ -255,35 +264,34 @@ fun OTPBlock(
                         if (isResendVisible) {
                             Button(
                                 onClick = {
-                                    countdown = 90
-                                    isResendVisible = false
+                                    if (checkInitialOtp == "") {
+                                        showPopup = true
+                                        targetTimeMillis.value = System.currentTimeMillis() + 90_000
+                                        isResendVisible = false
 
-                                    if (isBypass == true && !toastShown && checkInitialOtp) {
-                                        Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
-                                        generatedOtp = "123456"
-                                        toastShown = true
-                                        blockListViewModel.showOtpPopup()
-                                        showSendButton = false
-                                        return@Button
-                                    }
-
-                                    if (block.validations?.server == true && block.validations.device == true) {
-                                        if (sentOtpTrack == 0) {
-                                            Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
-                                            sentOtpTrack = 1
-                                        } else if (sentOtpTrack == 1) {
-                                            Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
-                                            sentOtpTrack = 2
-                                        } else {
-                                            Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
-                                            sentOtpTrack = 1
+                                        if (isBypass == true) {
+                                            Toasty.warning(context, "Bypass is true. Not sending otp.", Toasty.LENGTH_SHORT).show()
+                                            generatedOtp = "123456"
+                                            showSendButton = false
+                                            return@Button
                                         }
-                                    } else if (!block.validations?.server!! && block.validations?.device!!) {
-                                        Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
-                                    } else if (block.validations.server!! && !block.validations.device!!){
-                                        Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
-                                    } else {
-                                        if (checkInitialOtp){
+
+                                        if (block.validations?.server == true && block.validations.device == true) {
+                                            if (sentOtpTrack == 0) {
+                                                Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                                                sentOtpTrack = 1
+                                            } else if (sentOtpTrack == 1) {
+                                                Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                                                sentOtpTrack = 2
+                                            } else {
+                                                Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                                                sentOtpTrack = 1
+                                            }
+                                        } else if (!block.validations?.server!! && block.validations?.device!!) {
+                                            Toasty.warning(context, "Device sms send", Toasty.LENGTH_SHORT).show()
+                                        } else if (block.validations.server!! && !block.validations.device!!) {
+                                            Toasty.warning(context, "Server sms send", Toasty.LENGTH_SHORT).show()
+                                        } else {
                                             Toasty.warning(context, "Internet OTP configuration", Toasty.LENGTH_SHORT).show()
                                             return@Button
                                         }
@@ -297,9 +305,10 @@ fun OTPBlock(
                             Button(
                                 onClick = {
                                     if (otp == generatedOtp) {
+                                        showPopup = false
                                         val surveyHistoryModel = SurveyHistoryModel(
-                                            question = block.question?.slug ?: "",
-                                            answer = "Yes",
+                                            question = block.question?.alias ?: "",
+                                            answer = otp,
                                             id = currentBlockId
                                         )
                                         block.surveyHistoryModel = listOf(surveyHistoryModel)
@@ -309,8 +318,6 @@ fun OTPBlock(
                                         } else {
                                             blockListViewModel.addBlockToTheCheckList(block.referTo?.id!!, block.referTo.group_no!!)
                                         }
-
-                                        blockListViewModel.hideOtpPopup()
                                     } else {
                                         Toasty.warning(context, "Invalid OTP", Toasty.LENGTH_SHORT).show()
                                     }
@@ -329,10 +336,8 @@ fun OTPBlock(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .clickable {
-                            blockListViewModel.hideOtpPopup()
                             showSendButton = true
-                            checkInitialOtp = true
-                            toastShown = false
+                            showPopup = false
                         },
                     tint = Color.Black
                 )

@@ -38,7 +38,7 @@ fun InteractiveAvBlock (
     val currentBlockId = block.id ?: ""
     val isSkippable = block.skip?.id != "-1"
 
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val context = LocalContext.current
     val packageName = block.options?.get(0)?.value
 //    val packageName = "ltd.v2.game1"
@@ -54,7 +54,7 @@ fun InteractiveAvBlock (
         Column(
             modifier = Modifier.padding(8.dp)
         ) {
-            Text(question)
+            Text(block.question!!.slug)
             Spacer(modifier = Modifier.height(8.dp))
 
             Box(

@@ -1,4 +1,4 @@
-package com.example.customcompose
+package com.example.customcompose.views
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.example.customcompose.MyApplication
 import com.example.customcompose.helper.AudioRecorderService
 import com.example.customcompose.navigation.Navigation
 import com.example.customcompose.ui.theme.CustomComposeTheme

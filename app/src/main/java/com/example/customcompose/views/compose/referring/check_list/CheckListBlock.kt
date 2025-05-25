@@ -61,7 +61,7 @@ fun CheckListBlock(
     var checkListGroupId by remember { mutableStateOf("")  }
 
     val answer = selectedOptions.value.joinToString(",")
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val selectedSingleOption = remember { mutableStateOf("") }
     val isSelectionLocked = selectedOptions.value.size == block.options?.size
     val checkListHistory = blockListViewModel.checkListHistory.collectAsState()
@@ -77,7 +77,7 @@ fun CheckListBlock(
         Column(
             modifier = Modifier.padding(8.dp)
         ) {
-            Text(text = question)
+            Text(text = block.question!!.slug)
             Spacer(modifier = Modifier.height(8.dp))
 
             block.options?.forEach { option ->

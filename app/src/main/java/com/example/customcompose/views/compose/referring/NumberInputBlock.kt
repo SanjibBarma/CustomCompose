@@ -51,7 +51,7 @@ fun NumberInputBlock(
     val validationRegex = block.validations?.regex
 
     var text by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
 
     fun validateInput(input: String): Boolean {
         return if (validationRegex != null) {

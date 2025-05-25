@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.MyApplication.Companion.dashboardViewModel
 import com.example.customcompose.R
+import com.example.customcompose.helper.CommonUtils.getdatetime
+import com.example.customcompose.helper.Constants.surveyBasicInfo
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.Option
 import com.example.customcompose.model.SurveyHistoryModel
@@ -101,7 +103,7 @@ fun NonRefProductList(
 
     Column {
         println("Block Id is: ${block.id}")
-        Text(text = question)
+        Text(text = block.question!!.slug)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -137,59 +139,62 @@ fun NonRefProductList(
                             println("source_location: $sourceLocation")
 
                             //match the primary brand alias
-                            if (block.question?.alias == "product") {
-                                var matched = false
-                                println("print_log 1")
-                                for (achievementModel in targetAchievementList!!) {
-                                    println("print_log 2")
-                                    if (achievementModel.products.size != 0) {
-                                        //achievementlist er product theklei shudhu location target achievement calculate kora hobe
-                                        println("print_log 3")
-                                        for (locationTarget in achievementModel.locations) {
-                                            println("print_log 4")
-                                            println("sourceLocation: $sourceLocation    locationTarget.id: ${locationTarget.id}")
+                            if (block.question.alias == "product") {
 
-                                            //current block er alias jodi product hoy
-                                            //and target achievement list er product list size jodi 0 na hoy
-                                            //then selected route location id and target location id match kore achievement compare kora hobe
-                                            if (sourceLocation?.toInt() == locationTarget.id) {
-                                                println("print_log 5")
-                                                for (productTarget in achievementModel.products) {
-                                                    println("print_log 6")
-                                                    if (option.alias == productTarget.id) {
-                                                        println("print_log 7")
-                                                        //if daily_achievement jodi daily_target er soman ba boro hoy
-                                                        //tahole oi location and product er kono target nai
-                                                        if (achievementModel.daily_achievement >= achievementModel.daily_target && !achievementModel.over_achivement) {
-                                                            println("print_log 8")
-                                                            Toasty.warning(
-                                                                context,
-                                                                "No more target for this location and products combination",
-                                                                Toasty.LENGTH_SHORT
-                                                            ).show()
-                                                            return@clickable
-                                                        }
-                                                        //kintu jodi daily_achievement, daily_target er choto hoy
-                                                        //tahole samne agate parbe
-                                                        matched = true
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        println("print_log else 2")
-                                        //ar achievementlist er product na thakle sorasori samne agay jabe
-                                        matched = true
-                                    }
-                                }
-                                if (!matched) {
-                                    Toasty.warning(
-                                        context,
-                                        "This product is not allowed for this location",
-                                        Toasty.LENGTH_SHORT
-                                    ).show()
-                                    return@clickable
-                                }
+                                surveyBasicInfo["productId"] =  option.alias.toString()
+
+//                                var matched = false
+//                                println("print_log 1")
+//                                for (achievementModel in targetAchievementList!!) {
+//                                    println("print_log 2")
+//                                    if (achievementModel.products.size != 0) {
+//                                        //achievementlist er product theklei shudhu location target achievement calculate kora hobe
+//                                        println("print_log 3")
+//                                        for (locationTarget in achievementModel.locations) {
+//                                            println("print_log 4")
+//                                            println("sourceLocation: $sourceLocation    locationTarget.id: ${locationTarget.id}")
+//
+//                                            //current block er alias jodi product hoy
+//                                            //and target achievement list er product list size jodi 0 na hoy
+//                                            //then selected route location id and target location id match kore achievement compare kora hobe
+//                                            if (sourceLocation?.toInt() == locationTarget.id) {
+//                                                println("print_log 5")
+//                                                for (productTarget in achievementModel.products) {
+//                                                    println("print_log 6")
+//                                                    if (option.alias == productTarget.id) {
+//                                                        println("print_log 7")
+//                                                        //if daily_achievement jodi daily_target er soman ba boro hoy
+//                                                        //tahole oi location and product er kono target nai
+//                                                        if (achievementModel.daily_achievement >= achievementModel.daily_target && !achievementModel.over_achivement) {
+//                                                            println("print_log 8")
+//                                                            Toasty.warning(
+//                                                                context,
+//                                                                "No more target for this location and products combination",
+//                                                                Toasty.LENGTH_SHORT
+//                                                            ).show()
+//                                                            return@clickable
+//                                                        }
+//                                                        //kintu jodi daily_achievement, daily_target er choto hoy
+//                                                        //tahole samne agate parbe
+//                                                        matched = true
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    } else {
+//                                        println("print_log else 2")
+//                                        //ar achievementlist er product na thakle sorasori samne agay jabe
+//                                        matched = true
+//                                    }
+//                                }
+//                                if (!matched) {
+//                                    Toasty.warning(
+//                                        context,
+//                                        "This product is not allowed for this location",
+//                                        Toasty.LENGTH_SHORT
+//                                    ).show()
+//                                    return@clickable
+//                                }
                             }
                             selectedBrand = option.slug!!
                             selectedItem = option

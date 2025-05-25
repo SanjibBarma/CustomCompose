@@ -58,7 +58,6 @@ fun DatePickerBlock(
 
     var mDate = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
     val question = block.question?.alias ?: ""
-    val blockId = block.id ?: ""
 
     val maxAge = block.validations?.max ?: 0
     val minAge = block.validations?.min ?: 0
@@ -125,7 +124,7 @@ fun DatePickerBlock(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                question,
+                                block.question.slug,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )

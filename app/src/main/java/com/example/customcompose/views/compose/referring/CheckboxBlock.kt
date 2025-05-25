@@ -46,7 +46,7 @@ fun CheckboxBlock(
 
     val selectedOptions = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
     val answer = selectedOptions.value.joinToString(",")
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
 
     Card(
         modifier = Modifier
@@ -59,7 +59,7 @@ fun CheckboxBlock(
         Column (
             modifier = Modifier.padding(8.dp)
         ){
-            Text(text = question)
+            Text(text = block.question!!.slug)
 
             Spacer(modifier = Modifier.height(8.dp))
 

@@ -47,7 +47,7 @@ fun DropdownBlock(
     val isSkippable = block.skip?.id != "-1"
 
     var selectedOption by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
 
     Card(
         modifier = Modifier

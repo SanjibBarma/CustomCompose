@@ -95,7 +95,7 @@ fun CheckListDialog(
                             childView,
                             isCurrentGroupActive,
                             position,
-                            "checkList"
+                            "checkList",
                         )
                     }
 

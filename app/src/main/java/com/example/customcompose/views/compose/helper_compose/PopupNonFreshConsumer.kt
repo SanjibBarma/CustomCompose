@@ -1,4 +1,4 @@
-package com.example.customcompose.views.compose.dialog
+package com.example.customcompose.views.compose.helper_compose
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedButton
@@ -38,12 +40,12 @@ import com.example.customcompose.R
 import com.example.customcompose.model.DynamicInfoConModel
 
 @Composable
-fun PopupBannedConsumer (
+fun PopupNonFreshConsumer(
     dynmcInfoConModelList: List<DynamicInfoConModel>,
     messages: List<String>,
     onDismiss: () -> Unit,
     goToNextPage: () -> Unit
-){
+) {
     var msg by remember { mutableStateOf("")  }
 
 
@@ -87,7 +89,7 @@ fun PopupBannedConsumer (
                         }
 
                         Text(
-                            text = msg.ifEmpty { "This consumer was connected before in this campaign" },
+                            text = msg.ifEmpty { "Consumer is eligible for this contact" },
                             modifier = Modifier
                                 .padding(start = 16.dp, end = 16.dp, top = 40.dp),
                             fontFamily = FontFamily.SansSerif,
@@ -107,37 +109,25 @@ fun PopupBannedConsumer (
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "Consumer is not eligible for this contact.",
-                            modifier = Modifier
-                                .padding(start = 16.dp, end = 16.dp, top = 40.dp),
-                            fontFamily = FontFamily.SansSerif,
-                            color = Color.Black,
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center,
-                        )
-
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(start = 16.dp, end = 16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-//                            Button(
-//                                onClick = {
-//                                    goToNextPage ()
-//                                    onDismiss()
-//                                },
-//                                modifier = Modifier.width(120.dp),
-//                                colors = ButtonDefaults.buttonColors(Color(0xFF6200EE))
-//                            ) {
-//                                Text(text = "Yes", color = Color.White)
-//                            }
+                            Button(
+                                onClick = {
+                                    goToNextPage ()
+                                    onDismiss()
+                                },
+                                modifier = Modifier.width(120.dp),
+                                colors = ButtonDefaults.buttonColors(Color(0xFF6200EE))
+                            ) {
+                                Text(text = "Yes", color = Color.White)
+                            }
 
                             OutlinedButton(
-                                onClick = { onDismiss() },
+                                onClick = { onDismiss() }, // Close the popup when cancel is clicked
                                 modifier = Modifier.width(120.dp)
                             ) {
                                 Text(text = "Cancel", color = Color.Red)
@@ -148,7 +138,7 @@ fun PopupBannedConsumer (
             }
 
             Image(
-                painter = painterResource(id = R.drawable.popup_icon_banned_contact),
+                painter = painterResource(id = R.drawable.popup_icon_previous_contact),
                 contentDescription = "Popup Icon",
                 modifier = Modifier
                     .height(90.dp)

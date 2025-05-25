@@ -29,7 +29,6 @@ class DashboardRepository (private val apiService: ApiService, private val local
 
     fun getTargetAchievementData(brId: String, campId: String): Flow<TargetAchievementEntity?> {
         return localDbDao.getAllTargetAchievementData(brId, campId)
-            //.flowOn(Dispatchers.IO) // Ensures it's on the IO thread
     }
 
 }

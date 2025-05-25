@@ -25,15 +25,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.MyApplication.Companion.surveyFlowViewModel
+import com.example.customcompose.helper.Constants.fullCampaignData
+import com.example.customcompose.helper.Constants.surveyBasicInfo
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.ExtraServiceModel
 import com.example.customcompose.model.DynamicInfoConModel
 import com.example.customcompose.viewmodel.BlockListViewModel
-import com.example.customcompose.views.screens.SurveyDataManager.fullCampaignData
-import com.example.customcompose.views.compose.dialog.PopupBannedConsumer
-import com.example.customcompose.views.compose.dialog.PopupFreshConsumer
-import com.example.customcompose.views.compose.dialog.PopupNonFreshConsumer
+import com.example.customcompose.views.compose.helper_compose.PopupBannedConsumer
+import com.example.customcompose.views.compose.helper_compose.PopupFreshConsumer
+import com.example.customcompose.views.compose.helper_compose.PopupNonFreshConsumer
 import com.example.customcompose.views.compose.number_validation.NonRefCheckBox
 import com.example.customcompose.views.compose.number_validation.NonRefContactNo
 import com.example.customcompose.views.compose.number_validation.NonRefDate
@@ -105,6 +106,7 @@ fun NumberValidationGroup(
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
+                        appSessionManager.setContactNumber("")
                         blockListViewModel.showProgressLoading()
                         surveyFlowViewModel.resetNumberValidationState()
 
@@ -116,30 +118,31 @@ fun NumberValidationGroup(
                                     if (nonRefBlocks.id == surveyHistory?.id){
                                         if (surveyHistory?.answer.isNullOrEmpty()){
                                             blockListViewModel.hideProgressLoading()
-                                            Toasty.warning(context, "Provide a valid ${surveyHistory?.question}", Toasty.LENGTH_SHORT).show()
+                                            Toasty.warning(context, "Provide a valid ${nonRefBlocks.question?.slug}", Toasty.LENGTH_SHORT).show()
                                             return@Button
                                         }
                                         if (nonRefBlocks.type == "contactNo"){
-                                            if (surveyHistory?.answer.isNullOrEmpty()){
+                                            val phoneNumber = surveyHistory?.answer
+                                            val phoneRegex = "^(13|14|15|16|17|18|19)\\d{8}$".toRegex()
+
+//                                            if (surveyHistory?.answer.isNullOrEmpty()){
+//                                                blockListViewModel.hideProgressLoading()
+//                                                Toasty.warning(context, "Provide a valid ${surveyHistory?.question}", Toasty.LENGTH_SHORT).show()
+//                                                return@Button
+//                                            }
+                                            if (phoneNumber?.length != 10) {
                                                 blockListViewModel.hideProgressLoading()
-                                                Toasty.warning(context, "Provide a valid ${surveyHistory?.question}", Toasty.LENGTH_SHORT).show()
+                                                Toasty.warning(context, "Contact number must be 10 digits.", Toasty.LENGTH_SHORT).show()
                                                 return@Button
                                             }
-                                            if (nonRefBlocks.type == "contactNo"){
-                                                val phoneNumber = surveyHistory?.answer
-                                                val phoneRegex = "^(13|14|15|16|17|18|19)\\d{8}$".toRegex()
-
-                                                if (phoneNumber?.length != 10) {
-                                                    blockListViewModel.hideProgressLoading()
-                                                    Toasty.warning(context, "Contact number must be 10 digits.", Toasty.LENGTH_SHORT).show()
-                                                    return@Button
-                                                }
-                                                if (!phoneNumber.matches(phoneRegex)!!) {
-                                                    blockListViewModel.hideProgressLoading()
-                                                    Toasty.warning(context, "Contact number in not valid.", Toasty.LENGTH_SHORT).show()
-                                                    return@Button
-                                                }
+                                            if (!phoneNumber.matches(phoneRegex)!!) {
+                                                blockListViewModel.hideProgressLoading()
+                                                Toasty.warning(context, "Contact number is not valid.", Toasty.LENGTH_SHORT).show()
+                                                return@Button
                                             }
+                                            appSessionManager.setContactNumber(phoneNumber)
+                                            surveyBasicInfo["contact_no"] = phoneNumber
+
                                         }
                                     }
                                 }
@@ -149,6 +152,9 @@ fun NumberValidationGroup(
                         val surveyDataMap = mutableMapOf<String, HashMap<String, String>>()
                         val sourceLocation = blockListViewModel.routeParentList.value[0].selectedId
                         val locationId = blockListViewModel.routeParentList.value[blockListViewModel.routeParentList.value.size-1].selectedId
+
+                        surveyBasicInfo["source_location"] = sourceLocation.toString()
+                        surveyBasicInfo["location_id"] = locationId.toString()
 
                         val numberValidationMap = HashMap<String, Any>()
 
@@ -220,6 +226,9 @@ fun NumberValidationGroup(
                     val isExist = state.data.data[0].exist
                     val isEligible = state.data.data[0].eligible
                     status = state.data.data[0].status
+                    surveyBasicInfo["seg_status"] = state.data.data[0].status
+                    surveyBasicInfo["seg_stts"] = state.data.data[0].status
+
 
                     dynmcInfoConModelList = state.data.data[0].information
                     messages = state.data.data[0].message
@@ -235,6 +244,7 @@ fun NumberValidationGroup(
                     }else if (!isExist && !isEligible){
                         isBannedConsumer = true
                     }
+
                 }
             }
 

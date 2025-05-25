@@ -50,7 +50,7 @@ fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, isActive
     val currentBlockId = block.id ?: ""
 
     var text by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "")  }
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
 
     fun validateInput(input: String): Boolean {
         return if (validationRegex != null) {
@@ -76,7 +76,7 @@ fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, isActive
                 modifier = Modifier
                     .background(if (isActiveGroup) Color.White else Color(0x80CCCCCC))
             ){
-                Text(text = question)
+                Text(text = block.question!!.slug)
 
                 Spacer(modifier = Modifier.height(8.dp))
 

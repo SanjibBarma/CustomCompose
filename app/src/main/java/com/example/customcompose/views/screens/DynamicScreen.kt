@@ -3,9 +3,11 @@
 package com.example.customcompose.views.screens
 
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.activity.addCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -41,25 +43,38 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.MyApplication.Companion.blockListViewModel
+import com.example.customcompose.MyApplication.Companion.connectivityObserver
 import com.example.customcompose.MyApplication.Companion.loginViewModel
 import com.example.customcompose.helper.AudioRecorderService
+import com.example.customcompose.helper.CommonUtils.getContactDate
+import com.example.customcompose.helper.CommonUtils.getdatetime
 import com.example.customcompose.helper.CommonUtils.isServiceRunning
-import com.example.customcompose.model.SurveyDataModel
+import com.example.customcompose.helper.Constants.fullCampaignData
+import com.example.customcompose.helper.Constants.surveyBasicInfo
+import com.example.customcompose.helper.Constants.surveyFlowData
+import com.example.customcompose.helper.SntpClient
 import com.example.customcompose.model.SurveyModel
 import com.example.customcompose.ui.theme.DimBackground
 import com.example.customcompose.views.compose.SubmitButton
-import com.example.customcompose.views.compose.dialog.ExitDialog
+import com.example.customcompose.views.compose.helper_compose.ExitDialog
 import com.example.customcompose.views.compose.group.CheckGroupOrBlock
+import com.example.customcompose.views.compose.helper_compose.KeepScreenOnEffect
 import com.example.customcompose.views.compose.referring.LocationBlock
 import com.example.customcompose.views.compose.route_plan.RoutePlanView
-import com.example.customcompose.views.screens.SurveyDataManager.fullCampaignData
-import com.example.customcompose.views.screens.SurveyDataManager.surveyFlowData
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DynamicScreen(
     navController: NavHostController
 ) {
+    KeepScreenOnEffect()
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     var showExitDialog by remember { mutableStateOf(false) }
 
@@ -70,6 +85,8 @@ fun DynamicScreen(
     val isSubmitted by blockListViewModel.isSubmitted.collectAsState()
     val isProgressLoading by blockListViewModel.isProgressLoading.collectAsState()
     val isRoutePlanShow by blockListViewModel.isRoutePlan.collectAsState()
+    var dhakaTime by remember { mutableStateOf<ZonedDateTime?>(null) }
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
     val gson = Gson()
 
@@ -83,6 +100,22 @@ fun DynamicScreen(
     var surveyName by remember { mutableStateOf("") }
 
     LaunchedEffect(surveyDataState.value) {
+        surveyBasicInfo["contact_date"] =  getContactDate(getdatetime())
+        if (connectivityObserver.checkInternetConnection()) {
+            withContext(Dispatchers.IO) {
+                val utcMillis = SntpClient.getUtcTime()
+                utcMillis?.let {
+                    val instant = Instant.ofEpochMilli(it)
+                    val zoneId = ZoneId.of("Asia/Dhaka")
+                    val zonedTime = ZonedDateTime.ofInstant(instant, zoneId)
+                    dhakaTime = zonedTime
+                }
+            }
+            surveyBasicInfo["start"] =  dhakaTime!!.format(formatter)
+        }else{
+            surveyBasicInfo["start"] =  getdatetime()
+        }
+
         surveyDataState.value?.campData?.let { campData ->
             fullCampaignData = gson.fromJson(campData, SurveyModel::class.java)
 
@@ -218,8 +251,8 @@ fun DynamicScreen(
     }
 }
 
-object SurveyDataManager {
-    var surveyFlowData: List<SurveyDataModel>? = null
-    var fullCampaignData: SurveyModel? = null
-}
+//object SurveyDataManager {
+//    var surveyFlowData: List<SurveyDataModel>? = null
+//    var fullCampaignData: SurveyModel? = null
+//}
 

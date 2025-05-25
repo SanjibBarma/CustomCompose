@@ -8,11 +8,9 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.example.customcompose.MainActivity
+import com.example.customcompose.views.MainActivity
 import com.example.customcompose.R
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 
 class AudioRecorderService : Service() {
 
@@ -32,15 +30,38 @@ class AudioRecorderService : Service() {
             startForeground(1, notification)
         }
 
-        startRecording()
+        val fileName = intent?.getStringExtra("AUDIO_FILE_NAME") ?: "${System.currentTimeMillis()}.mp3"
+        startRecording(fileName)
+//        startRecording()
         return START_STICKY
     }
 
-    private fun startRecording() {
+//    private fun startRecording() {
+//        println("Service Started")
+//        val cacheDir = cacheDir
+//        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+//        outputFile = File(cacheDir, "$timestamp.mp3")
+//
+//        recorder = MediaRecorder().apply {
+//            setAudioSource(MediaRecorder.AudioSource.MIC)
+//            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+//            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+//            setOutputFile(outputFile?.absolutePath)
+//
+//            try {
+//                prepare()
+//                start()
+//                Log.d("AudioRecorderService", "Recording started: ${outputFile?.absolutePath}")
+//            } catch (e: Exception) {
+//                Log.e("AudioRecorderService", "Recording failed: ${e.message}")
+//            }
+//        }
+//    }
+
+    private fun startRecording(fileName: String) {
         println("Service Started")
         val cacheDir = cacheDir
-        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        outputFile = File(cacheDir, "$timestamp.mp3")
+        outputFile = File(cacheDir, fileName)
 
         recorder = MediaRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
