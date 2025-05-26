@@ -40,7 +40,7 @@ fun StarRatingBlock(
 
     val isSkippable = block.skip?.id != "-1"
 
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
 
     Card(
         modifier = Modifier

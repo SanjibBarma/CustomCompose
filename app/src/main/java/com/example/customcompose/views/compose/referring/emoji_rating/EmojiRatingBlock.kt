@@ -84,7 +84,7 @@ fun EmojiRatingBlock(
                         onSelect = {
                             selectedEmojiIndex = emojiTitles[index]
                             val surveyHistoryModel = SurveyHistoryModel(
-                                question = block.question.slug ?: "",
+                                question = block.question.alias ?: "",
                                 answer = emojiTitles[index],
                                 id = currentBlockId
                             )

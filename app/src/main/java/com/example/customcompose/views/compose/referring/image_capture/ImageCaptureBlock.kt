@@ -64,7 +64,7 @@ fun ImageCaptureBlock(
         mutableStateOf<Uri?>(if (cachedImageFile.exists()) cachedImageFile.toUri() else null)
     }
 
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
 
     Card(
         modifier = Modifier

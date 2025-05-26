@@ -77,7 +77,7 @@ fun ImageBlock(
     }
     var showImagePreview by remember { mutableStateOf(false) }
 
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val context = LocalContext.current
 
     val lazyListState = rememberLazyListState()
@@ -97,7 +97,7 @@ fun ImageBlock(
             modifier = Modifier.padding(8.dp)
         ) {
             println("Block Id is: $currentBlockId")
-            Text(text = question)
+            Text(text = block.question!!.slug)
 
             Spacer(modifier = Modifier.height(8.dp))
 

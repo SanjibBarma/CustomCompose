@@ -61,11 +61,18 @@ fun TermsAgreementBlock(
 ) {
     val currentBlockId = block.id ?: ""
 
-    var isChecked by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer == "Yes") }
+//    var previousAns by remember { mutableStateOf(block.surveyHistoryModel.firstOrNull()?.answer == "Yes") }
+    var previousAns by remember { mutableStateOf(block.surveyHistoryModel.firstOrNull()?.answer ?: "") }
     var showDialog by remember { mutableStateOf(true) }
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val isTermsShow by blockListViewModel.isTermsShow.collectAsState()
 
+    LaunchedEffect (Unit){
+        if (previousAns == ""){
+            showDialog = true
+            blockListViewModel.showTermsPopup()
+        }
+    }
 
     if (showDialog && isTermsShow) {
         DrawingCanvas(block, blockListViewModel, destination, onDismiss = { showDialog = false; blockListViewModel.hideTermsPopup() })

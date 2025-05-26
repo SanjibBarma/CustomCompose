@@ -7,20 +7,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.helper.AudioRecorderService
+import com.example.customcompose.helper.Constants.FAILED
+import com.example.customcompose.helper.Constants.SUCCESSFUL
+import com.example.customcompose.helper.Constants.fullCampaignData
+import com.example.customcompose.helper.Constants.surveyBasicInfo
+import com.example.customcompose.helper.Constants.surveyFlowData
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.FailedContact
 import com.example.customcompose.model.RoutePlanData
 import com.example.customcompose.model.RoutePlanParentModel
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.views.screens.SurveyDataManager.fullCampaignData
-import com.example.customcompose.views.screens.SurveyDataManager.surveyFlowData
 import com.google.gson.Gson
-import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class BlockListViewModel(
     private val context: Context
@@ -37,6 +42,9 @@ class BlockListViewModel(
     private val _isTermsShow = MutableStateFlow(false)
     val isTermsShow = _isTermsShow.asStateFlow()
 
+    private val _isGameBroadCast = MutableStateFlow(false)
+    val isGameBroadCast = _isGameBroadCast.asStateFlow()
+
     private val gson = Gson()
     private var jumpMatchCount = 0;
 
@@ -49,7 +57,11 @@ class BlockListViewModel(
 
         if (blockId == "submit" && groupId == "submit") {
             println("print_log: 5")
-            if (fullCampaignData?.conditions != null && fullCampaignData?.conditions!!.submit != null && fullCampaignData?.conditions!!.submit.failed_contact != null && fullCampaignData?.conditions!!.submit.failed_contact.size != 0){
+
+            //add the checkConditions in submit button
+            if (fullCampaignData?.conditions != null && fullCampaignData?.conditions!!.submit != null &&
+                fullCampaignData?.conditions!!.submit.failed_contact != null &&
+                fullCampaignData?.conditions!!.submit.failed_contact.size != 0){
                 checkConditions(fullCampaignData?.conditions!!.submit.failed_contact)
             }else{
                 _isSubmitted.value = true
@@ -92,12 +104,14 @@ class BlockListViewModel(
 
                                 if (jumpingLogic.conditions.size == jumpMatchCount){
                                     if (jumpingLogic.id == "submit"){
-                                        _isSubmitted.value = false
+                                        _isSubmitted.value = true
                                         println("show_submit")
                                         //match with conditions
                                         //if survey conditions submit model is matched with the surveyHistory data
                                         //then make the contact "contact_status" FAILED or SUCCESSFUL
                                     }else{
+                                        println("_isSubmitted.value = false")
+
                                         _isSubmitted.value = false
                                         appSessionManager.savePreviousGroupId(jumpingLogic.group_no)
                                         loadCurrentGroupOrBlock(jumpingLogic.id, jumpingLogic.group_no, position)
@@ -106,18 +120,6 @@ class BlockListViewModel(
                                 }
                             }
                         }
-
-
-//                        val jumpGroupId = previousGroup?.jumping_logic?.get(0)?.group_no
-//                        val jumpBlockId = previousGroup?.jumping_logic?.get(0)?.id
-//                        println("checkJumpingLogic    blockId $jumpBlockId groupId: $jumpGroupId")
-//
-//                        jumpBlockId?.let { blcId ->
-//                            jumpGroupId?.let { grpId ->
-//                                sharedPrefHelper.savePreviousGroupId(grpId)
-//                                loadCurrentGroupOrBlock(blcId, grpId)
-//                            }
-//                        }
                     }else{
                         println("print_log: 4")
                         appSessionManager.savePreviousGroupId(groupId)
@@ -147,11 +149,14 @@ class BlockListViewModel(
 
             if (failedMatchCount != 0 && surveyConList.size == failedMatchCount){
                 println("contact_status: failed")
+                surveyBasicInfo["contact_status"] = FAILED
                 break
             }else{
+                surveyBasicInfo["contact_status"] = SUCCESSFUL
                 println("contact_status: success")
             }
 
+            //after adding the contact_status in answerMap show submit
             _isSubmitted.value = true
         }
     }
@@ -182,7 +187,7 @@ class BlockListViewModel(
                 _parentSurveyBlockList.value = _parentSurveyBlockList.value.toMutableList().apply { add(newBlock) }
             } else {
                 if (block!!.type == "audio_start") {
-                    startAudioService(block.referTo?.id, block.referTo?.group_no, block.position)
+                    startAudioService(block.referTo?.id, block.referTo?.group_no, block.position, block.id)
                 } else if (block.type == "audio_end") {
                     stopAudioService(block.referTo?.id, block.referTo?.group_no, block.position)
                 } else if (block.type == "lookup" && block.validations?.invisible!!) {
@@ -194,6 +199,7 @@ class BlockListViewModel(
 
                         if (position+1 in mutableParentBlockList.indices) {
                             mutableParentBlockList.subList(position+1, mutableParentBlockList.size).clear()
+//                            mutableParentBlockList.subList(position, mutableParentBlockList.size).clear()
 
                             _parentSurveyBlockList.value = mutableParentBlockList.toList()
                             println("cleared_data: ${mutableParentBlockList.size}")
@@ -207,43 +213,60 @@ class BlockListViewModel(
 
                         _parentSurveyBlockList.value = mutableParentBlockList.toList()
                     }
-//                    if (group != null && block != null) {
-//                        val existingBlock = _parentSurveyBlockList.value.find { it.id == blockId}
-//                        val comboJson = gson.toJson(existingBlock)
-//                        Log.d("existingBlock_Data", comboJson)
-//                        if (existingBlock != null) {
-//                            val blockPosition = _parentSurveyBlockList.value.indexOf(existingBlock)
-//                            existingBlock.surveyHistoryModel = emptyList()
-//                            block.position = _parentSurveyBlockList.value.size
-//                            val updatedList = _parentSurveyBlockList.value.takeWhile { it != existingBlock } + existingBlock
-//                            _parentSurveyBlockList.value = updatedList
-//                            println("Block already exists. Cleared items after position of ${block.id}")
-//                        } else {
-//                            //val newBlock = block.copy(surveyHistoryModel = emptyList())
-//                            block.surveyHistoryModel= emptyList()
-//                            block.position = _parentSurveyBlockList.value.size
-//                            _parentSurveyBlockList.value = _parentSurveyBlockList.value.toMutableList().apply { add(block) }
-//                            println("New Block Added: ${block.id}")
-//                        }
-//                    }
                 }
             }
         }
     }
 
     private fun lookupApiCall(blockId: String?, groupId: String?, position: Int?) {
-        Toasty.success(context, "Lookup called", Toasty.LENGTH_SHORT).show()
+//        Toasty.success(context, "Lookup called", Toasty.LENGTH_SHORT).show()
+        val group = surveyFlowData!!.find { it.group == groupId }
+        val block = group?.blocks?.find { it.id == blockId }
+        val question = block?.question?.slug ?: ""
+        val currentBlockId = block?.id ?: ""
+
         if (blockId != null && groupId != null) {
             viewModelScope.launch {
                 if (position != null) {
                     addBlockToTheSurveyFlow(blockId, groupId, position)
+
+                    val lookUpHistory = SurveyHistoryModel(
+                        question = question,
+                        answer = "Yes",
+                        id = currentBlockId
+                    )
+
+                    InvisibleHistoryData.invisibleHistoryList.add(lookUpHistory)
                 }
             }
         }
     }
 
-    private fun startAudioService(blockId: String?, groupId: String?, position: Int?) {
-        val intent = Intent(context, AudioRecorderService::class.java)
+//    private fun startAudioService(blockId: String?, groupId: String?, position: Int?) {
+//        val intent = Intent(context, AudioRecorderService::class.java)
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            context.startForegroundService(intent)
+//        } else {
+//            context.startService(intent)
+//        }
+//
+//        if (blockId != null && groupId != null) {
+//            viewModelScope.launch {
+//                if (position != null) {
+//                    addBlockToTheSurveyFlow(blockId, groupId, position)
+//                }
+//            }
+//        }
+//    }
+
+    private fun startAudioService(blockId: String?, groupId: String?, position: Int?, currentBlockId: String?) {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val fileName = "$timestamp.mp3"
+
+        val intent = Intent(context, AudioRecorderService::class.java).apply {
+            putExtra("AUDIO_FILE_NAME", fileName)
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent)
         } else {
@@ -254,10 +277,23 @@ class BlockListViewModel(
             viewModelScope.launch {
                 if (position != null) {
                     addBlockToTheSurveyFlow(blockId, groupId, position)
+
+                    val audioHistory = currentBlockId?.let {
+                        SurveyHistoryModel(
+                            question = "audio",
+                            answer = fileName,
+                            id = it
+                        )
+                    }
+
+                    if (audioHistory != null) {
+                        InvisibleHistoryData.invisibleHistoryList.add(audioHistory)
+                    }
                 }
             }
         }
     }
+
 
     private fun stopAudioService(blockId: String?, groupId: String?, position: Int?) {
         val group = surveyFlowData!!.find { it.group == groupId }
@@ -479,4 +515,16 @@ class BlockListViewModel(
         _isTermsShow.value = false
     }
 
+    fun moveToNextFromGame() {
+        _isGameBroadCast.value = true
+    }
+
+    fun stayInGame() {
+        _isGameBroadCast.value = false
+    }
+
+}
+
+object InvisibleHistoryData {
+    val invisibleHistoryList: MutableList<SurveyHistoryModel> = mutableListOf()
 }

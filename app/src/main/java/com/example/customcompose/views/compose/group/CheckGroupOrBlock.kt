@@ -22,7 +22,7 @@ import com.example.customcompose.views.compose.referring.LookupBlock
 import com.example.customcompose.views.compose.referring.MultipleChoiceBlock
 import com.example.customcompose.views.compose.referring.NumberInputBlock
 import com.example.customcompose.views.compose.referring.TermsAgreementBlock
-import com.example.customcompose.views.compose.referring.VideoBlock
+import com.example.customcompose.views.compose.referring.video.VideoBlock
 import com.example.customcompose.views.compose.referring.check_list.CheckListBlock
 import com.example.customcompose.views.compose.referring.emoji_rating.EmojiRatingBlock
 import com.example.customcompose.views.compose.referring.image_capture.ImageCaptureBlock

@@ -50,7 +50,7 @@ fun MultipleChoiceBlock(
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
     var selectedOption by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
 
     Card(
         modifier = Modifier

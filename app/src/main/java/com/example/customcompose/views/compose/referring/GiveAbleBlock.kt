@@ -60,7 +60,7 @@ fun GiveAbleBlock(
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
     var selectedOption by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val materialList = remember { mutableStateListOf<MaterialFinalModel>() }
     val finalMaterialList = remember { mutableStateListOf<MaterialFinalModel>() }
     val context = LocalContext.current
@@ -147,7 +147,7 @@ fun GiveAbleBlock(
         Column(
             modifier = Modifier.padding(8.dp)
         ) {
-            Text(question)
+            Text(block.question!!.slug)
             Spacer(modifier = Modifier.height(8.dp))
 
             Box(

@@ -70,7 +70,7 @@ fun NonRefCheckBox(
 
     Column {
         println("Block Id is: ${block.id}")
-        Text(text = question)
+        Text(text = block.question!!.slug)
 
         Spacer(modifier = Modifier.height(8.dp))
 

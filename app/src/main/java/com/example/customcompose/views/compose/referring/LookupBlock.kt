@@ -36,7 +36,7 @@ fun LookupBlock (
     destination: String
 ){
     val currentBlockId = block.id ?: ""
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     var showButton by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(currentBlockId) {

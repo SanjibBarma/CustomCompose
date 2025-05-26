@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.MyApplication.Companion.dashboardViewModel
+import com.example.customcompose.helper.Constants.surveyBasicInfo
 import com.example.customcompose.model.RoutePlanParentModel
 import com.example.customcompose.model.SurveyDataModel
 import com.example.customcompose.model.TargetAchievement
@@ -113,24 +114,26 @@ fun RouteChildView(
                                 locations.selectedId = option.id
                                 selectedItemId.value = option.id
 
+                                surveyBasicInfo["location_name"] =  option.name
+
                                 //location list er first position check kora hocche
                                 //means route list theke selected id ber kora hobe
-                                if (listPosition == 0){
-                                    for (targetAchieve in targetAchievementList!!){
-                                        if (targetAchieve.products.isNullOrEmpty() && targetAchieve.products.size == 0){
-                                            for (locationTarget in targetAchieve.locations){
-                                                //selected loc id and target locations er jekono id jodi match kore tahole
-                                                // daily target and achievement compare kore daily_achievement over hoye gele warning dekhabe and return korbe
-                                                if (option.id == locationTarget.id){
-                                                    if (targetAchieve.daily_achievement >= targetAchieve.daily_target && !targetAchieve.over_achivement){
-                                                        Toasty.warning(context, "No more target for this location", Toasty.LENGTH_SHORT).show()
-                                                        return@clickable
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+//                                if (listPosition == 0){
+//                                    for (targetAchieve in targetAchievementList!!){
+//                                        if (targetAchieve.products.isNullOrEmpty() && targetAchieve.products.size == 0){
+//                                            for (locationTarget in targetAchieve.locations){
+//                                                //selected loc id and target locations er jekono id jodi match kore tahole
+//                                                // daily target and achievement compare kore daily_achievement over hoye gele warning dekhabe and return korbe
+//                                                if (option.id == locationTarget.id){
+//                                                    if (targetAchieve.daily_achievement >= targetAchieve.daily_target && !targetAchieve.over_achivement){
+//                                                        Toasty.warning(context, "No more target for this location", Toasty.LENGTH_SHORT).show()
+//                                                        return@clickable
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                }
 
                                 println("selectedItemId: ${selectedItemId.value}")
 

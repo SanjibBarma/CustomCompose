@@ -1,5 +1,6 @@
 package com.example.customcompose.views.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -66,11 +67,14 @@ import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.MyApplication.Companion.loginViewModel
 import com.example.customcompose.MyApplication.Companion.mediaService
 import com.example.customcompose.R
+import com.example.customcompose.helper.CommonUtils.calculateMD5
 import com.example.customcompose.helper.CommonUtils.getAppVersionCode
 import com.example.customcompose.helper.CommonUtils.getDeviceInfo
+import com.example.customcompose.helper.Constants.surveyBasicInfo
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.DownloadModel
 import com.example.customcompose.navigation.Screen
+import com.example.customcompose.views.compose.helper_compose.KeepScreenOnEffect
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.Dispatchers
@@ -78,8 +82,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
+import java.math.BigInteger
+import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -87,6 +97,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavHostController) {
+    KeepScreenOnEffect()
     val context = LocalContext.current
     var username by remember { mutableStateOf(appSessionManager.getUsername() ?: "") }
     var password by remember { mutableStateOf(appSessionManager.getPassword() ?: "") }
@@ -202,7 +213,7 @@ fun LoginScreen(navController: NavHostController) {
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                imageVector = if (!passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = "Toggle Password Visibility"
                             )
                         }
@@ -228,6 +239,7 @@ fun LoginScreen(navController: NavHostController) {
 
                 Button(
                     onClick = {
+                        downloadImageList.clear()
                         keyboardController?.hide()
                         focusManager.clearFocus()
 
@@ -290,7 +302,7 @@ fun LoginScreen(navController: NavHostController) {
 
                     LazyColumn(state = lazyListState) {
                         item{
-                            ShowProgress(navController, progress, "Api Info")
+                            ShowProgress(progress, "Api Info")
                         }
 
                         if (progress == 100f){
@@ -299,9 +311,13 @@ fun LoginScreen(navController: NavHostController) {
                                     LaunchedEffect(Unit) {
                                         if (downloadImageList.isNotEmpty()) {
                                             val imageListToProcess = downloadImageList.toList()
+                                            val downloadImageList = gson.toJson(downloadImageList)
+//                                            println("downloadImageList: $downloadImageList")
+                                            Log.d("downloadImageList: ", downloadImageList)
 
                                             scope.launch(Dispatchers.IO) {
                                                 imageListToProcess.forEachIndexed { index, imageUrl ->
+                                                    println("Downloading_image: ${imageUrl.url.split("/").last()}")
                                                     val cacheFile = File(context.cacheDir, imageUrl.url.split("/").last())
 
                                                     if (cacheFile.exists()) {
@@ -344,6 +360,7 @@ fun LoginScreen(navController: NavHostController) {
                                                     }
                                                 }
 
+
                                                 withContext(Dispatchers.Main) {
                                                     if (downloadVideoList.size == 0){
                                                         navController.navigate(Screen.DashboardScreen.route)
@@ -353,27 +370,38 @@ fun LoginScreen(navController: NavHostController) {
 
                                         }
                                     }
-                                    ShowProgress(navController, imageDownloadProgress, downloadImageList[0].type)
+                                    ShowProgress(imageDownloadProgress, downloadImageList[0].type)
                                 }
                             }
 
+                            println("imageDownloadProgress is: ${imageDownloadProgress}")
+                            println("imageDownloadProgress is: ${downloadVideoList.size}")
                             if (downloadVideoList.size > 0 && imageDownloadProgress == 100f){
+
                                 item{
                                     LaunchedEffect(Unit) {
                                         if (downloadVideoList.isNotEmpty()) {
 
-                                            val imageListToProcess = downloadVideoList.toList()
+                                            val videoListToProcess = downloadVideoList.toList()
 
                                             scope.launch(Dispatchers.IO) {
-                                                imageListToProcess.forEachIndexed { index, imageUrl ->
-                                                    val cacheFile = File(context.cacheDir, imageUrl.url.split("/").last())
-
+                                                videoListToProcess.forEachIndexed { index, videoInfo ->
+                                                    val cacheFile = File(context.cacheDir, videoInfo.url.split("/").last())
                                                     if (cacheFile.exists()) {
+
+                                                        if (calculateMD5(cacheFile) != videoInfo.md5) {
+                                                            withContext(Dispatchers.Main) {
+                                                                Toasty.warning(context, "MD5 not matching. Please try again!", Toasty.LENGTH_SHORT).show()
+                                                                isLoading = false
+                                                            }
+                                                            return@launch
+                                                        }
+
                                                         withContext(Dispatchers.Main) {
-                                                            videoDownloadProgress = ((index + 1) * 100f) / imageListToProcess.size
+                                                            videoDownloadProgress = ((index + 1) * 100f) / videoListToProcess.size
                                                         }
                                                     } else {
-                                                        val fullUrl = imageUrl.url
+                                                        val fullUrl = videoInfo.url
                                                         val response = mediaService.downloadFile(fullUrl)
 
                                                         if (response.isSuccessful) {
@@ -389,22 +417,37 @@ fun LoginScreen(navController: NavHostController) {
                                                             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                                                                 fileOutputStream.write(buffer, 0, bytesRead)
                                                                 downloadedSize += bytesRead
+
                                                                 withContext(Dispatchers.Main) {
-                                                                    videoDownloadProgress = ((index + downloadedSize.toFloat() / totalSize.toFloat()) / imageListToProcess.size) * 100f
+                                                                    videoDownloadProgress = ((index + downloadedSize.toFloat() / totalSize.toFloat()) / videoListToProcess.size) * 100f
                                                                 }
                                                             }
 
                                                             fileOutputStream.flush()
                                                             fileOutputStream.close()
+
+                                                            if (calculateMD5(cacheFile) != videoInfo.md5) {
+                                                                withContext(Dispatchers.Main) {
+                                                                    Toasty.warning(context, "MD5 not matching. Please try again!", Toasty.LENGTH_SHORT).show()
+                                                                    isLoading = false
+                                                                }
+                                                                return@launch
+                                                            }
+
+                                                            withContext(Dispatchers.Main) {
+                                                                println("Downloaded file path: ${cacheFile.absolutePath}")
+                                                                println("Downloaded file Md5: ${calculateMD5(File(cacheFile.absolutePath))}")
+                                                            }
+
                                                         } else {
                                                             withContext(Dispatchers.Main) {
-                                                                println("Download failed for ${imageUrl.url}")
+                                                                println("Download failed for ${videoInfo.url}")
                                                             }
                                                         }
                                                     }
 
                                                     withContext(Dispatchers.Main) {
-                                                        videoDownloadProgress = ((index + 1) * 100f) / imageListToProcess.size
+                                                        videoDownloadProgress = ((index + 1) * 100f) / videoListToProcess.size
                                                     }
                                                 }
 
@@ -413,10 +456,9 @@ fun LoginScreen(navController: NavHostController) {
                                                     navController.navigate(Screen.DashboardScreen.route)
                                                 }
                                             }
-
                                         }
                                     }
-                                    ShowProgress(navController, videoDownloadProgress, downloadVideoList[0].type)
+                                    ShowProgress(videoDownloadProgress, downloadVideoList[0].type)
                                 }
                             }
                         }
@@ -509,7 +551,6 @@ fun LoginScreen(navController: NavHostController) {
                     }
 
                     if (state.data.data[0].image != null && state.data.data[0].image?.size!! > 0) {
-                        // Iterate over images and add them to the imageList
                         for (image in state.data.data[0].image!!) {
                             val imageType = DownloadModel(
                                 type = "Images",
@@ -517,16 +558,21 @@ fun LoginScreen(navController: NavHostController) {
                             )
                             downloadImageList.add(imageType)
                         }
+
+                        println("downloadImageList: size: ${downloadImageList.size} id: ${state.data.data[0].id}")
                     }
 
+
                     if (state.data.data[0].video != null && state.data.data[0].video?.size!! > 0) {
-                        // Iterate over images and add them to the imageList
                         for (video in state.data.data[0].video!!) {
-                            val imageType = DownloadModel(
+
+                            println("generatedMD5 server: ${video.md5}")
+                            val videoType = DownloadModel(
                                 type = "Videos",
-                                url = video.name
+                                url = video.name,
+                                md5 = video.md5
                             )
-                            downloadVideoList.add(imageType)
+                            downloadVideoList.add(videoType)
                         }
                     }
                 }
@@ -536,7 +582,7 @@ fun LoginScreen(navController: NavHostController) {
 }
 
 @Composable
-fun ShowProgress(navController: NavHostController, progress: Float, title: String) {
+fun ShowProgress(progress: Float, title: String) {
     Spacer(modifier = Modifier.height(32.dp))
     Row (
         modifier = Modifier

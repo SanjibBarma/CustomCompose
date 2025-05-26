@@ -70,7 +70,7 @@ fun InteractiveGalleryBlock(
         mutableStateOf<Option?>(options.find { it.value == selectedImage })
     }
 
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val context = LocalContext.current
 
     val lazyListState = rememberLazyListState()
@@ -90,7 +90,7 @@ fun InteractiveGalleryBlock(
             modifier = Modifier.padding(8.dp)
         ) {
         println("Block Id is: $currentBlockId")
-        Text(text = question)
+        Text(text = block.question!!.slug)
 
         Spacer(modifier = Modifier.height(8.dp))
 

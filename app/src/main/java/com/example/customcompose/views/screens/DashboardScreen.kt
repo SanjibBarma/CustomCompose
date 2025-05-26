@@ -32,6 +32,7 @@ import com.example.customcompose.MyApplication.Companion.loginViewModel
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.navigation.Screen
 import com.example.customcompose.views.compose.CustomAppBar
+import com.example.customcompose.views.compose.helper_compose.KeepScreenOnEffect
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.CoroutineScope
@@ -44,6 +45,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun DashboardScreen(navController: NavHostController) {
     BackHandler {  }
+    KeepScreenOnEffect()
 
     val context = LocalContext.current
     val campaignListDataState = loginViewModel.campaignListData.observeAsState(initial = UIState.Loading)

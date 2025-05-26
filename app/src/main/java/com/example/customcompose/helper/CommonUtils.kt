@@ -1,5 +1,7 @@
 package com.example.customcompose.helper
 
+import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -7,26 +9,30 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.ExifInterface
 import android.media.ThumbnailUtils
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Log
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
+import java.math.BigInteger
+import java.net.Inet4Address
+import java.net.NetworkInterface
+import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
+import java.text.DateFormat
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.Random
-
-import android.annotation.SuppressLint
-import android.app.ActivityManager
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.os.Build
-import android.provider.Settings
-import java.net.Inet4Address
-import java.net.NetworkInterface
-import java.util.*
 
 object CommonUtils {
     fun generateOtp(): String {
@@ -211,6 +217,69 @@ object CommonUtils {
             }
         }
         return false
+    }
+
+    fun getContactDate(date: String?): String {
+        val outputPattern = "yyyy-MM-dd HH:mm:ss"
+        var str = ""
+
+        //   date = inputFormat.parse(time.substring(0,19));
+        var spf = SimpleDateFormat(outputPattern)
+        var newDate: Date? = null
+        try {
+            newDate = spf.parse(date)
+        } catch (e: ParseException) {
+            throw RuntimeException(e)
+        }
+        spf = SimpleDateFormat("yyyy-MM-dd")
+        str = spf.format(newDate)
+
+        return str
+    }
+
+    fun getdatetime(): String {
+        val df: DateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH)
+        val sdt = df.format(Date(System.currentTimeMillis()))
+        Log.d("getdatetie", sdt)
+        return sdt
+    }
+
+    fun calculateMD5(updateFile: File?): String? {
+        val digest: MessageDigest
+        try {
+            digest = MessageDigest.getInstance("MD5")
+        } catch (e: NoSuchAlgorithmException) {
+            return null
+        }
+
+        val `is`: InputStream
+        try {
+            `is` = FileInputStream(updateFile)
+        } catch (e: FileNotFoundException) {
+            return null
+        }
+
+        val buffer = ByteArray(8192)
+        var read: Int
+        try {
+            while ((`is`.read(buffer).also { read = it }) > 0) {
+                digest.update(buffer, 0, read)
+            }
+            val md5sum = digest.digest()
+            val bigInt = BigInteger(1, md5sum)
+            var output = bigInt.toString(16)
+            // Fill to 32 chars
+            output = String.format("%32s", output).replace(' ', '0')
+            return output
+        } catch (e: IOException) {
+            throw RuntimeException("Unable to process file for MD5", e)
+        } finally {
+            try {
+                `is`.close()
+            } catch (e: IOException) {
+
+            }
+        }
     }
 
 }

@@ -298,7 +298,7 @@ fun OTPBlock(
                                 onClick = {
                                     if (otp == generatedOtp) {
                                         val surveyHistoryModel = SurveyHistoryModel(
-                                            question = block.question?.slug ?: "",
+                                            question = block.question?.alias ?: "",
                                             answer = "Yes",
                                             id = currentBlockId
                                         )

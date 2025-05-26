@@ -41,7 +41,7 @@ fun WebViewDialog(
     val context = LocalContext.current
     val activity = context as? Activity
 
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val currentBlockId = block.id ?: ""
 
     Dialog(

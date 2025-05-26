@@ -31,6 +31,7 @@ class AppSessionManager(context: Context) {
     private val CAMPAIGN_ID = "CAMPAIGN_ID"
     private val MOBILE_VERIFICATION_DATA = "MOBILE_VERIFICATION_DATA"
     private val EXTRA_SERVICE_VAMP_INFO = "EXTRA_SERVICE_VAMP_INFO"
+    private val CONTACT_NUMBER = "CONTACT_NUMBER"
 
     fun saveItem(newItem: String) {
         val existingSet = getCheckListSet().toMutableSet()
@@ -161,6 +162,14 @@ class AppSessionManager(context: Context) {
 
     fun getExtraServiceCamInfo(): String? {
         return prefs.getString(EXTRA_SERVICE_VAMP_INFO, null)
+    }
+
+    fun setContactNumber(number: String) {
+        prefs.edit().putString(CONTACT_NUMBER, number).apply()
+    }
+
+    fun getContactNumber(): String? {
+        return prefs.getString(CONTACT_NUMBER, null)
     }
 
 }

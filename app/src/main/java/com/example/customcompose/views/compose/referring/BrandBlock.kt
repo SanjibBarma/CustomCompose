@@ -54,7 +54,7 @@ fun BrandBlock(
     val isSkippable = block.skip?.id != "-1"
     var selectedBrand by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
 
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val options = block.options ?: emptyList()
     val context = LocalContext.current
 
@@ -74,7 +74,7 @@ fun BrandBlock(
             modifier = Modifier.padding(8.dp)
         ){
             println("Block Id is: $currentBlockId")
-            Text(text = question)
+            Text(text = block.question!!.slug)
 
             Spacer(modifier = Modifier.height(8.dp))
 

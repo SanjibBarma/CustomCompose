@@ -20,6 +20,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,26 +50,43 @@ fun GameBlock(
     val currentBlockId = block.id ?: ""
     val isSkippable = block.skip?.id != "-1"
 
-    val question = block.question?.slug ?: ""
+    val question = block.question?.alias ?: ""
     val context = LocalContext.current
 //    val packageName = block.options?.get(0)?.value
     val packageName = "ltd.v2.game1"
+    val isGameBroadCast by blockListViewModel.isGameBroadCast.collectAsState()
 
     DisposableEffect(context) {
         val filter = IntentFilter("com.example.customcompose")
         val receiver = GameBroadcastReceiver()
-        ContextCompat.registerReceiver(
-            context,
-            receiver,
-            filter,
-            ContextCompat.RECEIVER_NOT_EXPORTED
-        )
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
 
         onDispose {
             context.unregisterReceiver(receiver)
         }
     }
 
+    LaunchedEffect(isGameBroadCast) {
+        if (isGameBroadCast) {
+            val historyModel = SurveyHistoryModel(
+                question = question,
+                answer = "Yes",
+                id = currentBlockId
+            )
+
+            block.surveyHistoryModel = listOf(historyModel)
+
+            block.referTo?.group_no?.let { groupId ->
+                block.referTo.id?.let { nextBlockId ->
+                    if (destination == "mainSurvey"){
+                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
+                    }else{
+                        blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                    }
+                }
+            }
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -79,7 +99,7 @@ fun GameBlock(
         Column(
             modifier = Modifier.padding(8.dp)
         ) {
-            Text(question)
+            Text(block.question!!.slug)
             Spacer(modifier = Modifier.height(8.dp))
 
             Box(
@@ -88,14 +108,14 @@ fun GameBlock(
                     .fillMaxWidth()
                     .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
                     .clickable(enabled = isActiveGroup) {
+                        blockListViewModel.stayInGame()
                         try {
                             val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName ?: "")
                             if (launchIntent != null) {
                                 launchIntent.putExtra("brandName", appSessionManager.getPrimaryBrandName())
                                 context.startActivity(launchIntent)
                             } else {
-                                Toast.makeText(context, "Package not found", Toast.LENGTH_SHORT)
-                                    .show()
+                                Toast.makeText(context, "Package not found", Toast.LENGTH_SHORT).show()
                             }
                         } catch (e: Exception) {
                             Toast.makeText(context, "Unable to open app", Toast.LENGTH_SHORT).show()
