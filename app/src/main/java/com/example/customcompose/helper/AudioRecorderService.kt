@@ -8,11 +8,9 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.example.customcompose.MainActivity
+import com.example.customcompose.views.MainActivity
 import com.example.customcompose.R
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 
 class AudioRecorderService : Service() {
 

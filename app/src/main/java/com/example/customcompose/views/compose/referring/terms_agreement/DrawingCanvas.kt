@@ -1,5 +1,7 @@
-package com.example.customcompose.views.compose.referring
+package com.example.customcompose.views.compose.referring.terms_agreement
 
+import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PathMeasure
@@ -29,8 +31,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -51,75 +51,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
-
-@Composable
-fun TermsAgreementBlock(
-    block: Block,
-    blockListViewModel: BlockListViewModel,
-    isActiveGroup: Boolean,
-    destination: String
-) {
-    val currentBlockId = block.id ?: ""
-
-//    var previousAns by remember { mutableStateOf(block.surveyHistoryModel.firstOrNull()?.answer == "Yes") }
-    var previousAns by remember { mutableStateOf(block.surveyHistoryModel.firstOrNull()?.answer ?: "") }
-    var showDialog by remember { mutableStateOf(true) }
-    val question = block.question?.alias ?: ""
-    val isTermsShow by blockListViewModel.isTermsShow.collectAsState()
-
-    LaunchedEffect (Unit){
-        if (previousAns == ""){
-            showDialog = true
-            blockListViewModel.showTermsPopup()
-        }
-    }
-
-    if (showDialog && isTermsShow) {
-        DrawingCanvas(block, blockListViewModel, destination, onDismiss = { showDialog = false; blockListViewModel.hideTermsPopup() })
-    }else{
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .clickable (enabled = isActiveGroup){
-                    showDialog = true
-                    blockListViewModel.showTermsPopup()
-                },
-            elevation = CardDefaults.cardElevation(2.dp),
-            shape = RoundedCornerShape(4.dp),
-            colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
-        ) {
-            Column(
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Text(text = block.question!!.slug)
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                //show the canvas saved image here if saved el
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
-                        .padding(8.dp)
-                ) {
-                    Column {
-                        block.validations?.terms?.forEach { term ->
-                            Text(
-                                text = term,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+import java.io.File
+import java.io.FileOutputStream
 
 @Composable
 fun DrawingCanvas(block: Block, blockListViewModel: BlockListViewModel, destination: String, onDismiss: () -> Unit) {
@@ -148,6 +81,7 @@ fun DrawingCanvas(block: Block, blockListViewModel: BlockListViewModel, destinat
         val question = block.question?.slug ?: ""
         val currentBlockId = block.id ?: ""
         val context = LocalContext.current
+        val signatureName = "signature.jpg"
 
         Column (
             modifier = Modifier
@@ -156,7 +90,8 @@ fun DrawingCanvas(block: Block, blockListViewModel: BlockListViewModel, destinat
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = question, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Text(text = question, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(
+                Alignment.CenterHorizontally))
             Spacer(modifier = Modifier.height(8.dp))
             Card (
                 modifier = Modifier
@@ -250,20 +185,23 @@ fun DrawingCanvas(block: Block, blockListViewModel: BlockListViewModel, destinat
             ) {
                 Button(
                     onClick = {
-
-                        if (drawingPercentage < (10.0 / maxThreshold) * 100) { // 10 units as percentage
+                        if (drawingPercentage < (10.0 / maxThreshold) * 100) {
                             Toast.makeText(context, "Sign needed", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
 
-                        if (drawingPercentage < (50.0 / maxThreshold) * 100) { // 50 units as percentage
+                        if (drawingPercentage < (50.0 / maxThreshold) * 100) {
                             Toast.makeText(context, "Sign too short", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
 
+                        // Save the drawing as image
+                        val bitmap = createBitmapFromPaths(paths.toList(), paint, canvasSize)
+                        saveSignatureToCache(context, bitmap, signatureName)
+
                         val surveyHistoryModel = SurveyHistoryModel(
                             question = question,
-                            answer = "Yes",
+                            answer = signatureName,
                             id = currentBlockId
                         )
                         block.surveyHistoryModel = listOf(surveyHistoryModel)
@@ -302,6 +240,25 @@ fun DrawingCanvas(block: Block, blockListViewModel: BlockListViewModel, destinat
         }
     }
 }
+
+fun saveSignatureToCache(context: Context, bitmap: Bitmap, filename: String): File {
+    val file = File(context.cacheDir, filename)
+    FileOutputStream(file).use { out ->
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+    }
+    return file
+}
+
+fun createBitmapFromPaths(paths: List<Path>, paint: Paint, size: Size): Bitmap {
+    val bitmap = Bitmap.createBitmap(size.width.toInt(), size.height.toInt(), Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    canvas.drawColor(android.graphics.Color.WHITE) // Background color
+    paths.forEach { path ->
+        canvas.drawPath(path, paint)
+    }
+    return bitmap
+}
+
 
 // Helper function to approximate the path length
 fun Path.approximateLength(): Float {

@@ -6,7 +6,6 @@ import android.os.Build
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
-import android.widget.Toast
 import android.widget.VideoView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -17,16 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
-import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.views.compose.helper_compose.KeepScreenOnEffect
 
 @Composable
 fun FullScreenVideoPopup(
-    videoUri: Uri,
-    blockId: String?,
-    groupId: String?,
-    destination: String?,
-    position: String?,
+    videoUri: Uri
 ) {
     KeepScreenOnEffect()
 
@@ -34,9 +28,7 @@ fun FullScreenVideoPopup(
     val activity = context.findActivity()
     println("videoUri_link: ${videoUri.toString()}" )
 
-    BackHandler {
-        //Toast.makeText(context, "Back press is disabled during video playback", Toast.LENGTH_SHORT).show()
-    }
+    BackHandler {}
 
     DisposableEffect(Unit) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -81,26 +73,6 @@ fun FullScreenVideoPopup(
             VideoView(ctx).apply {
                 setVideoURI(videoUri)
                 setOnCompletionListener {
-                    if (destination == "mainSurvey") {
-                        if (blockId != null && groupId != null && position != null) {
-                            blockListViewModel.addBlockToTheSurveyFlow(
-                                blockId,
-                                groupId,
-                                position.toInt()
-                            )
-
-                            println("mainSurvey_jump")
-
-                        }
-
-                    } else {
-                        if (blockId != null && groupId != null) {
-                            blockListViewModel.addBlockToTheCheckList(
-                                blockId,
-                                groupId
-                            )
-                        }
-                    }
                     activity?.finish()
                 }
                 setOnPreparedListener {

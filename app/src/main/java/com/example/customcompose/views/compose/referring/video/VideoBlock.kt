@@ -44,7 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.R
-import com.example.customcompose.CustomActivity
+import com.example.customcompose.views.CustomActivity
 import com.example.customcompose.helper.CommonUtils.createVideoThumbnail
 import com.example.customcompose.helper.CommonUtils.getVideoPathFromCache
 import com.example.customcompose.model.Block
@@ -78,13 +78,32 @@ fun VideoBlock(
     var videoUri by remember { mutableStateOf<Uri?>(null) }
     val isSkippable = block.skip?.id != "-1"
 
-    var videoName by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
+    var videoName by remember { mutableStateOf(block.surveyHistoryModel.firstOrNull()?.answer ?: "") }
     val question = block.question?.alias ?: ""
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) {
         showVideoDialogScreen = false
+
+        val surveyHistoryModel = SurveyHistoryModel(
+            question = question,
+            answer = "Yes",
+            id = currentBlockId
+        )
+        block.surveyHistoryModel = listOf(surveyHistoryModel)
+
+        block.options[0].referTo?.id?.let { blockId ->
+            block.options[0].referTo!!.group_no?.let { groupId ->
+                if (destination == "mainSurvey") {
+                    blockListViewModel.addBlockToTheSurveyFlow(
+                        blockId, groupId, block.position
+                    )
+                } else {
+                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                }
+            }
+        }
     }
 
     LaunchedEffect(videoPath) {
@@ -133,18 +152,6 @@ fun VideoBlock(
                             Log.d("Box Clicked", "Showing video dialog")
                             videoUri = Uri.fromFile(File(videoPath))
                             showVideoDialogScreen = true
-                        } else {
-                            block.options[0].referTo?.id?.let { blockId ->
-                                block.options[0].referTo!!.group_no?.let { groupId ->
-                                    if (destination == "mainSurvey") {
-                                        blockListViewModel.addBlockToTheSurveyFlow(
-                                            blockId, groupId, block.position
-                                        )
-                                    } else {
-                                        blockListViewModel.addBlockToTheCheckList(blockId, groupId)
-                                    }
-                                }
-                            }
                         }
                     },
                 contentAlignment = Alignment.Center,
@@ -164,25 +171,10 @@ fun VideoBlock(
                                 Log.d("Box Clicked", "Showing video dialog")
                                 videoUri = Uri.fromFile(File(videoPath))
                                 showVideoDialogScreen = true
-                            } else {
-                                block.options[0].referTo?.id?.let { blockId ->
-                                    block.options[0].referTo!!.group_no?.let { groupId ->
-                                        if (destination == "mainSurvey") {
-                                            blockListViewModel.addBlockToTheSurveyFlow(
-                                                blockId,
-                                                groupId,
-                                                block.position
-                                            )
-                                        } else {
-                                            blockListViewModel.addBlockToTheCheckList(
-                                                blockId,
-                                                groupId
-                                            )
-                                        }
-                                    }
-                                }
                             }
-                        }, modifier = Modifier.size(60.dp)
+                        },
+                        modifier = Modifier.size(60.dp),
+                        enabled = isActiveGroup
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_media_play),
@@ -200,27 +192,12 @@ fun VideoBlock(
             }
 
             if (showVideoDialogScreen) {
-                val surveyHistoryModel = SurveyHistoryModel(
-                    question = question,
-                    answer = "Yes",
-                    id = currentBlockId
-                )
-
-                block.surveyHistoryModel = listOf(surveyHistoryModel)
                 val videoUriiiii = Uri.fromFile(videoFile)
-                println("video_Sender: blockid: ${block.options[0].referTo?.id}   groupId: ${block.options[0].referTo?.group_no}   position: ${block.position}")
-
                 val intent = Intent(context, CustomActivity::class.java).apply {
                     putExtra("video_uri", videoUriiiii.toString())
-                    putExtra("blockId", block.options[0].referTo?.id)
-                    putExtra("groupId", block.options[0].referTo?.group_no)
-                    putExtra("position", block.position.toString())
-                    putExtra("destination", destination)
+                    putExtra("fileView", "video_view")
                 }
-
-//                context.startActivity(intent)
                 launcher.launch(intent)
-
             }
 
             if (isSkippable) {
