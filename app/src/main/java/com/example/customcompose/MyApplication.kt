@@ -1,8 +1,8 @@
 package com.example.customcompose
 
 import android.app.Application
-import com.example.customcompose.app_database.AppDatabase
-import com.example.customcompose.helper.AppSessionManager
+import com.example.customcompose.storage.AppDatabase
+import com.example.customcompose.storage.AppSessionManager
 import com.example.customcompose.helper.ConnectivityObserver
 import com.example.customcompose.network.ApiService
 import com.example.customcompose.network.RetrofitInstance
@@ -22,7 +22,7 @@ class MyApplication : Application() {
                 ?: throw IllegalStateException("Application instance is not initialized")
         }
 
-        private val apiService: ApiService by lazy {
+        val apiService: ApiService by lazy {
             RetrofitInstance.apiService
         }
 
@@ -41,15 +41,15 @@ class MyApplication : Application() {
         }
 
         private val loginRepository: LoginRepository by lazy {
-            LoginRepository(apiService, appDatabase.dbDao())
+            LoginRepository(appDatabase.dbDao())
         }
 
-        private val dashboardRepository: DashboardRepository by lazy {
-            DashboardRepository(apiService, appDatabase.dbDao())
+        val dashboardRepository: DashboardRepository by lazy {
+            DashboardRepository(appDatabase.dbDao())
         }
 
         val loginViewModel: LoginViewModel by lazy {
-            LoginViewModel(loginRepository, connectivityObserver)
+            LoginViewModel(loginRepository)
         }
 
         val dashboardViewModel: DashboardViewModel by lazy {
@@ -62,7 +62,7 @@ class MyApplication : Application() {
         }
 
         private val surveyFlowRepository: SurveyFlowRepository by lazy {
-            SurveyFlowRepository(apiService, appDatabase.dbDao())
+            SurveyFlowRepository(appDatabase.dbDao())
         }
 
         val surveyFlowViewModel: SurveyFlowViewModel by lazy {

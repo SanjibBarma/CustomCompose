@@ -7,7 +7,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.customcompose.model.Block
-import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.views.compose.referring.FileUploadBlock
 import com.example.customcompose.views.compose.referring.BrandBlock
 import com.example.customcompose.views.compose.referring.CheckboxBlock
 import com.example.customcompose.views.compose.referring.DatePickerBlock
@@ -33,7 +33,6 @@ import es.dmoral.toasty.Toasty
 
 @Composable
 fun CheckGroupOrBlock(
-    blockListViewModel: BlockListViewModel,
     surveyBlock: Block,
     isActiveGroup: Boolean,
     position: Int?,
@@ -43,31 +42,30 @@ fun CheckGroupOrBlock(
 
     Column{
         when (surveyBlock.type) {
-//            "audio_start" -> AudioServiceBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-//            "audio_end" -> AudioServiceBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "textInput" -> EditTextBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "terms" -> TermsAgreementBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "otp" -> OTPBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "dropdown" -> DropdownBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "multipleChoice" -> MultipleChoiceBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "numberInput" -> NumberInputBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "checkbox" -> CheckboxBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "emoji_rating" -> EmojiRatingBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "camera" -> ImageCaptureBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "url" -> UrlBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "video" -> VideoBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "star_rating" -> StarRatingBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "date" -> DatePickerBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "checklist" -> CheckListBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "product" -> BrandBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "interactive_gallery" -> InteractiveGalleryBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "image" -> ImageBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "lookup" -> LookupBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "game" -> GameBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "giveable" -> GiveAbleBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "interactive_av" -> InteractiveAvBlock(surveyBlock, blockListViewModel, isActiveGroup, destination)
-            "non-referring" -> NonReferringGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination)
-            "numbervalidation" -> NumberValidationGroup(blockListViewModel, surveyBlock, position, isActiveGroup, destination)
+            "textInput" -> EditTextBlock(surveyBlock, isActiveGroup, destination)
+            "terms" -> TermsAgreementBlock(surveyBlock, isActiveGroup, destination)
+            "otp" -> OTPBlock(surveyBlock, isActiveGroup, destination)
+            "dropdown" -> DropdownBlock(surveyBlock, isActiveGroup, destination)
+            "multipleChoice" -> MultipleChoiceBlock(surveyBlock, isActiveGroup, destination)
+            "numberInput" -> NumberInputBlock(surveyBlock, isActiveGroup, destination)
+            "checkbox" -> CheckboxBlock(surveyBlock, isActiveGroup, destination)
+            "emoji_rating" -> EmojiRatingBlock(surveyBlock, isActiveGroup, destination)
+            "camera" -> ImageCaptureBlock(surveyBlock, isActiveGroup, destination)
+            "url" -> UrlBlock(surveyBlock, isActiveGroup, destination)
+            "video" -> VideoBlock(surveyBlock, isActiveGroup, destination)
+            "star_rating" -> StarRatingBlock(surveyBlock, isActiveGroup, destination)
+            "date" -> DatePickerBlock(surveyBlock, isActiveGroup, destination)
+            "checklist" -> CheckListBlock(surveyBlock, isActiveGroup, destination)
+            "product" -> BrandBlock(surveyBlock, isActiveGroup, destination)
+            "interactive_gallery" -> InteractiveGalleryBlock(surveyBlock, isActiveGroup, destination)
+            "image" -> ImageBlock(surveyBlock, isActiveGroup, destination)
+            "lookup" -> LookupBlock(surveyBlock, isActiveGroup, destination)
+            "game" -> GameBlock(surveyBlock, isActiveGroup, destination)
+            "giveable" -> GiveAbleBlock(surveyBlock, isActiveGroup, destination)
+            "interactive_av" -> InteractiveAvBlock(surveyBlock, isActiveGroup, destination)
+            "non-referring" -> NonReferringGroup(surveyBlock, position, isActiveGroup, destination)
+            "numbervalidation" -> NumberValidationGroup(surveyBlock, position, isActiveGroup, destination)
+            "file_upload" -> FileUploadBlock(surveyBlock, position, isActiveGroup, destination)
 
             else -> {
                 Text("Unsupported block type: ${surveyBlock.type}", color = Color.Red)

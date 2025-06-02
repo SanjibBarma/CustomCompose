@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.helper.CommonUtils.generateOtp
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
@@ -49,7 +50,6 @@ import kotlinx.coroutines.delay
 @Composable
 fun OTPBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {
@@ -64,6 +64,8 @@ fun OTPBlock(
     var generatedOtp by remember { mutableStateOf(if (isBypass == true) "123456" else generateOtp()) }
     var isResendVisible by remember { mutableStateOf(false) }
     var showSendButton by remember { mutableStateOf(false) }
+    val isOtpBoxShowing by blockListViewModel.isOtpBoxShowing.collectAsState()
+
 
     val targetTimeMillis = rememberSaveable { mutableStateOf<Long?>(null) }
     var countdown by remember { mutableIntStateOf(90) }
@@ -79,8 +81,8 @@ fun OTPBlock(
     }
 
     LaunchedEffect(Unit) {
-        if (checkInitialOtp == "") {
-            if (countdown != 0){
+        if (checkInitialOtp == "" && isOtpBoxShowing) {
+            if (targetTimeMillis.value != null){
                 showPopup = true
             }else{
                 showPopup = true
@@ -131,8 +133,9 @@ fun OTPBlock(
                 Button(
                     onClick = {
                         if (checkInitialOtp == "") {
-                            if (countdown != 0){
+                            if (targetTimeMillis.value != null){
                                 showPopup = true
+                                showSendButton = false
                             }else{
                                 showPopup = true
                                 targetTimeMillis.value = System.currentTimeMillis() + 90_000
@@ -312,6 +315,8 @@ fun OTPBlock(
                                             id = currentBlockId
                                         )
                                         block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                        countdown = 0
+                                        targetTimeMillis.value = null
 
                                         if (destination == "mainSurvey") {
                                             blockListViewModel.addBlockToTheSurveyFlow(block.referTo?.id!!, block.referTo.group_no!!, block.position)

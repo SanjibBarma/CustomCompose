@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.Option
@@ -46,7 +47,6 @@ import java.io.File
 @Composable
 fun BrandBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {

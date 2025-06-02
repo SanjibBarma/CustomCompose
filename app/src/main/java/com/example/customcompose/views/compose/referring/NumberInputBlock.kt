@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -40,7 +41,6 @@ import es.dmoral.toasty.Toasty
 @Composable
 fun NumberInputBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {

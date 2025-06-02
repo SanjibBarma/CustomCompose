@@ -1,8 +1,10 @@
 package com.example.customcompose.viewmodel
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.MyApplication.Companion.appSessionManager
@@ -27,9 +29,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class BlockListViewModel(
-    private val context: Context
-) : ViewModel() {
+class BlockListViewModel(application: Application) : AndroidViewModel(application) {
+    private val context = application.applicationContext
+
     private val _parentSurveyBlockList = MutableStateFlow<List<Block>>(emptyList())
     val parentSurveyBlockList = _parentSurveyBlockList.asStateFlow()
 
@@ -39,11 +41,14 @@ class BlockListViewModel(
     private val _isProgressLoading = MutableStateFlow(false)
     val isProgressLoading = _isProgressLoading.asStateFlow()
 
-    private val _isTermsShow = MutableStateFlow(false)
-    val isTermsShow = _isTermsShow.asStateFlow()
-
     private val _isGameBroadCast = MutableStateFlow(false)
     val isGameBroadCast = _isGameBroadCast.asStateFlow()
+
+    private val _isShowAv = MutableStateFlow(false)
+    val isShowAv = _isShowAv.asStateFlow()
+
+    private val _isOtpBoxShowing = MutableStateFlow(true)
+    val isOtpBoxShowing = _isOtpBoxShowing.asStateFlow()
 
     private val gson = Gson()
     private var jumpMatchCount = 0;
@@ -178,7 +183,6 @@ class BlockListViewModel(
                     validations = null,
                     group = group.group,
                     blocks = group.blocks,
-                    //try to make empty without mentioned it
                     surveyHistoryModel = emptyList(),
                     jumping_logic = group.jumping_logic,
                     position = _parentSurveyBlockList.value.size
@@ -199,8 +203,6 @@ class BlockListViewModel(
 
                         if (position+1 in mutableParentBlockList.indices) {
                             mutableParentBlockList.subList(position+1, mutableParentBlockList.size).clear()
-//                            mutableParentBlockList.subList(position, mutableParentBlockList.size).clear()
-
                             _parentSurveyBlockList.value = mutableParentBlockList.toList()
                             println("cleared_data: ${mutableParentBlockList.size}")
 
@@ -219,7 +221,6 @@ class BlockListViewModel(
     }
 
     private fun lookupApiCall(blockId: String?, groupId: String?, position: Int?) {
-//        Toasty.success(context, "Lookup called", Toasty.LENGTH_SHORT).show()
         val group = surveyFlowData!!.find { it.group == groupId }
         val block = group?.blocks?.find { it.id == blockId }
         val question = block?.question?.slug ?: ""
@@ -242,22 +243,6 @@ class BlockListViewModel(
         }
     }
 
-//    private fun startAudioService(blockId: String?, groupId: String?, position: Int?) {
-//        val intent = Intent(context, AudioRecorderService::class.java)
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            context.startForegroundService(intent)
-//        } else {
-//            context.startService(intent)
-//        }
-//
-//        if (blockId != null && groupId != null) {
-//            viewModelScope.launch {
-//                if (position != null) {
-//                    addBlockToTheSurveyFlow(blockId, groupId, position)
-//                }
-//            }
-//        }
-//    }
 
     private fun startAudioService(blockId: String?, groupId: String?, position: Int?, currentBlockId: String?) {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
@@ -394,16 +379,34 @@ class BlockListViewModel(
                     _parentSurveyBlockList.value = _parentSurveyBlockList.value.toMutableList().apply { add(newBlock) }
                 }else{
                     if (group != null && block != null) {
-                        val existingBlock = _checkListParentBlockList.value.find { it.id == blockId }
+//                        val existingBlock = _checkListParentBlockList.value.find { it.id == blockId }
+//
+//                        if (existingBlock != null) {
+//                            val updatedList = _checkListParentBlockList.value.takeWhile { it != existingBlock } /*+ existingBlock*/
+//                            _checkListParentBlockList.value = updatedList
+//                            println("Block already exists. Cleared items after position of ${block.id}")
+//                        } else {
+//
+//                            _checkListParentBlockList.value = _checkListParentBlockList.value.toMutableList().apply { add(block) }
+//                            println("New Block Added: ${block.id}")
+//                        }
 
-                        if (existingBlock != null) {
-                            val updatedList = _checkListParentBlockList.value.takeWhile { it != existingBlock } /*+ existingBlock*/
-                            _checkListParentBlockList.value = updatedList
-                            println("Block already exists. Cleared items after position of ${block.id}")
-                        } else {
+                        viewModelScope.launch(Dispatchers.Main) {
+                            val mutableParentBlockList = _checkListParentBlockList.value.toMutableList()
 
-                            _checkListParentBlockList.value = _checkListParentBlockList.value.toMutableList().apply { add(block) }
-                            println("New Block Added: ${block.id}")
+                            if (_checkListParentBlockList.value.size+1 in mutableParentBlockList.indices) {
+                                mutableParentBlockList.subList(_checkListParentBlockList.value.size+1, mutableParentBlockList.size).clear()
+                                _checkListParentBlockList.value = mutableParentBlockList.toList()
+                                println("cleared_data: ${mutableParentBlockList.size}")
+
+                                delay(10)
+                            }
+
+                            block.surveyHistoryModel = emptyList()
+                            block.position = _checkListParentBlockList.value.size
+                            mutableParentBlockList.add(block)
+
+                            _checkListParentBlockList.value = mutableParentBlockList.toList()
                         }
                     }
                 }
@@ -496,20 +499,28 @@ class BlockListViewModel(
         _isProgressLoading.value = false
     }
 
-    fun showTermsPopup() {
-        _isTermsShow.value = true
-    }
-
-    fun hideTermsPopup() {
-        _isTermsShow.value = false
-    }
-
     fun moveToNextFromGame() {
         _isGameBroadCast.value = true
     }
 
     fun stayInGame() {
         _isGameBroadCast.value = false
+    }
+
+    fun moveToNextFromAv() {
+        _isShowAv.value = true
+    }
+
+    fun stayInAv() {
+        _isShowAv.value = false
+    }
+
+    fun showOtpBox() {
+        _isOtpBoxShowing.value = true
+    }
+
+    fun hideOtpBox() {
+        _isOtpBoxShowing.value = false
     }
 
 }

@@ -16,6 +16,11 @@ import android.os.Build
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
+import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.helper.Constants.surveyBasicInfo
+import com.example.customcompose.model.Block
+import com.example.customcompose.model.Result
+import com.example.customcompose.model.TapAnalysisModel
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
@@ -33,6 +38,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.Random
+import java.util.TimeZone
 
 object CommonUtils {
     fun generateOtp(): String {
@@ -281,5 +287,51 @@ object CommonUtils {
             }
         }
     }
+
+    fun getTapDateTime(startTime: String): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH)
+        sdf.timeZone = TimeZone.getTimeZone("Asia/Dhaka")
+        return sdf.format(Date(System.currentTimeMillis() + (startTime.toLong() - System.nanoTime()) / 1000000))
+    }
+
+    fun saveTapAnalysisData(block: Block, result: List<Result?>, question: String) {
+        if (block.id != null) {
+            val distinctResults = result.filterNotNull().distinctBy { it.option }
+
+            val tapData = appSessionManager.getStartTimeTapAnalysis()?.let {
+                getTapDateTime(it)
+            }?.let {
+                TapAnalysisModel(
+                    block_id = block.id,
+                    question = question,
+                    result = distinctResults,
+                    survey_start_time = it
+                )
+            }
+
+            println("saveTapAnalysisData: $tapData")
+
+            if (tapData != null) {
+                appSessionManager.saveTapAnalysis(tapData)
+            }
+
+            if (appSessionManager.getTapAnalysisList().isNotEmpty()) {
+                surveyBasicInfo["tap_analysis"] = appSessionManager.getTapAnalysisList()
+            }
+        }
+    }
+
+    fun getTapAnalysisElapsedTime(): Long? {
+        val startTimeStr = appSessionManager.getStartTimeTapAnalysis()
+        return if (!startTimeStr.isNullOrEmpty()) {
+            val startTime = startTimeStr.toLongOrNull()
+            startTime?.let {
+                System.nanoTime() - it
+            }
+        } else {
+            null
+        }
+    }
+
 
 }

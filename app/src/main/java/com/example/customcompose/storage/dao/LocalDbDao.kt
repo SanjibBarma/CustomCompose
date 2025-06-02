@@ -1,13 +1,13 @@
-package com.example.customcompose.app_database.dao
+package com.example.customcompose.storage.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.customcompose.app_database.entity.PtrProgressEntity
-import com.example.customcompose.app_database.entity.SignInEntity
-import com.example.customcompose.app_database.entity.SurveyDataEntity
-import com.example.customcompose.app_database.entity.TargetAchievementEntity
+import com.example.customcompose.storage.entity.PtrProgressEntity
+import com.example.customcompose.storage.entity.SignInEntity
+import com.example.customcompose.storage.entity.SurveyDataEntity
+import com.example.customcompose.storage.entity.TargetAchievementEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -16,13 +16,14 @@ interface LocalDbDao {
     suspend fun upsertSignInData(user: SignInEntity)
 
     @Query("SELECT * FROM signin_data_table WHERE userId = :id")
-    suspend fun getSignInDataById(id: Int): SignInEntity?
+    suspend fun getSignInDataById(id: String): SignInEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSurveyData(surveyData: SurveyDataEntity)
 
+
     @Query("SELECT * FROM CAMPAIGN_Table WHERE brId = :brId AND campId = :campId LIMIT 1")
-    fun getSurveyDataDataByIds(brId: String, campId: String): Flow<SurveyDataEntity?>
+    fun getSurveyDataByIds(brId: String, campId: String): Flow<SurveyDataEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertTargetAchievementData(targetAchievementEntity: TargetAchievementEntity)

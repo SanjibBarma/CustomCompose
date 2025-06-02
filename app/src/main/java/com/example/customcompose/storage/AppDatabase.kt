@@ -1,14 +1,14 @@
-package com.example.customcompose.app_database
+package com.example.customcompose.storage
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.customcompose.app_database.dao.LocalDbDao
-import com.example.customcompose.app_database.entity.PtrProgressEntity
-import com.example.customcompose.app_database.entity.SignInEntity
-import com.example.customcompose.app_database.entity.SurveyDataEntity
-import com.example.customcompose.app_database.entity.TargetAchievementEntity
+import com.example.customcompose.storage.dao.LocalDbDao
+import com.example.customcompose.storage.entity.PtrProgressEntity
+import com.example.customcompose.storage.entity.SignInEntity
+import com.example.customcompose.storage.entity.SurveyDataEntity
+import com.example.customcompose.storage.entity.TargetAchievementEntity
 
 @Database(
     entities = [

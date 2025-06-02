@@ -27,7 +27,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,6 +36,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.example.customcompose.R
 import com.example.customcompose.model.Option
 
 @RequiresApi(Build.VERSION_CODES.R)
@@ -109,7 +109,7 @@ fun FullScreenImagePreview(
         ) {
             itemsIndexed(options) { _, option ->
                 val context = LocalContext.current
-                val bitmap = rememberImageBitmapFromCache(option.value, context)
+                val bitmap = rememberImageBitmapFromCache(option.value, context, R.drawable.placeholder_img)
                 bitmap?.let {
                     Image(
                         bitmap = it,

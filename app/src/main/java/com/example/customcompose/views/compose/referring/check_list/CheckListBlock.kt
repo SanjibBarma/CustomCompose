@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,37 +35,44 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
-import com.example.customcompose.MyApplication.Companion.surveyFlowViewModel
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.viewmodel.BlockListViewModel
-import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import es.dmoral.toasty.Toasty
 
 @Composable
 fun CheckListBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String,
 ) {
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
     val context = LocalContext.current
-//    val selectedOptions = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
-    val selectedOptions = remember { mutableStateOf(appSessionManager.getCheckListSet() ?: emptySet()) }
+    var savedOptions by remember { mutableStateOf(block.surveyHistoryModel.firstOrNull()?.answer ?: "") }
+    val selectedOptions = remember { mutableStateOf(emptySet<String>()) }
 
     val showDialog = remember { mutableStateOf(false) }
 
-    var checkListBlockId by remember { mutableStateOf("")  }
-    var checkListGroupId by remember { mutableStateOf("")  }
+    var checkListBlockId by remember { mutableStateOf("") }
+    var checkListGroupId by remember { mutableStateOf("") }
 
     val answer = selectedOptions.value.joinToString(",")
     val question = block.question?.alias ?: ""
     val selectedSingleOption = remember { mutableStateOf("") }
     val isSelectionLocked = selectedOptions.value.size == block.options?.size
     val checkListHistory = blockListViewModel.checkListHistory.collectAsState()
+
+    LaunchedEffect(savedOptions) {
+        println("checklistdata_block: $savedOptions")
+        println("checklistdata_lock: ${appSessionManager.getCheckListSet()}")
+        if (savedOptions.isEmpty()) {
+            appSessionManager.clearCheckList()
+        } else {
+            selectedOptions.value = appSessionManager.getCheckListSet()
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -109,13 +117,13 @@ fun CheckListBlock(
                                         checkListGroupId = option.referTo?.group_no ?: ""
                                         selectedSingleOption.value = option.value
 
-                                        if (!appSessionManager.existsItem(option.value)) {
+                                        if (!appSessionManager.existsCheckListItem(option.value)) {
                                             showDialog.value = true
                                             blockListViewModel.clearCheckList()
                                             blockListViewModel.addBlockToTheCheckList(checkListBlockId, checkListGroupId)
                                         }
                                     } else {
-                                        appSessionManager.removeItem(option.value)
+                                        appSessionManager.removeCheckListItem(option.value)
 
                                         val index = block.options.indexOf(option) ?: -1
                                         if (index != -1) {
@@ -143,13 +151,13 @@ fun CheckListBlock(
                                             checkListGroupId = option.referTo?.group_no ?: ""
                                             selectedSingleOption.value = option.value
 
-                                            if (!appSessionManager.existsItem(option.value)) {
+                                            if (!appSessionManager.existsCheckListItem(option.value)) {
                                                 showDialog.value = true
                                                 blockListViewModel.clearCheckList()
                                                 blockListViewModel.addBlockToTheCheckList(checkListBlockId, checkListGroupId)
                                             }
                                         } else {
-                                            appSessionManager.removeItem(option.value)
+                                            appSessionManager.removeCheckListItem(option.value)
 
                                             val index = block.options?.indexOf(option) ?: -1
                                             if (index != -1) {
@@ -183,7 +191,6 @@ fun CheckListBlock(
             if (showDialog.value) {
                 CheckListDialog(
                     selectedOption = selectedSingleOption.value,
-                    blockListViewModel = blockListViewModel,
                     onClose = {
                         showDialog.value = false
                     },
@@ -191,7 +198,6 @@ fun CheckListBlock(
                         showDialog.value = false
                         selectedOptions.value = selectedOptions.value - selectedSingleOption.value
                     },
-                    surveyFlowViewModel
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))

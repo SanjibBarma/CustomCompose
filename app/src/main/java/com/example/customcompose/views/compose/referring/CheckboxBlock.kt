@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.viewmodel.BlockListViewModel
@@ -35,7 +36,6 @@ import es.dmoral.toasty.Toasty
 @Composable
 fun CheckboxBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {
@@ -44,7 +44,7 @@ fun CheckboxBlock(
 
     val context = LocalContext.current
 
-    val selectedOptions = remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
+    val selectedOptions = remember { mutableStateOf(block.surveyHistoryModel.firstOrNull()?.answer?.split(",")?.toSet() ?: emptySet()) }
     val answer = selectedOptions.value.joinToString(",")
     val question = block.question?.alias ?: ""
 

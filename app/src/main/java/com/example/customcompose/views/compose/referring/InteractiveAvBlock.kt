@@ -1,5 +1,8 @@
 package com.example.customcompose.views.compose.referring
 
+import android.content.Context
+import android.content.IntentFilter
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -17,21 +20,26 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.R
+import com.example.customcompose.helper.GameBroadcastReceiver
+import com.example.customcompose.helper.InteractiveAvBroadcastReceiver
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
 fun InteractiveAvBlock (
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ){
@@ -41,7 +49,46 @@ fun InteractiveAvBlock (
     val question = block.question?.alias ?: ""
     val context = LocalContext.current
     val packageName = block.options?.get(0)?.value
-//    val packageName = "ltd.v2.game1"
+//    val packageName = "com.batb.bhn_tog"
+    val isAvBroadCast by blockListViewModel.isShowAv.collectAsState()
+
+    DisposableEffect(context) {
+        val filter = IntentFilter("com.example.batcampaign")
+        val receiver = InteractiveAvBroadcastReceiver()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+        }
+
+        onDispose {
+            context.unregisterReceiver(receiver)
+        }
+    }
+
+    LaunchedEffect(isAvBroadCast) {
+        println("isAvBroadCast $isAvBroadCast")
+
+        if (isAvBroadCast) {
+            val historyModel = SurveyHistoryModel(
+                question = question,
+                answer = "Yes",
+                id = currentBlockId
+            )
+
+
+            block.surveyHistoryModel = listOf(historyModel)
+            block.referTo?.group_no?.let { groupId ->
+                block.referTo.id?.let { nextBlockId ->
+                    if (destination == "mainSurvey"){
+                        blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
+                    }else{
+                        blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                    }
+                }
+            }
+            blockListViewModel.stayInAv()
+        }
+    }
 
     Card(
         modifier = Modifier

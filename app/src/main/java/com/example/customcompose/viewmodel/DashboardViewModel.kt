@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.MyApplication.Companion.connectivityObserver
-import com.example.customcompose.app_database.entity.TargetAchievementEntity
+import com.example.customcompose.storage.entity.TargetAchievementEntity
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.AchievementData
 import com.example.customcompose.model.ExtraServiceModel
@@ -16,7 +16,6 @@ import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 class DashboardViewModel(private val dashboardRepository: DashboardRepository) : ViewModel(){
@@ -82,17 +81,15 @@ class DashboardViewModel(private val dashboardRepository: DashboardRepository) :
                         response.body()?.let { responseBody ->
                             _targetAchievementData.postValue(UIState.Success(responseBody))
 
-                            if (responseBody.data != null){
-                                for (targetAchievementData in responseBody.data.targetAchievements){
-                                    val targetAchievement = TargetAchievementEntity(
-                                        target_achievement = gson.toJson( responseBody.data.targetAchievements),
-                                        target_id = targetAchievementData.id,
-                                        user_id = appSessionManager.getBrId()!!,
-                                        campaign_id = appSessionManager.getCampaignId()!!
-                                    )
+                            for (targetAchievementData in responseBody.data.targetAchievements){
+                                val targetAchievement = TargetAchievementEntity(
+                                    target_achievement = gson.toJson( responseBody.data.targetAchievements),
+                                    target_id = targetAchievementData.id,
+                                    user_id = appSessionManager.getBrId()!!,
+                                    campaign_id = appSessionManager.getCampaignId()!!
+                                )
 
-                                    dashboardRepository.upsertTargetAchievementData(targetAchievement)
-                                }
+                                dashboardRepository.upsertTargetAchievementData(targetAchievement)
                             }
 
                         } ?: run {

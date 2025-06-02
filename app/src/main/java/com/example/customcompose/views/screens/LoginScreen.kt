@@ -1,6 +1,5 @@
 package com.example.customcompose.views.screens
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -23,18 +21,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -43,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -70,11 +66,11 @@ import com.example.customcompose.R
 import com.example.customcompose.helper.CommonUtils.calculateMD5
 import com.example.customcompose.helper.CommonUtils.getAppVersionCode
 import com.example.customcompose.helper.CommonUtils.getDeviceInfo
-import com.example.customcompose.helper.Constants.surveyBasicInfo
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.DownloadModel
 import com.example.customcompose.navigation.Screen
 import com.example.customcompose.views.compose.helper_compose.KeepScreenOnEffect
+import com.example.customcompose.views.compose.helper_compose.ShowProgress
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 import kotlinx.coroutines.Dispatchers
@@ -82,14 +78,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileNotFoundException
 import java.io.FileOutputStream
-import java.io.IOException
 import java.io.InputStream
-import java.math.BigInteger
-import java.security.MessageDigest
-import java.security.NoSuchAlgorithmException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -123,6 +113,9 @@ fun LoginScreen(navController: NavHostController) {
     var campaignListStepDone by remember { mutableStateOf(false) }
     var surveyStepDone by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0f) }
+    var apiCount by remember { mutableIntStateOf(0) }
+    var downloadImagesCount by remember { mutableIntStateOf(0) }
+    var downloadVideoCount by remember { mutableIntStateOf(0) }
     val lazyListState = rememberLazyListState()
 
     val downloadImageList = mutableListOf<DownloadModel>()
@@ -285,7 +278,6 @@ fun LoginScreen(navController: NavHostController) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(text = "Prism Ecrm app v.${getAppVersionCode(context)}", fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(text = "© V2 Technologies Ltd-$crrYear", fontSize = 12.sp)
                 }
             }
@@ -302,27 +294,26 @@ fun LoginScreen(navController: NavHostController) {
 
                     LazyColumn(state = lazyListState) {
                         item{
-                            ShowProgress(progress, "Api Info")
+                            ShowProgress(progress, "Api Info", apiCount, 4)
                         }
 
                         if (progress == 100f){
                             if (downloadImageList.size > 0){
                                 item{
-                                    LaunchedEffect(Unit) {
+                                    LaunchedEffect(downloadImageList.size) {
                                         if (downloadImageList.isNotEmpty()) {
-                                            val imageListToProcess = downloadImageList.toList()
-                                            val downloadImageList = gson.toJson(downloadImageList)
-//                                            println("downloadImageList: $downloadImageList")
-                                            Log.d("downloadImageList: ", downloadImageList)
-
-                                            scope.launch(Dispatchers.IO) {
-                                                imageListToProcess.forEachIndexed { index, imageUrl ->
-                                                    println("Downloading_image: ${imageUrl.url.split("/").last()}")
-                                                    val cacheFile = File(context.cacheDir, imageUrl.url.split("/").last())
-
+                                            withContext(Dispatchers.IO) {
+                                                downloadImageList.forEachIndexed { index, imageUrl ->
+//                                                    println("Downloading_image: ${imageUrl.url.substringAfterLast("/")}")
+                                                    val cacheFile = File(context.cacheDir, imageUrl.url.substringAfterLast("/"))
+                                                    if (downloadImagesCount >= downloadImageList.size){
+                                                        downloadImagesCount = downloadImageList.size
+                                                    }else{
+                                                        downloadImagesCount ++
+                                                    }
                                                     if (cacheFile.exists()) {
                                                         withContext(Dispatchers.Main) {
-                                                            imageDownloadProgress = ((index + 1) * 100f) / imageListToProcess.size
+                                                            imageDownloadProgress = ((index + 1) * 100f) / downloadImageList.size
                                                         }
                                                     } else {
                                                         val fullUrl = imageUrl.url
@@ -342,7 +333,7 @@ fun LoginScreen(navController: NavHostController) {
                                                                 fileOutputStream.write(buffer, 0, bytesRead)
                                                                 downloadedSize += bytesRead
                                                                 withContext(Dispatchers.Main) {
-                                                                    imageDownloadProgress = ((index + downloadedSize.toFloat() / totalSize.toFloat()) / imageListToProcess.size) * 100f
+                                                                    imageDownloadProgress = ((index + downloadedSize.toFloat() / totalSize.toFloat()) / downloadImageList.size) * 100f
                                                                 }
                                                             }
 
@@ -356,7 +347,7 @@ fun LoginScreen(navController: NavHostController) {
                                                     }
 
                                                     withContext(Dispatchers.Main) {
-                                                        imageDownloadProgress = ((index + 1) * 100f) / imageListToProcess.size
+                                                        imageDownloadProgress = ((index + 1) * 100f) / downloadImageList.size
                                                     }
                                                 }
 
@@ -364,13 +355,21 @@ fun LoginScreen(navController: NavHostController) {
                                                 withContext(Dispatchers.Main) {
                                                     if (downloadVideoList.size == 0){
                                                         navController.navigate(Screen.DashboardScreen.route)
+                                                        appSessionManager.setCampaignId("")
                                                     }
                                                 }
                                             }
 
                                         }
                                     }
-                                    ShowProgress(imageDownloadProgress, downloadImageList[0].type)
+                                    ShowProgress(imageDownloadProgress, downloadImageList[0].type, downloadImagesCount, downloadImageList.size)
+                                }
+                            }else{
+                                if (downloadVideoList.isNullOrEmpty()){
+                                    navController.navigate(Screen.DashboardScreen.route)
+                                    appSessionManager.setCampaignId("")
+                                }else{
+                                    imageDownloadProgress = 100f
                                 }
                             }
 
@@ -379,16 +378,13 @@ fun LoginScreen(navController: NavHostController) {
                             if (downloadVideoList.size > 0 && imageDownloadProgress == 100f){
 
                                 item{
-                                    LaunchedEffect(Unit) {
+                                    LaunchedEffect(downloadVideoList.size) {
                                         if (downloadVideoList.isNotEmpty()) {
-
-                                            val videoListToProcess = downloadVideoList.toList()
-
                                             scope.launch(Dispatchers.IO) {
-                                                videoListToProcess.forEachIndexed { index, videoInfo ->
-                                                    val cacheFile = File(context.cacheDir, videoInfo.url.split("/").last())
+                                                downloadVideoList.forEachIndexed { index, videoInfo ->
+                                                    val cacheFile = File(context.cacheDir, videoInfo.url.substringAfterLast("/"))
+                                                    downloadVideoCount += 1
                                                     if (cacheFile.exists()) {
-
                                                         if (calculateMD5(cacheFile) != videoInfo.md5) {
                                                             withContext(Dispatchers.Main) {
                                                                 Toasty.warning(context, "MD5 not matching. Please try again!", Toasty.LENGTH_SHORT).show()
@@ -398,7 +394,7 @@ fun LoginScreen(navController: NavHostController) {
                                                         }
 
                                                         withContext(Dispatchers.Main) {
-                                                            videoDownloadProgress = ((index + 1) * 100f) / videoListToProcess.size
+                                                            videoDownloadProgress = ((index + 1) * 100f) / downloadVideoList.size
                                                         }
                                                     } else {
                                                         val fullUrl = videoInfo.url
@@ -419,7 +415,7 @@ fun LoginScreen(navController: NavHostController) {
                                                                 downloadedSize += bytesRead
 
                                                                 withContext(Dispatchers.Main) {
-                                                                    videoDownloadProgress = ((index + downloadedSize.toFloat() / totalSize.toFloat()) / videoListToProcess.size) * 100f
+                                                                    videoDownloadProgress = ((index + downloadedSize.toFloat() / totalSize.toFloat()) / downloadVideoList.size) * 100f
                                                                 }
                                                             }
 
@@ -447,18 +443,19 @@ fun LoginScreen(navController: NavHostController) {
                                                     }
 
                                                     withContext(Dispatchers.Main) {
-                                                        videoDownloadProgress = ((index + 1) * 100f) / videoListToProcess.size
+                                                        videoDownloadProgress = ((index + 1) * 100f) / downloadVideoList.size
                                                     }
                                                 }
 
                                                 withContext(Dispatchers.Main) {
                                                     delay(500)
                                                     navController.navigate(Screen.DashboardScreen.route)
+                                                    appSessionManager.setCampaignId("")
                                                 }
                                             }
                                         }
                                     }
-                                    ShowProgress(videoDownloadProgress, downloadVideoList[0].type)
+                                    ShowProgress(videoDownloadProgress, downloadVideoList[0].type, downloadVideoCount, downloadVideoList.size)
                                 }
                             }
                         }
@@ -478,13 +475,14 @@ fun LoginScreen(navController: NavHostController) {
                     if (!loginStepDone) {
                         loginStepDone = true
                         progress += 25
+                        apiCount += 1
                     }
 
                     println("userSignInData: ${state.data.data.id}")
                     state.data.data.token?.let {token ->
                         appSessionManager.setSessionToken(token)
                     }
-                    appSessionManager.setBrId(state.data.data.id.toString())
+                    state.data.data.username?.let { appSessionManager.setBrId(it) }
                 }
             }
 
@@ -499,6 +497,7 @@ fun LoginScreen(navController: NavHostController) {
                     if (!userInfoStepDone) {
                         userInfoStepDone = true
                         progress += 25
+                        apiCount += 1
                     }
 
                     val time = SimpleDateFormat("yyyy:MM:dd:HH:mm:ss")
@@ -528,6 +527,7 @@ fun LoginScreen(navController: NavHostController) {
                     if (!campaignListStepDone) {
                         campaignListStepDone = true
                         progress += 25
+                        apiCount += 1
                     }
                     if (state.data.data.isNullOrEmpty()){
                         isLoading = false
@@ -548,25 +548,25 @@ fun LoginScreen(navController: NavHostController) {
                     if (!surveyStepDone) {
                         surveyStepDone = true
                         progress += 25
+                        apiCount += 1
                     }
 
                     if (state.data.data[0].image != null && state.data.data[0].image?.size!! > 0) {
-                        for (image in state.data.data[0].image!!) {
-                            val imageType = DownloadModel(
-                                type = "Images",
-                                url = image
-                            )
-                            downloadImageList.add(imageType)
+                        val existingUrls = downloadImageList.map { it.url }.toSet()
+                        state.data.data[0].image?.let { images ->
+                            for (image in images) {
+                                if (!existingUrls.contains(image)) {
+                                    downloadImageList.add(DownloadModel(type = "Images", url = image))
+//                                    println("downloadImageList_Path: $image            downloadImageList: ${downloadImageList.size}")
+                                }
+                            }
                         }
-
-                        println("downloadImageList: size: ${downloadImageList.size} id: ${state.data.data[0].id}")
                     }
 
 
                     if (state.data.data[0].video != null && state.data.data[0].video?.size!! > 0) {
                         for (video in state.data.data[0].video!!) {
-
-                            println("generatedMD5 server: ${video.md5}")
+//                            println("generatedMD5 server: ${video.md5}")
                             val videoType = DownloadModel(
                                 type = "Videos",
                                 url = video.name,
@@ -580,52 +580,3 @@ fun LoginScreen(navController: NavHostController) {
         }
     }
 }
-
-@Composable
-fun ShowProgress(progress: Float, title: String) {
-    Spacer(modifier = Modifier.height(32.dp))
-    Row (
-        modifier = Modifier
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ){
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.size(60.dp)
-        ) {
-            CircularProgressIndicator(
-                progress = 1f,
-                color = Color.LightGray,
-                strokeWidth = 8.dp,
-                modifier = Modifier.fillMaxSize()
-            )
-            CircularProgressIndicator(
-                progress = progress / 100f,
-                color = Color.Blue,
-                strokeWidth = 8.dp,
-                modifier = Modifier.fillMaxSize()
-            )
-            if (progress == 100f) {
-                Icon(
-                    imageVector = Icons.Filled.CheckCircle,
-                    contentDescription = "Download Complete",
-                    tint = Color.Blue,
-                    modifier = Modifier.size(40.dp)
-                )
-
-                //navigate to next screen
-//                navController.navigate(Screen.DashboardScreen.route)
-            } else {
-                Text(
-                    text = "${progress.toInt()}%",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.Black,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(title)
-    }
-}
-

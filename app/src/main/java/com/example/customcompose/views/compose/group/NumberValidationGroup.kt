@@ -1,5 +1,7 @@
 package com.example.customcompose.views.compose.group
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +15,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -24,14 +27,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
+import com.example.customcompose.MyApplication.Companion.dashboardViewModel
 import com.example.customcompose.MyApplication.Companion.surveyFlowViewModel
+import com.example.customcompose.helper.CommonUtils.getTapAnalysisElapsedTime
+import com.example.customcompose.helper.CommonUtils.saveTapAnalysisData
+import com.example.customcompose.helper.Constants.BTN_NXT
 import com.example.customcompose.helper.Constants.fullCampaignData
+import com.example.customcompose.helper.Constants.numberValTapResult
 import com.example.customcompose.helper.Constants.surveyBasicInfo
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.Block
-import com.example.customcompose.model.ExtraServiceModel
 import com.example.customcompose.model.DynamicInfoConModel
-import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.model.ExtraServiceModel
+import com.example.customcompose.model.Result
+import com.example.customcompose.model.SurveyHistoryModel
+import com.example.customcompose.model.TargetAchievement
 import com.example.customcompose.views.compose.helper_compose.PopupBannedConsumer
 import com.example.customcompose.views.compose.helper_compose.PopupFreshConsumer
 import com.example.customcompose.views.compose.helper_compose.PopupNonFreshConsumer
@@ -49,7 +60,6 @@ import es.dmoral.toasty.Toasty
 
 @Composable
 fun NumberValidationGroup(
-    blockListViewModel: BlockListViewModel,
     currentBlock: Block?,
     position: Int?,
     isActiveGroup: Boolean,
@@ -67,6 +77,24 @@ fun NumberValidationGroup(
     var dynmcInfoConModelList by remember { mutableStateOf(emptyList<DynamicInfoConModel>()) }
     var messages by remember { mutableStateOf(emptyList<String>()) }
     val gson = Gson()
+
+    appSessionManager.getBrId()?.let {
+        dashboardViewModel.fetchTargetAchieveDataByIds(it, appSessionManager.getCampaignId()!!)
+    }
+    val localTargetAchievementState by dashboardViewModel.localTargetAchieveData.observeAsState()
+    var localAchieveList by remember { mutableStateOf<List<TargetAchievement>?>(emptyList()) }
+
+    LaunchedEffect(localTargetAchievementState) {
+        numberValTapResult.clear()
+        localTargetAchievementState?.target_achievement?.let {
+            try {
+                localAchieveList = gson.fromJson(it, Array<TargetAchievement>::class.java).toList()
+            } catch (e: Exception) {
+                localAchieveList = emptyList()
+            }
+        }
+        println("targetAchieveData_compose: $localAchieveList")
+    }
 
     Box(
         modifier = Modifier
@@ -87,30 +115,39 @@ fun NumberValidationGroup(
                 println("Nonref Block Size: ${currentBlock?.blocks?.size}")
 
                 for ((index, block) in currentBlock?.blocks!!.withIndex()){
-//                println("Nonref Block Id is: ${block.id}")
                     when(block.type){
-                        "dropdown" -> NonRefDropdown(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "date" -> NonRefDate(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "multipleChoice+icon" -> NonRefMultipleChoice(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "textInput" -> NonRefTextInput(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "checkbox" -> NonRefCheckBox(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "numberInput" -> NonRefNumberInput(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "multipleChoice" -> NonRefMultipleChoice(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "dropdown+condition" -> NonRefDropdown(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "emailInput" -> NonRefEmailInput(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "contactNo" -> NonRefContactNo(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "product" -> NonRefProductList(block, blockListViewModel, index, position!!, isActiveGroup)
+                        "dropdown" -> NonRefDropdown(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
+                        "date" -> NonRefDate(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
+                        "multipleChoice+icon" -> NonRefMultipleChoice(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
+                        "textInput" -> NonRefTextInput(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
+                        "checkbox" -> NonRefCheckBox(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
+                        "numberInput" -> NonRefNumberInput(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
+                        "multipleChoice" -> NonRefMultipleChoice(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
+                        "dropdown+condition" -> NonRefDropdown(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
+                        "emailInput" -> NonRefEmailInput(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
+                        "contactNo" -> NonRefContactNo(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
+                        "product" -> NonRefProductList(block, index, position!!, isActiveGroup){result -> numberValTapData(result)}
                     }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
+
+                        val result = Result(
+                            option = BTN_NXT,
+                            tap_time = (getTapAnalysisElapsedTime()!! / 1000000).toString()
+                        )
+                        numberValTapResult.add(result)
+                        saveTapAnalysisData(currentBlock, numberValTapResult, "number_validation")
+
                         appSessionManager.setContactNumber("")
                         blockListViewModel.showProgressLoading()
                         surveyFlowViewModel.resetNumberValidationState()
 
                         if (currentBlock.surveyHistoryModel.isNotEmpty()){
+                            //  Log.d("verifyMobile", "basicQuestionList: "+basicQuestionList.get(basicQuestionList.size()-1).toString());
+                            val brandBlockList = mutableListOf<Block>()
                             println("history list size: ${currentBlock.surveyHistoryModel}")
                             for (nonRefBlocks in currentBlock.blocks){
                                 for (surveyHistory in currentBlock.surveyHistoryModel){
@@ -121,15 +158,19 @@ fun NumberValidationGroup(
                                             Toasty.warning(context, "Provide a valid ${nonRefBlocks.question?.slug}", Toasty.LENGTH_SHORT).show()
                                             return@Button
                                         }
+
+                                        if (nonRefBlocks.type == "product"){
+                                            if (nonRefBlocks.question?.alias == "product"
+                                                || nonRefBlocks.question?.alias == "previous_brand"
+                                                || nonRefBlocks.question?.alias == "secondary_brand"){
+                                                brandBlockList.add(nonRefBlocks)
+                                            }
+                                        }
+
                                         if (nonRefBlocks.type == "contactNo"){
                                             val phoneNumber = surveyHistory?.answer
                                             val phoneRegex = "^(13|14|15|16|17|18|19)\\d{8}$".toRegex()
 
-//                                            if (surveyHistory?.answer.isNullOrEmpty()){
-//                                                blockListViewModel.hideProgressLoading()
-//                                                Toasty.warning(context, "Provide a valid ${surveyHistory?.question}", Toasty.LENGTH_SHORT).show()
-//                                                return@Button
-//                                            }
                                             if (phoneNumber?.length != 10) {
                                                 blockListViewModel.hideProgressLoading()
                                                 Toasty.warning(context, "Contact number must be 10 digits.", Toasty.LENGTH_SHORT).show()
@@ -140,6 +181,13 @@ fun NumberValidationGroup(
                                                 Toasty.warning(context, "Contact number is not valid.", Toasty.LENGTH_SHORT).show()
                                                 return@Button
                                             }
+
+                                            if (brandBlockList.isNotEmpty() && localAchieveList != null){
+                                                if (!checkBrandValidation(context, brandBlockList, localAchieveList!!, currentBlock.surveyHistoryModel)){
+                                                    return@Button
+                                                }
+                                            }
+
                                             appSessionManager.setContactNumber(phoneNumber)
                                             surveyBasicInfo["contact_no"] = phoneNumber
 
@@ -268,7 +316,7 @@ fun NumberValidationGroup(
                     isLoaded = false
                 },
                 goToNextPage = {
-                    goToNextPage (blockListViewModel, currentBlock, status, position)
+                    goToNextPage (currentBlock, status, position)
                 }
             )
         }
@@ -283,11 +331,10 @@ fun NumberValidationGroup(
                 },
 
                 goToNextPage = {
-                    goToNextPage (blockListViewModel, currentBlock, status, position)
+                    goToNextPage (currentBlock, status, position)
                 }
             )
         }
-
 
         if (isBannedConsumer && isLoaded) {
             PopupBannedConsumer (
@@ -299,15 +346,101 @@ fun NumberValidationGroup(
                 },
 
                 goToNextPage = {
-                    goToNextPage (blockListViewModel, currentBlock, status, position)
+                    goToNextPage (currentBlock, status, position)
                 }
             )
         }
     }
 }
 
+fun numberValTapData(result: Result) {
+    numberValTapResult.add(result)
+}
+
+fun checkBrandValidation(
+    context: Context,
+    brandBlockList: List<Block>,
+    localAchieveList: List<TargetAchievement>,
+    surveyHistoryModel: List<SurveyHistoryModel?>
+): Boolean {
+    var matched = 0
+    var currentAchievement: TargetAchievement? = null
+    val sourceLocation = blockListViewModel.routeParentList.value[0].selectedId
+
+    outerLoop@ for (achievementModel in localAchieveList){
+        for (locationTarget in achievementModel.locations){
+            if (sourceLocation == locationTarget.id){
+                matched = 0
+                currentAchievement = achievementModel
+
+                for (brandBlock in brandBlockList){
+                    val ansModel: SurveyHistoryModel? = brandBlock.id?.let { surveyHistoryModel[it.toInt()] }
+                    println("ansModel: $ansModel")
+                    if (brandBlock.question!!.alias == "product"){
+
+                        if (achievementModel.primary_brands.isNotEmpty()){
+                            for (productTarget in achievementModel.primary_brands){
+                                if (ansModel?.answer == productTarget.id.toString()){
+                                    matched++
+                                    break
+                                }
+                            }
+                        }else{
+                            matched++
+                        }
+
+                    }else if (brandBlock.question.alias == "secondary_brand"){
+
+                        if (achievementModel.secondary_brands.isNotEmpty()){
+                            for (productTarget in achievementModel.secondary_brands){
+                                if (ansModel?.answer == productTarget.id.toString()){
+                                    matched++
+                                    break
+                                }
+                            }
+                        }else{
+                            matched++
+                        }
+
+                    }else if (brandBlock.question.alias == "previous_brand"){
+
+                        if (achievementModel.previous_brands.isNotEmpty()){
+                            for (productTarget in achievementModel.previous_brands){
+                                if (ansModel?.answer == productTarget.id.toString()){
+                                    matched++
+                                    break
+                                }
+                            }
+                        }else{
+                            matched++
+                        }
+
+                    }
+                }
+
+                if (matched == brandBlockList.size){
+                    break@outerLoop
+                }
+            }
+        }
+    }
+
+    if (matched == brandBlockList.size){
+        if (currentAchievement?.daily_achievement!! >= currentAchievement.daily_target && !currentAchievement.over_achivement){
+            Toasty.warning(context, "No more target for this location and products combination", Toasty.LENGTH_SHORT).show()
+            blockListViewModel.hideProgressLoading()
+            return false
+        }
+        appSessionManager.insertCurrentTargetAchievementId(Gson().toJson(currentAchievement))
+        return true
+    }else{
+        Toasty.warning(context, "This products and location combination is not allowed.", Toast.LENGTH_SHORT).show()
+        blockListViewModel.hideProgressLoading()
+        return false
+    }
+}
+
 fun goToNextPage(
-    blockListViewModel: BlockListViewModel,
     currentBlock: Block?,
     status: Int,
     position: Int?

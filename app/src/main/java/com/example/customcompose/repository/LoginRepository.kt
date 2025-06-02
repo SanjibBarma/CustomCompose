@@ -1,19 +1,17 @@
 package com.example.customcompose.repository
 
-import com.example.customcompose.app_database.dao.LocalDbDao
-import com.example.customcompose.app_database.entity.SignInEntity
-import com.example.customcompose.app_database.entity.SurveyDataEntity
+import com.example.customcompose.storage.dao.LocalDbDao
+import com.example.customcompose.storage.entity.SignInEntity
+import com.example.customcompose.storage.entity.SurveyDataEntity
 import com.example.customcompose.model.CampaignsModel
 import com.example.customcompose.model.SignInModel
 import com.example.customcompose.model.SurveyData
-import com.example.customcompose.model.SurveyModel
 import com.example.customcompose.model.UserInfoModel
-import com.example.customcompose.network.ApiService
-import com.google.gson.JsonObject
+import com.example.customcompose.MyApplication.Companion.apiService
 import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
 
-class LoginRepository(private val apiService: ApiService, private val localDbDao: LocalDbDao) {
+class LoginRepository(private val localDbDao: LocalDbDao) {
     //api call will start from here
     //login api
     suspend fun getLoginInfo(signInMap: HashMap<String, Any>): Response<SignInModel> {
@@ -48,7 +46,7 @@ class LoginRepository(private val apiService: ApiService, private val localDbDao
         localDbDao.upsertSignInData(signInEntity)
     }
 
-    suspend fun getSignInDataByUserId(id: Int): SignInEntity?{
+    suspend fun getSignInDataByUserId(id: String): SignInEntity?{
         return localDbDao.getSignInDataById(id)
     }
 
@@ -59,7 +57,7 @@ class LoginRepository(private val apiService: ApiService, private val localDbDao
     }
 
     fun getSurveyDataDataByIds(brId: String, campId: String): Flow<SurveyDataEntity?> {
-        return localDbDao.getSurveyDataDataByIds(brId, campId)
+        return localDbDao.getSurveyDataByIds(brId, campId)
     }
 
 

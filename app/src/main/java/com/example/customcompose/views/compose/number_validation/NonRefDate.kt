@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -37,10 +40,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.R
+import com.example.customcompose.helper.CommonUtils
+import com.example.customcompose.helper.CommonUtils.getTapAnalysisElapsedTime
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.model.NumberCheckData
+import com.example.customcompose.model.Result
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
@@ -49,18 +56,14 @@ import java.util.Calendar
 @Composable
 fun NonRefDate(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     index: Int,
     position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    onOptionSelected: (Result) -> Unit
 ) {
     val gson = Gson()
-    val isRequired = block.required
     val existingData = blockListViewModel.getDataFromIndex(position, index)
-
-    var mDate = remember { mutableStateOf(existingData?.answer ?: "") }
     val question = block.question?.alias ?: ""
-
     val blockId = block.id ?: ""
 
     val maxAge = block.validations?.max ?: 50
@@ -68,63 +71,62 @@ fun NonRefDate(
 
     val mContext = LocalContext.current
     val mCalendar = Calendar.getInstance()
-
     val currentYear = mCalendar.get(Calendar.YEAR)
     val currentMonth = mCalendar.get(Calendar.MONTH)
     val currentDay = mCalendar.get(Calendar.DAY_OF_MONTH)
 
-    var showDialog by remember { mutableStateOf(false) }
-    val tempDate = remember { mutableStateOf("") }
-
     val minAllowedCalendar = Calendar.getInstance().apply { set(currentYear - maxAge, currentMonth, currentDay) }
     val maxAllowedCalendar = Calendar.getInstance().apply { set(currentYear - minAge, currentMonth, currentDay) }
 
+    var mDate by remember { mutableStateOf(existingData?.answer ?: "") }
+    var tempDate by remember { mutableStateOf("") }
+    var showDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(mDate.value) {
-      val nonRefData = appSessionManager.getMobileVerificationData()
+    LaunchedEffect(Unit) {
+        val nonRefData = appSessionManager.getMobileVerificationData()
         if (!nonRefData.isNullOrEmpty()) {
-            println("NonRefTextInput: $nonRefData")
             val numberCheckData: NumberCheckData? = gson.fromJson(nonRefData, NumberCheckData::class.java)
-
-            if (numberCheckData != null && numberCheckData.information != null){
-                for (dynamicInfo in numberCheckData.information) {
-                    if (dynamicInfo.key == question) {
-                        mDate.value = dynamicInfo.value
-                    }
-                }
+            numberCheckData?.information?.firstOrNull { it.key == question }?.let {
+                mDate = it.value
+                blockListViewModel.saveDataAtIndex(
+                    position,
+                    SurveyHistoryModel(question = question, answer = it.value, id = blockId)
+                )
             }
         }
 
-        val surveyHistoryModel = SurveyHistoryModel(
-            question = question,
-            answer = mDate.value,
-            id = blockId
+        val result = Result(
+            option = question,
+            tap_time = (getTapAnalysisElapsedTime()!! / 1000000).toString()
         )
-
-        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
+        onOptionSelected(result)
     }
 
     Column {
-        println("Block Id is: ${block.id}")
-        Text(block.question!!.slug)
+        Text(block.question?.slug ?: "")
         Spacer(modifier = Modifier.height(8.dp))
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .height(56.dp)
                 .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
-                .padding(8.dp)
                 .clickable(enabled = isActiveGroup) { showDialog = true }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp)
             ) {
-                Text(mDate.value)
+                Text(
+                    text = if (mDate.isBlank()) "Select DoB" else mDate,
+                    color = if (mDate.isBlank()) Color.Gray else Color.Black
+                )
                 Icon(
                     painter = painterResource(R.drawable.ic_calendar),
-                    contentDescription = "Dropdown Arrow",
+                    contentDescription = "Calendar Icon",
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -141,67 +143,79 @@ fun NonRefDate(
                         modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            "Date of birth",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-
+                        Text("Date of birth", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        AndroidView(
-                            factory = { context ->
-                                DatePicker(context).apply {
-                                    init(currentYear - minAge, currentMonth, currentDay) { _, year, month, day ->
-                                        val selectedCalendar = Calendar.getInstance().apply {
-                                            set(year, month, day)
-                                        }
+                        AndroidView(factory = { context ->
+                            val initCalendar = if (mDate.isNotBlank()) {
+                                val parts = mDate.split("/")
+                                Calendar.getInstance().apply {
+                                    set(parts[2].toInt(), parts[1].toInt() - 1, parts[0].toInt())
+                                }
+                            } else {
+                                Calendar.getInstance().apply {
+                                    set(currentYear - minAge, currentMonth, currentDay)
+                                    add(Calendar.DAY_OF_MONTH, -1)
+                                }
+                            }
 
-                                        if (selectedCalendar.before(minAllowedCalendar)) {
-                                            Toasty.warning(context, "Must be less than $maxAge years old", Toasty.LENGTH_SHORT).show()
-                                            tempDate.value = ""
-                                        }else if (selectedCalendar.after(maxAllowedCalendar)){
-                                            Toasty.warning(context, "Must be more than $minAge years old", Toasty.LENGTH_SHORT).show()
-                                            tempDate.value = ""
-                                        } else {
-                                            tempDate.value = "$day/${month + 1}/$year"
-                                        }
+                            tempDate = "${initCalendar.get(Calendar.DAY_OF_MONTH)}/${initCalendar.get(Calendar.MONTH) + 1}/${initCalendar.get(Calendar.YEAR)}"
+
+                            DatePicker(context).apply {
+                                init(
+                                    initCalendar.get(Calendar.YEAR),
+                                    initCalendar.get(Calendar.MONTH),
+                                    initCalendar.get(Calendar.DAY_OF_MONTH)
+                                ) { _, year, month, day ->
+
+                                    val selectedCalendar = Calendar.getInstance().apply {
+                                        set(year, month, day)
+                                    }
+
+                                    tempDate = if (selectedCalendar.before(minAllowedCalendar)) {
+                                        Toasty.warning(context, "Must be less than $maxAge years old", Toasty.LENGTH_SHORT).show()
+                                        ""
+                                    } else if (selectedCalendar.after(maxAllowedCalendar)) {
+                                        Toasty.warning(context, "Must be more than $minAge years old", Toasty.LENGTH_SHORT).show()
+                                        ""
+                                    } else {
+                                        "$day/${month + 1}/$year"
                                     }
                                 }
                             }
-                        )
+                        })
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        Row(
-                            modifier = Modifier.wrapContentWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             Button(
                                 onClick = {
                                     showDialog = false
-                                    mDate.value = ""
+                                    tempDate = ""
                                 },
-                                modifier = Modifier.weight(1f, fill = false).width(120.dp)
+                                modifier = Modifier.width(120.dp)
                             ) {
                                 Text("Cancel")
                             }
 
                             Button(
                                 onClick = {
-                                    if (tempDate.value.isNotEmpty()) {
-                                        mDate.value = tempDate.value
+                                    if (tempDate.isNotBlank()) {
+                                        mDate = tempDate
+                                        blockListViewModel.saveDataAtIndex(
+                                            position,
+                                            SurveyHistoryModel(question = question, answer = mDate, id = blockId)
+                                        )
                                         showDialog = false
                                     } else {
                                         Toasty.warning(mContext, "Please select a valid date", Toasty.LENGTH_SHORT).show()
                                     }
                                 },
-                                modifier = Modifier.weight(1f, fill = false).width(120.dp)
+                                modifier = Modifier.width(120.dp)
                             ) {
                                 Text("OK")
                             }
                         }
-
                     }
                 }
             }

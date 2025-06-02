@@ -54,23 +54,22 @@ fun RouteChildView(
     listPosition: Int,
     onDismiss: () -> Unit
 ) {
-
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-
     onBackPressedDispatcher?.addCallback {
         //navController.popBackStack()
         onDismiss()
         Log.d("MyScreen", "Back button pressed on MyScreen")
     }
 
-    val context = LocalContext.current
     val selectedItemId = remember { mutableStateOf(locations.selectedId ?: 0) }
     val routeListItem by blockListViewModel.routeParentList.collectAsState()
 
-//    val targetAchievementList: List<TargetAchievement> = gson.fromJson(TARGET_ACHIEVEMENT_LIST, Array<TargetAchievement>::class.java).toList()
-    appSessionManager.getBrId()?.let {
-        dashboardViewModel.fetchTargetAchieveDataByIds(it, appSessionManager.getCampaignId()!!)
+    LaunchedEffect(Unit) {
+        appSessionManager.getBrId()?.let {
+            dashboardViewModel.fetchTargetAchieveDataByIds(it, appSessionManager.getCampaignId()!!)
+        }
     }
+
     val targetAchievementState by dashboardViewModel.localTargetAchieveData.observeAsState()
     val gson = Gson()
     var targetAchievementList by remember { mutableStateOf<List<TargetAchievement>?>(emptyList()) }
@@ -115,28 +114,7 @@ fun RouteChildView(
                                 selectedItemId.value = option.id
 
                                 surveyBasicInfo["location_name"] =  option.name
-
-                                //location list er first position check kora hocche
-                                //means route list theke selected id ber kora hobe
-//                                if (listPosition == 0){
-//                                    for (targetAchieve in targetAchievementList!!){
-//                                        if (targetAchieve.products.isNullOrEmpty() && targetAchieve.products.size == 0){
-//                                            for (locationTarget in targetAchieve.locations){
-//                                                //selected loc id and target locations er jekono id jodi match kore tahole
-//                                                // daily target and achievement compare kore daily_achievement over hoye gele warning dekhabe and return korbe
-//                                                if (option.id == locationTarget.id){
-//                                                    if (targetAchieve.daily_achievement >= targetAchieve.daily_target && !targetAchieve.over_achivement){
-//                                                        Toasty.warning(context, "No more target for this location", Toasty.LENGTH_SHORT).show()
-//                                                        return@clickable
-//                                                    }
-//                                                }
-//                                            }
-//                                        }
-//                                    }
-//                                }
-
                                 println("selectedItemId: ${selectedItemId.value}")
-
 
                                 if (!option.locations.isNullOrEmpty()) {
                                     blockListViewModel.addNextRoutePlanData(option.locations[0].type_slug, option.locations, listPosition+1)

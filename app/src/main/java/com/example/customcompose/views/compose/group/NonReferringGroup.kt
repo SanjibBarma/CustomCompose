@@ -14,12 +14,18 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
+import com.example.customcompose.helper.CommonUtils.getTapAnalysisElapsedTime
+import com.example.customcompose.helper.CommonUtils.saveTapAnalysisData
+import com.example.customcompose.helper.Constants.BTN_NXT
+import com.example.customcompose.helper.Constants.numberValTapResult
 import com.example.customcompose.model.Block
-import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.model.Result
 import com.example.customcompose.views.compose.number_validation.NonRefCheckBox
 import com.example.customcompose.views.compose.number_validation.NonRefContactNo
 import com.example.customcompose.views.compose.number_validation.NonRefDate
@@ -33,13 +39,16 @@ import es.dmoral.toasty.Toasty
 
 @Composable
 fun NonReferringGroup(
-    blockListViewModel: BlockListViewModel,
     currentBlock: Block,
     position: Int?,
     isActiveGroup: Boolean,
     destination: String
 ) {
     val context = LocalContext.current
+
+    LaunchedEffect (Unit){
+        numberValTapResult.clear()
+    }
 
     Box(
         modifier = Modifier
@@ -63,17 +72,17 @@ fun NonReferringGroup(
                 for ((index, block) in currentBlock?.blocks!!.withIndex()){
 //                println("Nonref Block Id is: ${block.id}")
                     when(block.type){
-                        "dropdown" -> NonRefDropdown(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "date" -> NonRefDate(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "multipleChoice+icon" -> NonRefMultipleChoice(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "textInput" -> NonRefTextInput(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "checkbox" -> NonRefCheckBox(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "numberInput" -> NonRefNumberInput(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "multipleChoice" -> NonRefMultipleChoice(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "dropdown+condition" -> NonRefDropdown(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "emailInput" -> NonRefEmailInput(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "contactNo" -> NonRefContactNo(block, blockListViewModel, index, position!!, isActiveGroup)
-                        "product" -> NonRefProductList(block, blockListViewModel, index, position!!, isActiveGroup)
+                        "dropdown" -> NonRefDropdown(block, index, position!!, isActiveGroup){result -> tapData(result)}
+                        "date" -> NonRefDate(block, index, position!!, isActiveGroup){result -> tapData(result)}
+                        "multipleChoice+icon" -> NonRefMultipleChoice(block, index, position!!, isActiveGroup){result -> tapData(result)}
+                        "textInput" -> NonRefTextInput(block, index, position!!, isActiveGroup){result -> tapData(result)}
+                        "checkbox" -> NonRefCheckBox(block, index, position!!, isActiveGroup){result -> tapData(result)}
+                        "numberInput" -> NonRefNumberInput(block, index, position!!, isActiveGroup){result -> tapData(result)}
+                        "multipleChoice" -> NonRefMultipleChoice(block, index, position!!, isActiveGroup){result -> tapData(result)}
+                        "dropdown+condition" -> NonRefDropdown(block, index, position!!, isActiveGroup){result -> tapData(result)}
+                        "emailInput" -> NonRefEmailInput(block, index, position!!, isActiveGroup){result -> tapData(result)}
+                        "contactNo" -> NonRefContactNo(block, index, position!!, isActiveGroup){result -> tapData(result)}
+                        "product" -> NonRefProductList(block, index, position!!, isActiveGroup){result -> tapData(result)}
                     }
                 }
 
@@ -120,10 +129,19 @@ fun NonReferringGroup(
                             }
                         }
 
+                        val result = Result(
+                            option = BTN_NXT,
+                            tap_time = (getTapAnalysisElapsedTime()!! / 1000000).toString()
+                        )
+                        numberValTapResult.add(result)
+
+                        saveTapAnalysisData(currentBlock, numberValTapResult, "non_referring")
+
                         currentBlock.position?.let {position ->
                             blockListViewModel.hideProgressLoading()
                             blockListViewModel.addBlockToTheSurveyFlow(currentBlock.jumping_logic?.get(0)!!.id, currentBlock.jumping_logic[0].group_no, position)
                         }
+
                     },
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -134,4 +152,8 @@ fun NonReferringGroup(
             }
         }
     }
+}
+
+fun tapData(result: Result) {
+    numberValTapResult.add(result)
 }

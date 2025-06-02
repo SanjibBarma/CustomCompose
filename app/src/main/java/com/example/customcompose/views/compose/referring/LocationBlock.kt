@@ -63,8 +63,7 @@ fun LocationBlock(blockListViewModel: BlockListViewModel, isActiveGroup: Boolean
             Text(
                 "Location: ${sourceLocationName.value}, ${targetLocationName.value}",
                 modifier = Modifier
-                    .padding(16.dp),
-                fontSize = 14.sp
+                    .padding(16.dp)
             )
         }
     }

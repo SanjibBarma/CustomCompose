@@ -1,4 +1,4 @@
-package com.example.customcompose.app_database.entity
+package com.example.customcompose.storage.entity
 
 import androidx.room.Entity
 import androidx.room.Index

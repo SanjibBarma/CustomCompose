@@ -17,14 +17,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.MyApplication.Companion.connectivityObserver
+import com.example.customcompose.MyApplication.Companion.dashboardRepository
+import com.example.customcompose.storage.entity.TargetAchievementEntity
 import com.example.customcompose.helper.CommonUtils.getDeviceInfo
 import com.example.customcompose.helper.CommonUtils.getdatetime
 import com.example.customcompose.helper.Constants.fullCampaignData
 import com.example.customcompose.helper.Constants.surveyBasicInfo
 import com.example.customcompose.helper.SntpClient
+import com.example.customcompose.model.TargetAchievement
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.example.customcompose.viewmodel.InvisibleHistoryData.invisibleHistoryList
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,12 +43,28 @@ fun SubmitButton(blockListViewModel: BlockListViewModel) {
     val context = LocalContext.current
     var dhakaTime by remember { mutableStateOf<ZonedDateTime?>(null) }
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val gson = Gson()
+    val gson = GsonBuilder().setPrettyPrinting().create()
     val surveyDataMap = mutableMapOf<String, HashMap<String, String>>()
 
     Button(
         onClick = {
             CoroutineScope(Dispatchers.IO).launch {
+
+                val achievement: TargetAchievement? = appSessionManager.getCurrentTargetAchievement()
+
+                if (achievement != null) {
+                    achievement.daily_achievement +=1
+
+                    val targetAchievement = TargetAchievementEntity(
+                        target_achievement = gson.toJson(achievement),
+                        target_id = achievement.id,
+                        user_id = appSessionManager.getBrId()!!,
+                        campaign_id = appSessionManager.getCampaignId()!!
+                    )
+
+                    dashboardRepository.upsertTargetAchievementData(targetAchievement)
+                }
+
                 for (surveyBlockHistory in blockListViewModel.parentSurveyBlockList.value) {
                     if (surveyBlockHistory?.surveyHistoryModel != null) {
                         for (surveyHistory in surveyBlockHistory.surveyHistoryModel) {
@@ -66,24 +86,6 @@ fun SubmitButton(blockListViewModel: BlockListViewModel) {
                         )
                     }
                 }
-
-//            val surveyBasicInfo = HashMap<String, Any>().apply {
-//                put("deviceInfo", getDeviceInfo(context))
-//                put("survey_data", surveyDataMap)
-//                appSessionManager.getUsername()?.let { put("contacted_br", it) }
-//                put("source_location", sourceLocation.toString())
-//                put("location_id", locationId.toString())
-//
-//                fullCampaignData?.let {
-//                    put("campaign_name", it.name)
-//                    put("campaign_id", it.id.toString())
-//                    put("campaign_version", it.versions.campaign)
-//                    put("video_version", it.versions.video)
-//                    put("image_version", it.versions.image)
-//                    put("audio_needed", it.conditions.audio)
-//                    put("audio_recorded", it.conditions.audio)
-//                }
-//            }
 
                 surveyBasicInfo["device_info"] = getDeviceInfo(context)
                 surveyBasicInfo["survey_data"] = surveyDataMap
@@ -113,11 +115,12 @@ fun SubmitButton(blockListViewModel: BlockListViewModel) {
                 surveyBasicInfo["long"] = 90.3973018
                 surveyBasicInfo["lat"] = 23.7828891
                 surveyBasicInfo["radius"] = 11.482
-                surveyBasicInfo["tap_analysis"] = tapAnalysisList
+//                surveyBasicInfo["tap_analysis"] = tapAnalysisList
 
 
                 val comboJson = gson.toJson(surveyBasicInfo)
                 Log.d("SURVEY_COMBO_DATA", comboJson)
+                println("SURVEY_COMBO_DATA: $comboJson")
             }
         },
         modifier = Modifier

@@ -23,6 +23,12 @@
     <queries>
         <package android:name="com.NvisioSolutionsLimited.LSPassionPUG2025" />
     </queries>
+    <queries>
+        <package android:name="com.NvisioSolutionsLtd.LSCocreate25" />
+    </queries>
+    <queries>
+        <package android:name="com.batb.bhn_tog" />
+    </queries>
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -93,9 +99,18 @@
             android:name=".helper.GameBroadcastReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.example.customcompose" />
+                <action android:name="v2.ltd.ecrm3.app" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".helper.InteractiveAvBroadcastReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.example.batcampaign" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

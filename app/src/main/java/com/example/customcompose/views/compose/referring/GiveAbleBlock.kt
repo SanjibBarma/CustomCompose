@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.MyApplication.Companion.surveyFlowViewModel
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.GiveAbleAchievement
@@ -53,7 +54,6 @@ import java.io.File
 @Composable
 fun GiveAbleBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {
@@ -68,7 +68,7 @@ fun GiveAbleBlock(
     val gson = Gson()
 
     appSessionManager.getCampaignId()?.let { camId ->
-        surveyFlowViewModel.fetchPtrDataById(appSessionManager.getBrId().toString(), camId)
+        surveyFlowViewModel.fetchPtrDataById(appSessionManager.getBrId()!!, camId)
     }
 
 //    val storedMaterials: List<MaterialFinalModel> = gson.fromJson(MATERIAL_STRING, Array<MaterialFinalModel>::class.java).toList()
@@ -78,9 +78,7 @@ fun GiveAbleBlock(
     var giveAbleAchievement: GiveAbleAchievement? = null
 
     LaunchedEffect(ptrDataState.value) {
-
         //first check the survey data from local. if local survey data or pending data is exist then calculate here
-
         giveAbleAchievement = gson.fromJson(ptrDataState.value?.ptrData, GiveAbleAchievement::class.java)
 
         if (giveAbleAchievement?.data != null) { // Check if data is not null before assigning

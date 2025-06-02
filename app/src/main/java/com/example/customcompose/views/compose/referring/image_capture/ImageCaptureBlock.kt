@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.R
 import com.example.customcompose.helper.CommonUtils.createImageFile
 import com.example.customcompose.helper.CommonUtils.rotateImage
@@ -47,7 +48,6 @@ import java.io.File
 @Composable
 fun ImageCaptureBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {

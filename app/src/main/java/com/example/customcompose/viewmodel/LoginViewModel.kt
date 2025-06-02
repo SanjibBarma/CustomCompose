@@ -1,32 +1,26 @@
 package com.example.customcompose.viewmodel
 
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.customcompose.app_database.entity.SignInEntity
-import com.example.customcompose.app_database.entity.SurveyDataEntity
-import com.example.customcompose.helper.AppSessionManager
-import com.example.customcompose.helper.ConnectivityObserver
+import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.connectivityObserver
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.CampaignsModel
 import com.example.customcompose.model.SignInModel
 import com.example.customcompose.model.SurveyData
-import com.example.customcompose.model.SurveyModel
 import com.example.customcompose.model.UserInfoModel
 import com.example.customcompose.repository.LoginRepository
+import com.example.customcompose.storage.entity.SignInEntity
+import com.example.customcompose.storage.entity.SurveyDataEntity
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class LoginViewModel(
-    private val loginRepository: LoginRepository,
-    private val connectivityObserver: ConnectivityObserver
+    private val loginRepository: LoginRepository
 ): ViewModel() {
 
     //login api
@@ -48,8 +42,8 @@ class LoginViewModel(
                         response.body()?.let { responseBody ->
                             _loginData.postValue(UIState.Success(responseBody))
 
-                            response.body()!!.data.id?.let {
-                                _userId.postValue(response.body()!!.data.id.toString())
+                            response.body()!!.data.username?.let {
+                                _userId.postValue(response.body()!!.data.username!!)
 
                                 SignInEntity(
                                     userId = it,
@@ -140,6 +134,8 @@ class LoginViewModel(
                     if (response.isSuccessful) {
                         response.body()?.let { responseBody ->
                             _campaignListData.postValue(UIState.Success(responseBody))
+                            val campListData = gson.toJson(responseBody)
+                            appSessionManager.setCampData(campListData)
 
                             //call survey data api
                             val campaignIds = responseBody.data.map { it.id.toString() }

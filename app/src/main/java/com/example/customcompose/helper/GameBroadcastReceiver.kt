@@ -16,9 +16,8 @@ class GameBroadcastReceiver() : BroadcastReceiver() {
 
         Log.d("GameBroadcastReceiver", "Received Broadcast: Start Time: $startTime, End Time: $endTime, Status: $gameStatus")
 
-        if (!gameStatus){
+        if (gameStatus){
             blockListViewModel.moveToNextFromGame()
-            Toast.makeText(context, "Received: Start Time: $startTime, End Time: $endTime, Status: $gameStatus", Toast.LENGTH_LONG).show()
         }
     }
 }

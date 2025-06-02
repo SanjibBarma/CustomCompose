@@ -2,9 +2,9 @@ package com.example.customcompose.views.compose.referring.image_view
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -48,17 +48,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.views.CustomActivity
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.ui.theme.ProductSelected
-import com.example.customcompose.viewmodel.BlockListViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -67,12 +67,10 @@ import java.io.File
 @Composable
 fun ImageBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {
     val context = LocalContext.current
-    val activity = context as? ComponentActivity
 
     val isSkippable = block.skip?.id != "-1"
     val currentBlockId = block.id ?: ""
@@ -130,7 +128,7 @@ fun ImageBlock(
 
                 LazyRow(state = lazyListState, modifier = Modifier.weight(1f)) {
                     itemsIndexed(options) { index, option ->
-                        val imageBitmap = rememberImageBitmapFromCache(option.value, context)
+                        val imageBitmap = rememberImageBitmapFromCache(option.value, context, R.drawable.placeholder_img)
                         val isSelected = option.value == selectedImage
 
                         Box(
@@ -154,17 +152,13 @@ fun ImageBlock(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    imageBitmap?.let {
+                                    if (imageBitmap != null){
                                         Image(
-                                            bitmap = it,
+                                            bitmap = imageBitmap,
                                             contentDescription = option.value,
                                             modifier = Modifier.size(100.dp, 130.dp)
                                         )
-                                    } ?: Image(
-                                        painter = painterResource(id = R.drawable.tom_jerry),
-                                        contentDescription = "Default Icon",
-                                        modifier = Modifier.size(100.dp, 130.dp)
-                                    )
+                                    }
 
                                     if (isSelected) {
                                         Box(
@@ -244,12 +238,24 @@ fun ImageBlock(
 }
 
 @Composable
-fun rememberImageBitmapFromCache(imagePath: String, context: Context): ImageBitmap? {
+fun rememberImageBitmapFromCache(imagePath: String, context: Context, placeholderImg: Int): ImageBitmap? {
     val fileName = imagePath.substringAfterLast("/")
     val imageFile = File(context.cacheDir, fileName)
     return remember(imagePath) {
         if (imageFile.exists()) {
             BitmapFactory.decodeFile(imageFile.absolutePath)?.asImageBitmap()
-        } else null
+        } else{
+            ContextCompat.getDrawable(context, placeholderImg)?.let { drawable ->
+                val bitmap = Bitmap.createBitmap(
+                    drawable.intrinsicWidth,
+                    drawable.intrinsicHeight,
+                    Bitmap.Config.ARGB_8888
+                )
+                val canvas = android.graphics.Canvas(bitmap)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                bitmap.asImageBitmap()
+            }
+        }
     }
 }

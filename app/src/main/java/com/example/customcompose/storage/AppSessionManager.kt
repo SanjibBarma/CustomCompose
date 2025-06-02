@@ -1,7 +1,9 @@
-package com.example.customcompose.helper
+package com.example.customcompose.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.customcompose.model.TapAnalysisModel
+import com.example.customcompose.model.TargetAchievement
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
@@ -32,8 +34,13 @@ class AppSessionManager(context: Context) {
     private val MOBILE_VERIFICATION_DATA = "MOBILE_VERIFICATION_DATA"
     private val EXTRA_SERVICE_VAMP_INFO = "EXTRA_SERVICE_VAMP_INFO"
     private val CONTACT_NUMBER = "CONTACT_NUMBER"
+    private val CURRENT_ACHIEVEMENT = "CURRENT_ACHIEVEMENT"
+    private val TAP_ANALYSIS_KEY = "tap_analysis_list"
+    private val START_TIME_TAP = "START_TIME_TAP"
+    private val CAMP_LIST_INFO = "CAMP_LIST_INFO"
 
-    fun saveItem(newItem: String) {
+
+    fun saveCheckListItem(newItem: String) {
         val existingSet = getCheckListSet().toMutableSet()
         if (existingSet.add(newItem)) { // Add only if it's new
             val jsonString = Gson().toJson(existingSet)
@@ -47,11 +54,11 @@ class AppSessionManager(context: Context) {
         return Gson().fromJson(jsonString, type) ?: emptySet()
     }
 
-    fun existsItem(item: String): Boolean {
+    fun existsCheckListItem(item: String): Boolean {
         return getCheckListSet().contains(item)
     }
 
-    fun removeItem(itemToRemove: String) {
+    fun removeCheckListItem(itemToRemove: String) {
         val existingSet = getCheckListSet().toMutableSet()
         if (existingSet.remove(itemToRemove)) { // Remove if it exists
             val jsonString = Gson().toJson(existingSet)
@@ -170,6 +177,67 @@ class AppSessionManager(context: Context) {
 
     fun getContactNumber(): String? {
         return prefs.getString(CONTACT_NUMBER, null)
+    }
+
+    fun insertCurrentTargetAchievementId(json: String) {
+        prefs.edit().putString(CURRENT_ACHIEVEMENT, json).apply()
+    }
+
+    fun getCurrentTargetAchievement(): TargetAchievement? {
+        val json = prefs.getString(CURRENT_ACHIEVEMENT, null)
+        return if (json.isNullOrEmpty()) {
+            null
+        } else {
+            Gson().fromJson(json, object : TypeToken<TargetAchievement>() {}.type)
+        }
+    }
+
+    fun saveTapAnalysis(newTap: TapAnalysisModel) {
+        val gson = Gson()
+
+        val existingJson = prefs.getString(TAP_ANALYSIS_KEY, null)
+        val currentList: MutableList<TapAnalysisModel> = if (!existingJson.isNullOrEmpty()) {
+            val type = object : TypeToken<MutableList<TapAnalysisModel>>() {}.type
+            gson.fromJson(existingJson, type)
+        } else {
+            mutableListOf()
+        }
+        currentList.add(newTap)
+
+        val updatedJson = gson.toJson(currentList)
+        prefs.edit().putString(TAP_ANALYSIS_KEY, updatedJson).apply()
+    }
+
+    fun getTapAnalysisList(): List<TapAnalysisModel> {
+        val gson = Gson()
+
+        val json = prefs.getString(TAP_ANALYSIS_KEY, null)
+        return if (!json.isNullOrEmpty()) {
+            val type = object : TypeToken<List<TapAnalysisModel>>() {}.type
+            gson.fromJson(json, type)
+        } else {
+            emptyList()
+        }
+    }
+
+    fun clearTapAnalysisList() {
+        prefs.edit().remove(TAP_ANALYSIS_KEY).apply()
+    }
+
+    fun setStartTimeTapAnalysis(time: String) {
+        prefs.edit().putString(START_TIME_TAP, time).apply()
+    }
+
+    fun getStartTimeTapAnalysis(): String? {
+        return prefs.getString(START_TIME_TAP, null)
+    }
+
+    fun setCampData(data: String) {
+        prefs.edit().putString(CAMP_LIST_INFO, data).apply()
+    }
+
+    fun getCampListData(): String? {
+        return prefs.getString(CAMP_LIST_INFO, null)
     }
 
 }

@@ -17,31 +17,33 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.model.Block
-import com.example.customcompose.viewmodel.BlockListViewModel
 import java.io.File
 
 @Composable
 fun TermsAgreementBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {
-    var previousAns by remember { mutableStateOf(block.surveyHistoryModel.firstOrNull()?.answer ?: "") }
-    var showDialog by remember { mutableStateOf(true) }
-    val isTermsShow by blockListViewModel.isTermsShow.collectAsState()
+    var previousAns by remember {
+        mutableStateOf(
+            block.surveyHistoryModel.firstOrNull()?.answer ?: ""
+        )
+    }
+    var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val imageFile = File(context.cacheDir, previousAns)
@@ -51,49 +53,48 @@ fun TermsAgreementBlock(
         } else null
     }
 
-    LaunchedEffect (Unit){
-        if (previousAns == ""){
+    LaunchedEffect(Unit) {
+        if (previousAns == "") {
             showDialog = true
-            blockListViewModel.showTermsPopup()
         }
     }
 
-    if (showDialog && isTermsShow) {
-        DrawingCanvas(block, blockListViewModel, destination, onDismiss = { showDialog = false; blockListViewModel.hideTermsPopup() })
-    }else{
+    if (showDialog) {
+        DrawingCanvas(block, destination, onDismiss = { showDialog = false; })
+    } else {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
-                .clickable (enabled = isActiveGroup){
+                .clickable(enabled = isActiveGroup) {
                     showDialog = true
-                    blockListViewModel.showTermsPopup()
+                    blockListViewModel.hideOtpBox()
                 },
             elevation = CardDefaults.cardElevation(2.dp),
             shape = RoundedCornerShape(4.dp),
             colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
         ) {
             Column(
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(8.dp).padding(bottom = 8.dp)
             ) {
                 Text(text = block.question!!.slug)
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Box(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
-                        .padding(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    shape = RoundedCornerShape(4.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
                 ) {
                     Column {
-                        //show the canvas saved image here if saved el
                         if (imageBitmap != null) {
                             Image(
                                 bitmap = imageBitmap,
                                 contentDescription = previousAns,
                                 modifier = Modifier
-                                    .height(250.dp)
                                     .fillMaxWidth()
                                     .background(Color.White)
                             )
@@ -107,7 +108,7 @@ fun TermsAgreementBlock(
                     Text(
                         text = term,
                         fontSize = 12.sp,
-                        modifier = Modifier.padding(bottom = 8.dp, start = 8.dp, end = 8.dp)
+                        lineHeight = 14.sp,
                     )
                 }
             }

@@ -5,8 +5,7 @@ package com.example.customcompose.views.screens
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import androidx.activity.addCallback
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,24 +18,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
-import kotlinx.coroutines.launch
-
-import androidx.compose.material3.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -50,19 +43,21 @@ import com.example.customcompose.helper.CommonUtils.getContactDate
 import com.example.customcompose.helper.CommonUtils.getdatetime
 import com.example.customcompose.helper.CommonUtils.isServiceRunning
 import com.example.customcompose.helper.Constants.fullCampaignData
+import com.example.customcompose.helper.Constants.numberValTapResult
 import com.example.customcompose.helper.Constants.surveyBasicInfo
 import com.example.customcompose.helper.Constants.surveyFlowData
 import com.example.customcompose.helper.SntpClient
 import com.example.customcompose.model.SurveyModel
 import com.example.customcompose.ui.theme.DimBackground
 import com.example.customcompose.views.compose.SubmitButton
-import com.example.customcompose.views.compose.helper_compose.ExitDialog
 import com.example.customcompose.views.compose.group.CheckGroupOrBlock
+import com.example.customcompose.views.compose.helper_compose.ExitDialog
 import com.example.customcompose.views.compose.helper_compose.KeepScreenOnEffect
 import com.example.customcompose.views.compose.referring.LocationBlock
 import com.example.customcompose.views.compose.route_plan.RoutePlanView
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
@@ -75,8 +70,8 @@ fun DynamicScreen(
     navController: NavHostController
 ) {
     KeepScreenOnEffect()
-    val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     var showExitDialog by remember { mutableStateOf(false) }
+    BackHandler { showExitDialog = true }
 
     val context = LocalContext.current
     val parentSurveyList by blockListViewModel.parentSurveyBlockList.collectAsState()
@@ -87,19 +82,18 @@ fun DynamicScreen(
     val isRoutePlanShow by blockListViewModel.isRoutePlan.collectAsState()
     var dhakaTime by remember { mutableStateOf<ZonedDateTime?>(null) }
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-
     val gson = Gson()
-
     appSessionManager.getCampaignId()?.let { camId ->
-        loginViewModel.fetchSurveyDataByIds(appSessionManager.getBrId().toString(), camId)
+        loginViewModel.fetchSurveyDataByIds(appSessionManager.getBrId()!!, camId)
     }
-
     val surveyDataState = loginViewModel.localSurveyData.observeAsState()
-
-//    var surveyData: SurveyModel? = null
     var surveyName by remember { mutableStateOf("") }
 
+
     LaunchedEffect(surveyDataState.value) {
+        appSessionManager.setStartTimeTapAnalysis(System.nanoTime().toString())
+        numberValTapResult.clear()
+
         surveyBasicInfo["contact_date"] =  getContactDate(getdatetime())
         if (connectivityObserver.checkInternetConnection()) {
             withContext(Dispatchers.IO) {
@@ -109,11 +103,15 @@ fun DynamicScreen(
                     val zoneId = ZoneId.of("Asia/Dhaka")
                     val zonedTime = ZonedDateTime.ofInstant(instant, zoneId)
                     dhakaTime = zonedTime
+                    println("sntpZonedDateTime: ${dhakaTime!!.format(formatter)}")
+                    surveyBasicInfo["start"] = dhakaTime!!.format(formatter)
+                } ?: run {
+                    // Fallback if SNTP fails
+                    surveyBasicInfo["start"] = getdatetime()
                 }
             }
-            surveyBasicInfo["start"] =  dhakaTime!!.format(formatter)
-        }else{
-            surveyBasicInfo["start"] =  getdatetime()
+        } else {
+            surveyBasicInfo["start"] = getdatetime()
         }
 
         surveyDataState.value?.campData?.let { campData ->
@@ -129,7 +127,6 @@ fun DynamicScreen(
                     blockListViewModel.showRoutePlanView()
                     blockListViewModel.clearRouteList()
                     appSessionManager.setMobileVerificationData("")
-                    blockListViewModel.showTermsPopup()
                     blockListViewModel.addNextRoutePlanData(routePlan.type_slug, routePlanLocal, blockListViewModel.routeParentList.value.size)
                 }
             }
@@ -145,7 +142,8 @@ fun DynamicScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
-        }
+        },
+        modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -181,7 +179,7 @@ fun DynamicScreen(
                         val isCurrentGroupActive =
                             !isSubmitted && parentSurveyList.lastOrNull()?.group == childView.group
                         val position = childView.position
-                        CheckGroupOrBlock(blockListViewModel, childView, isCurrentGroupActive, position, "mainSurvey")
+                        CheckGroupOrBlock(childView, isCurrentGroupActive, position, "mainSurvey")
                     }
 
                     if (isSubmitted) {
@@ -225,10 +223,6 @@ fun DynamicScreen(
         }
     }
 
-    onBackPressedDispatcher?.addCallback {
-        showExitDialog = true
-        println("Back button pressed on DynamicScreen")
-    }
 
     if (showExitDialog){
         ExitDialog(
@@ -239,7 +233,6 @@ fun DynamicScreen(
                 blockListViewModel.clearParentBlockList()
                 appSessionManager.setMobileVerificationData("")
                 showExitDialog = false
-                blockListViewModel.showTermsPopup()
 
                 val intent = Intent(context, AudioRecorderService::class.java)
 
@@ -250,9 +243,3 @@ fun DynamicScreen(
         )
     }
 }
-
-//object SurveyDataManager {
-//    var surveyFlowData: List<SurveyDataModel>? = null
-//    var fullCampaignData: SurveyModel? = null
-//}
-

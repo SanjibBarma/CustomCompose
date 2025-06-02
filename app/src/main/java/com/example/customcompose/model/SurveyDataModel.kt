@@ -38,7 +38,7 @@ data class Option(val alias: Int, val slug: String?, val value: String, val refe
 data class ReferTo(val id: String?, val group_no: String?)
 
 @Serializable
-data class Question(val slug: String, val alias: String)
+data class Question(val slug: String, var alias: String)
 
 @Serializable
 data class Validations(

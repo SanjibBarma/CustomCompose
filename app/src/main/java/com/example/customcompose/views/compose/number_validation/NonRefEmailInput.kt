@@ -22,9 +22,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
+import com.example.customcompose.helper.CommonUtils.getTapAnalysisElapsedTime
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.model.NumberCheckData
+import com.example.customcompose.model.Result
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
 
@@ -32,10 +35,10 @@ import com.google.gson.Gson
 @Composable
 fun NonRefEmailInput(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     index: Int,
     position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    onOptionSelected: (Result) -> Unit
 ) {
     val gson = Gson()
     val isRequired = block.required
@@ -66,6 +69,12 @@ fun NonRefEmailInput(
         )
 
         blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
+
+        val result = Result(
+            option = question,
+            tap_time = (getTapAnalysisElapsedTime()!! / 1000000).toString()
+        )
+        onOptionSelected(result)
     }
 
     Column (

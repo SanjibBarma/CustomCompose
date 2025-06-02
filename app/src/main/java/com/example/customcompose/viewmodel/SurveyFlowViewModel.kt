@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.customcompose.MyApplication.Companion.appSessionManager
 import com.example.customcompose.MyApplication.Companion.connectivityObserver
-import com.example.customcompose.app_database.entity.PtrProgressEntity
+import com.example.customcompose.storage.entity.PtrProgressEntity
 import com.example.customcompose.helper.UIState
 import com.example.customcompose.model.GiveAbleAchievement
 import com.example.customcompose.model.NumberCheckModel
@@ -14,7 +14,6 @@ import com.example.customcompose.repository.SurveyFlowRepository
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 class SurveyFlowViewModel(

@@ -26,9 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.viewmodel.BlockListViewModel
-import com.example.customcompose.viewmodel.SurveyFlowViewModel
 import com.example.customcompose.views.compose.group.CheckGroupOrBlock
 import kotlinx.coroutines.launch
 
@@ -36,10 +35,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun CheckListDialog(
     selectedOption: String,
-    blockListViewModel: BlockListViewModel,
     onClose: () -> Unit,
-    onDismiss: () -> Unit,
-    numberValidationViewModel: SurveyFlowViewModel
+    onDismiss: () -> Unit
 ) {
 
     val surveyViewListItem by blockListViewModel.checkListParentBlockList.collectAsState()
@@ -91,7 +88,6 @@ fun CheckListDialog(
                         println("Type Name: ${childView.type}")
                         println("BlockData: $childView")
                         CheckGroupOrBlock(
-                            blockListViewModel,
                             childView,
                             isCurrentGroupActive,
                             position,
@@ -120,7 +116,7 @@ fun CheckListDialog(
                         onClose()
                         blockListViewModel.clearCheckList()
                         blockListViewModel.updateCheckList(false)
-                        appSessionManager.saveItem(selectedOption)
+                        appSessionManager.saveCheckListItem(selectedOption)
                     }
                 }
             }

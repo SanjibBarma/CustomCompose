@@ -29,9 +29,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
+import com.example.customcompose.helper.CommonUtils
+import com.example.customcompose.helper.CommonUtils.getTapAnalysisElapsedTime
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.model.NumberCheckData
+import com.example.customcompose.model.Result
 import com.example.customcompose.viewmodel.BlockListViewModel
 import com.google.gson.Gson
 
@@ -39,10 +43,10 @@ import com.google.gson.Gson
 @Composable
 fun NonRefContactNo(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     index: Int,
     position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    onOptionSelected: (Result) -> Unit
 ) {
     val isRequired = block.required
     val question = block.question?.alias ?: ""
@@ -51,35 +55,35 @@ fun NonRefContactNo(
     val existingData = blockListViewModel.getDataFromIndex(position, index)
     var phoneNumber by remember { mutableStateOf(existingData?.answer ?: "") }
 
-    LaunchedEffect(phoneNumber) {
+    // 1. Load from stored JSON data only once
+    LaunchedEffect(Unit) {
         val nonRefData = appSessionManager.getMobileVerificationData()
         if (!nonRefData.isNullOrEmpty()) {
-            println("NonRefTextInput: $nonRefData")
             val numberCheckData: NumberCheckData? = gson.fromJson(nonRefData, NumberCheckData::class.java)
 
-            if (numberCheckData != null && numberCheckData.information != null){
-                for (dynamicInfo in numberCheckData.information) {
-                    if (dynamicInfo.key == question) {
-                        phoneNumber = dynamicInfo.value
-                    }
-                }
+            numberCheckData?.information?.firstOrNull { it.key == question }?.let {
+                phoneNumber = it.value
+
+                val surveyHistoryModel = SurveyHistoryModel(
+                    question = question,
+                    answer = it.value,
+                    id = blockId
+                )
+                blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
             }
         }
 
-        val surveyHistoryModel = SurveyHistoryModel(
-            question = question,
-            answer = phoneNumber,
-            id = blockId
+        val result = Result(
+            option = question,
+            tap_time = (getTapAnalysisElapsedTime()!! / 1000000).toString()
         )
-        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
+        onOptionSelected(result)
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
     ) {
-        println("Block Id is: ${block.id}")
-        Text(text = block.question!!.slug)
+        Text(text = block.question?.slug ?: "")
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -93,6 +97,13 @@ fun NonRefContactNo(
                 onValueChange = {
                     if (it.all { char -> char.isDigit() } && it.length <= 10) {
                         phoneNumber = it
+
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = question,
+                            answer = it,
+                            id = blockId
+                        )
+                        blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
                     }
                 },
                 modifier = Modifier

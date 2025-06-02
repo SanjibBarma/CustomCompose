@@ -1,6 +1,5 @@
 package com.example.customcompose.views.compose.referring
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,27 +35,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.R
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.Option
 import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.ui.theme.ProductSelected
-import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.views.compose.referring.image_view.rememberImageBitmapFromCache
 import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
 fun InteractiveGalleryBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {
@@ -65,9 +60,7 @@ fun InteractiveGalleryBlock(
     val isSkippable = block.skip?.id != "-1"
     var selectedImage by remember { mutableStateOf(block.surveyHistoryModel?.firstOrNull()?.answer ?: "") }
     val options = block.options ?: emptyList()
-    var selectedItem by remember {
-        mutableStateOf<Option?>(options.find { it.value == selectedImage })
-    }
+    var selectedItem by remember { mutableStateOf<Option?>(options.find { it.value == selectedImage }) }
 
     val question = block.question?.alias ?: ""
     val context = LocalContext.current
@@ -84,190 +77,196 @@ fun InteractiveGalleryBlock(
         elevation = CardDefaults.cardElevation(2.dp),
         shape = RoundedCornerShape(4.dp),
         colors = CardDefaults.cardColors(containerColor = if (isActiveGroup) Color.White else Color.LightGray)
-    ){
+    ) {
         Column(
             modifier = Modifier.padding(8.dp)
         ) {
-        println("Block Id is: $currentBlockId")
-        Text(text = block.question!!.slug)
+            println("Block Id is: $currentBlockId")
+            Text(text = block.question!!.slug)
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = {
-                    coroutineScope.launch {
-                        val currentFirst = lazyListState.firstVisibleItemIndex
-                        if (currentFirst > 0) {
-                            lazyListState.animateScrollToItem(currentFirst - 1)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            val currentFirst = lazyListState.firstVisibleItemIndex
+                            if (currentFirst > 0) {
+                                lazyListState.animateScrollToItem(currentFirst - 1)
+                            }
                         }
-                    }
-                },
-                enabled = hasItems && lazyListState.firstVisibleItemIndex > 0
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowLeft,
-                    contentDescription = "Scroll left",
-                    tint = Color.Gray
-                )
-            }
-            LazyRow(
-                state = lazyListState,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(enabled = isActiveGroup) { }
-            ) {
-                items(options) { option ->
+                    },
+                    enabled = hasItems && lazyListState.firstVisibleItemIndex > 0
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowLeft,
+                        contentDescription = "Scroll left",
+                        tint = Color.Gray
+                    )
+                }
+                LazyRow(
+                    state = lazyListState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(enabled = isActiveGroup) { }
+                ) {
+                    items(options) { option ->
 
-                    val fileName = option.value.substringAfterLast("/")
-                    val imageFile = File(context.cacheDir, fileName)
+                        val fileName = option.value.substringAfterLast("/")
+                        val imageFile = File(context.cacheDir, fileName)
 
-                    val imageBitmap = remember(option.value) {
-                        if (imageFile.exists()) {
-                            BitmapFactory.decodeFile(imageFile.absolutePath)?.asImageBitmap()
-                        } else null
-                    }
+                        val imageBitmap = rememberImageBitmapFromCache(
+                            option.value,
+                            context,
+                            R.drawable.placeholder_img
+                        )
 
-                    val backgroundColor = if (selectedItem == option) ProductSelected else Color.White
+                        val backgroundColor =
+                            if (selectedItem == option) ProductSelected else Color.White
 
-                    val isSelected = option.value == selectedImage
+                        val isSelected = option.value == selectedImage
 
-                    Box(
-                        modifier = Modifier
-                            .border(1.dp, if (isSelected) Color.Black else Color.Transparent, RoundedCornerShape(4.dp))
-                    ) {
-                        Column(
+                        Box(
                             modifier = Modifier
-                                .padding(8.dp)
-                                .height(130.dp)
-                                .width(100.dp)
-                                .background(backgroundColor)
-                                .clickable(enabled = isActiveGroup) {
-                                    selectedImage = option.value!!
-                                    selectedItem = option
+                                .border(
+                                    1.dp,
+                                    if (isSelected) Color.Black else Color.Transparent,
+                                    RoundedCornerShape(4.dp)
+                                )
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .height(130.dp)
+                                    .width(100.dp)
+                                    .background(backgroundColor)
+                                    .clickable(enabled = isActiveGroup) {
+                                        selectedImage = option.value!!
+                                        selectedItem = option
 
-                                    val surveyHistoryModel = SurveyHistoryModel(
-                                        question = question,
-                                        answer = selectedImage,
-                                        id = currentBlockId
-                                    )
-                                    block.surveyHistoryModel = listOf(surveyHistoryModel)
+                                        val surveyHistoryModel = SurveyHistoryModel(
+                                            question = question,
+                                            answer = option.value,
+                                            id = currentBlockId
+                                        )
+                                        block.surveyHistoryModel = listOf(surveyHistoryModel)
 
-                                    option.referTo?.group_no?.let { groupId ->
-                                        option.referTo.id?.let { nextBlockId ->
-                                            if (destination == "mainSurvey") {
-                                                blockListViewModel.addBlockToTheSurveyFlow(nextBlockId, groupId, block.position)
-                                            } else {
-                                                blockListViewModel.addBlockToTheCheckList(nextBlockId, groupId)
+                                        option.referTo?.group_no?.let { groupId ->
+                                            option.referTo.id?.let { nextBlockId ->
+                                                if (destination == "mainSurvey") {
+                                                    blockListViewModel.addBlockToTheSurveyFlow(
+                                                        nextBlockId,
+                                                        groupId,
+                                                        block.position
+                                                    )
+                                                } else {
+                                                    blockListViewModel.addBlockToTheCheckList(
+                                                        nextBlockId,
+                                                        groupId
+                                                    )
+                                                }
                                             }
                                         }
+
                                     }
-
-                                }
-                                .border(1.dp, color = Color.Gray, RoundedCornerShape(4.dp)),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Box(contentAlignment = Alignment.Center) {
-                                if (imageBitmap != null) {
-                                    Image(
-                                        bitmap = imageBitmap,
-                                        contentDescription = option.value,
-                                        modifier = Modifier
-                                            .height(130.dp)
-                                            .width(100.dp)
-                                            .background(Color.White)
-                                    )
-                                }else{
-                                    Image(
-                                        painter = painterResource(id = R.drawable.tom_jerry),
-                                        contentDescription = "Default Icon",
-                                        modifier = Modifier
-                                            .height(130.dp)
-                                            .width(100.dp)
-                                            .background(Color.White)
-                                    )
-                                }
-
-                                if (isSelected) {
-                                    Box(
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .background(Color.Black.copy(alpha = 0.4f))
-                                            .clip(RoundedCornerShape(4.dp))
-                                    )
-                                }
-                            }
-
-
-                            if (!option.slug.isNullOrEmpty()) {
+                                    .border(1.dp, color = Color.Gray, RoundedCornerShape(4.dp)),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
                                 Spacer(modifier = Modifier.height(4.dp))
 
-                                Text(
-                                    text = option.slug,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.width(100.dp),
-                                    fontSize = 12.sp,
-                                    fontWeight = Bold
-                                )
+                                Box(contentAlignment = Alignment.Center) {
+                                    if (imageBitmap != null) {
+                                        Image(
+                                            bitmap = imageBitmap,
+                                            contentDescription = option.value,
+                                            modifier = Modifier
+                                                .height(if (!option.name.isNullOrEmpty()) { 100.dp} else {130.dp})
+//                                                .height(130.dp)
+                                                .width(100.dp)
+                                                .background(Color.White)
+                                        )
+                                    }
+
+                                    if (isSelected) {
+                                        Box(
+                                            modifier = Modifier
+                                                .matchParentSize()
+                                                .background(Color.Black.copy(alpha = 0.4f))
+                                                .clip(RoundedCornerShape(4.dp))
+                                        )
+                                    }
+                                }
+
+                                if (!option.name.isNullOrEmpty()) {
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = option.name,
+                                        maxLines = 1,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.width(100.dp),
+                                        fontSize = 10.sp,
+                                        color = Color.Black
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            IconButton(
-                onClick = {
-                    coroutineScope.launch {
-                        val currentFirst = lazyListState.firstVisibleItemIndex
-                        if (currentFirst < options.size - 1) {
-                            lazyListState.animateScrollToItem(currentFirst + 1)
-                        }
-                    }
-                },
-                enabled = hasItems && lazyListState.firstVisibleItemIndex < options.size - 1
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowRight,
-                    tint = Color.Gray,
-                    contentDescription = "Scroll right"
-                )
-            }
-        }
-
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (isSkippable) {
-
-            Button(
-                onClick = {
-                    val surveyHistoryModel = SurveyHistoryModel(
-                        question = "",
-                        answer = "",
-                        id = currentBlockId
-                    )
-                    block.surveyHistoryModel = listOf(surveyHistoryModel)
-
-                    block.skip?.id?.let { blockId ->
-                        block.skip.group_no.let { groupId ->
-                            if (destination == "mainSurvey") {
-                                blockListViewModel.addBlockToTheSurveyFlow(blockId, groupId, block.position)
-                            } else {
-                                blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            val currentFirst = lazyListState.firstVisibleItemIndex
+                            if (currentFirst < options.size - 1) {
+                                lazyListState.animateScrollToItem(currentFirst + 1)
                             }
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isActiveGroup
-            ) {
-                Text("Skip")
+                    },
+                    enabled = hasItems && lazyListState.firstVisibleItemIndex < options.size - 1
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowRight,
+                        tint = Color.Gray,
+                        contentDescription = "Scroll right"
+                    )
+                }
+            }
+
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (isSkippable) {
+
+                Button(
+                    onClick = {
+                        val surveyHistoryModel = SurveyHistoryModel(
+                            question = "",
+                            answer = "",
+                            id = currentBlockId
+                        )
+                        block.surveyHistoryModel = listOf(surveyHistoryModel)
+
+                        block.skip?.id?.let { blockId ->
+                            block.skip.group_no.let { groupId ->
+                                if (destination == "mainSurvey") {
+                                    blockListViewModel.addBlockToTheSurveyFlow(
+                                        blockId,
+                                        groupId,
+                                        block.position
+                                    )
+                                } else {
+                                    blockListViewModel.addBlockToTheCheckList(blockId, groupId)
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = isActiveGroup
+                ) {
+                    Text("Skip")
+                }
             }
         }
-    }
     }
 }

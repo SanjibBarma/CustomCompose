@@ -45,18 +45,9 @@ class MainActivity : ComponentActivity() {
         if (!hasRequiredPermissions()) {
             requestPermissionLauncher.launch(requiredPermissions)
         }
-
-        val numberValidationViewModel = MyApplication.surveyFlowViewModel
-        val loginViewModel = MyApplication.loginViewModel
-        val blockListViewModel = MyApplication.blockListViewModel
-
         setContent {
             CustomComposeTheme {
-                Navigation(
-                    blockListViewModel,
-                    numberValidationViewModel,
-                    loginViewModel
-                )
+                Navigation()
             }
         }
     }

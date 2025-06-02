@@ -1,6 +1,8 @@
 package com.example.customcompose.views.compose.referring
 
+import android.content.Context
 import android.content.IntentFilter
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -23,7 +25,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,16 +34,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.helper.GameBroadcastReceiver
-import com.example.customcompose.helper.AppSessionManager
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.viewmodel.BlockListViewModel
 
 @Composable
 fun GameBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {
@@ -52,19 +51,23 @@ fun GameBlock(
 
     val question = block.question?.alias ?: ""
     val context = LocalContext.current
-//    val packageName = block.options?.get(0)?.value
-    val packageName = "ltd.v2.game1"
+    val packageName = block.options?.get(0)?.value
+//    val packageName = "ltd.v2.game1"
     val isGameBroadCast by blockListViewModel.isGameBroadCast.collectAsState()
 
     DisposableEffect(context) {
-        val filter = IntentFilter("com.example.customcompose")
+        val filter = IntentFilter("v2.ltd.ecrm3.app")
         val receiver = GameBroadcastReceiver()
-        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+        }
 
         onDispose {
             context.unregisterReceiver(receiver)
         }
     }
+
 
     LaunchedEffect(isGameBroadCast) {
         if (isGameBroadCast) {
@@ -85,6 +88,7 @@ fun GameBlock(
                     }
                 }
             }
+            blockListViewModel.stayInGame()
         }
     }
 

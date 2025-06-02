@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import okhttp3.*
+import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
 import okio.Buffer
 import retrofit2.Retrofit
@@ -17,10 +18,10 @@ object RetrofitInstance {
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
     private val client = OkHttpClient.Builder()
-        .addInterceptor(createLoggingInterceptor())
         .connectTimeout(60, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)
+        .addInterceptor(createLoggingInterceptor())
         .build()
 
     private fun createLoggingInterceptor(): Interceptor = Interceptor { chain ->
@@ -46,10 +47,10 @@ object RetrofitInstance {
             append("\n\n┌────── Request ────────────────────────────────────────────────────────\n")
             append("│ URL: ${request.url}\n")
             append("│ Method: @${request.method}\n")
-            append("│ Token:\n│ $wrappedToken\n") // 🔥 Soft-wrapped token
+            append("│ Token:\n│ $wrappedToken\n")
             append("│ Body:\n")
             formattedRequestBody.split("\n").forEach { line ->
-                append("│ $line\n")
+                append(" $line\n")
             }
             append("└─────────────────────────────────────────────────────────────────────\n")
         }
@@ -57,11 +58,12 @@ object RetrofitInstance {
 
         val response = chain.proceed(request)
 
-        val responseBody = response.peekBody(2048).string()
+        val rawBody = response.body?.string() ?: ""
         val formattedResponseBody = try {
-            gson.toJson(JsonParser.parseString(responseBody))
+            val jsonElement = JsonParser.parseString(rawBody)
+            gson.toJson(jsonElement)
         } catch (e: Exception) {
-            responseBody
+            rawBody
         }
 
         val responseLog = buildString {
@@ -70,13 +72,16 @@ object RetrofitInstance {
             append("│ Status Code: ${response.code} / ${response.message}\n")
             append("│ Body:\n")
             formattedResponseBody.split("\n").forEach { line ->
-                append("│ $line\n")
+                append(" $line\n")
             }
             append("└─────────────────────────────────────────────────────────────────────\n")
         }
         Log.i(LOG_TAG, responseLog)
 
-        response
+        // 🔥 Recreate response body so Retrofit can read it again
+        val contentType = response.body?.contentType()
+        val newBody = rawBody.toResponseBody(contentType)
+        return@Interceptor response.newBuilder().body(newBody).build()
     }
 
     val apiService: ApiService by lazy {
@@ -93,12 +98,22 @@ object RetrofitInstance {
     //====================******************============================//
     private const val MEDIA_URL = "https://ecrm3-nonremovable-uploads.s3.ap-southeast-1.amazonaws.com/"
 
-    private val media_loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+    private val mediaResponseLogger = Interceptor { chain ->
+        val response = chain.proceed(chain.request())
+
+        val responseLog = buildString {
+            append("│ Media: ${response.request.url}\n")
+        }
+        Log.i(LOG_TAG, responseLog)
+
+        response
     }
 
     private val mediaClient = OkHttpClient.Builder()
-        .addInterceptor(media_loggingInterceptor)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .addInterceptor(mediaResponseLogger)
         .build()
 
     val mediaService: ApiService by lazy {

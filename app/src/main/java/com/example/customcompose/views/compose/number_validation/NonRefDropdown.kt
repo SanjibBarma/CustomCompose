@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,19 +30,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.customcompose.MyApplication.Companion.appSessionManager
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
+import com.example.customcompose.helper.CommonUtils.getTapAnalysisElapsedTime
 import com.example.customcompose.model.Block
-import com.example.customcompose.model.SurveyHistoryModel
 import com.example.customcompose.model.NumberCheckData
-import com.example.customcompose.viewmodel.BlockListViewModel
+import com.example.customcompose.model.Result
+import com.example.customcompose.model.SurveyHistoryModel
 import com.google.gson.Gson
 
 @Composable
 fun NonRefDropdown(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     index: Int,
     position: Int,
-    isActiveGroup: Boolean
+    isActiveGroup: Boolean,
+    onOptionSelected: (Result) -> Unit
 ) {
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val isRequired = block.required
@@ -72,6 +75,12 @@ fun NonRefDropdown(
             id = blockId
         )
         blockListViewModel.saveDataAtIndex(position, surveyHistoryModel)
+
+        val result = Result(
+            option = question,
+            tap_time = (getTapAnalysisElapsedTime()!! / 1000000).toString()
+        )
+        onOptionSelected(result)
     }
 
     Column {
@@ -82,21 +91,33 @@ fun NonRefDropdown(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .height(56.dp)
                 .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
-                .padding(8.dp)
-                .clickable (enabled = isActiveGroup){ isDropdownExpanded = true }
+                .clickable(enabled = isActiveGroup) { isDropdownExpanded = true }
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(selectedOption)
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Dropdown Arrow",
-                    modifier = Modifier.size(24.dp)
-                )
+            Column (modifier = Modifier
+                .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ){
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Text(
+                        text = if(selectedOption == ""){"Select ${block.question.slug}"}else{selectedOption},
+                        color = if (selectedOption == "") Color.Gray else Color.Black,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Dropdown Arrow",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
 

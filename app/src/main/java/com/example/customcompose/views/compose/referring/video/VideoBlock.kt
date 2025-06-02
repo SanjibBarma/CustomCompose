@@ -43,6 +43,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.R
 import com.example.customcompose.views.CustomActivity
 import com.example.customcompose.helper.CommonUtils.createVideoThumbnail
@@ -59,7 +60,6 @@ import java.io.File
 @Composable
 fun VideoBlock(
     block: Block,
-    blockListViewModel: BlockListViewModel,
     isActiveGroup: Boolean,
     destination: String
 ) {
@@ -156,9 +156,7 @@ fun VideoBlock(
                     },
                 contentAlignment = Alignment.Center,
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator()
-                } else if (videoThumbnail != null) {
+                if (videoThumbnail != null) {
                     Image(
                         bitmap = videoThumbnail!!.asImageBitmap(),
                         contentDescription = "Video Thumbnail",
@@ -173,13 +171,14 @@ fun VideoBlock(
                                 showVideoDialogScreen = true
                             }
                         },
-                        modifier = Modifier.size(60.dp),
+                        modifier = Modifier.size(100.dp),
                         enabled = isActiveGroup
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_media_play),
                             contentDescription = "Play Video",
-                            tint = Color.White
+                            tint = Color.White,
+                            modifier = Modifier.size(70.dp)
                         )
                     }
                 } else {

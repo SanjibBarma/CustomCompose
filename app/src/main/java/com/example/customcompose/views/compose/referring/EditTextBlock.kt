@@ -33,15 +33,14 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.customcompose.MyApplication.Companion.blockListViewModel
 import com.example.customcompose.model.Block
 import com.example.customcompose.model.SurveyHistoryModel
-import com.example.customcompose.viewmodel.BlockListViewModel
-import com.google.gson.Gson
 import es.dmoral.toasty.Toasty
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditTextBlock(block: Block, blockListViewModel: BlockListViewModel, isActiveGroup: Boolean, destination: String) {
+fun EditTextBlock(block: Block, isActiveGroup: Boolean, destination: String) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val isSkippable = block.skip?.id != "-1"
